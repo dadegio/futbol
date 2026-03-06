@@ -298,11 +298,11 @@ function TeamStatsCard({
   setPlayerStat: (playerId: string, key: "goals" | "assists", value: string) => void;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
-      <div className="mb-4 text-xl font-black text-white">{title}</div>
+    <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
+      <div className="mb-4 text-lg md:text-xl font-black text-[var(--foreground)]">{title}</div>
 
       {players.length === 0 ? (
-        <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-white/55">
+        <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
           Nessun giocatore disponibile.
         </div>
       ) : (
@@ -310,37 +310,40 @@ function TeamStatsCard({
           {players.map((p) => (
             <div
               key={p.id}
-                className="grid gap-3 rounded-2xl border border-white/8 bg-[#17171a] p-4 md:grid-cols-[minmax(200px,1fr)_80px_80px] md:items-center"            >
-              <div className="min-w-0 pr-2">
-                <div className="text-lg font-bold text-white">
+              className="rounded-2xl border border-white/8 bg-white/[0.03] p-4"
+            >
+              <div className="min-w-0">
+                <div className="text-base md:text-lg font-bold text-[var(--foreground)] break-words">
                   #{p.number} {p.firstName} {p.lastName}
                 </div>
               </div>
 
-              <div>
-                <div className="mb-1 text-xs uppercase tracking-[0.16em] text-white/40">
-                  Gol
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div>
+                  <div className="mb-1 text-xs uppercase tracking-[0.16em] text-[var(--foreground)]/40">
+                    Gol
+                  </div>
+                  <input
+                    value={stats[p.id]?.goals ?? ""}
+                    placeholder="0"
+                    onChange={(e) => setPlayerStat(p.id, "goals", e.target.value)}
+                    inputMode="numeric"
+                    className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-center font-bold text-[var(--foreground)] outline-none focus:border-[var(--accent)]/40"
+                  />
                 </div>
-                <input
-                  value={stats[p.id]?.goals ?? ""}
-                  placeholder="0"
-                  onChange={(e) => setPlayerStat(p.id, "goals", e.target.value)}
-                  inputMode="numeric"
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-3 text-center font-bold text-white outline-none focus:border-[var(--accent)]/40"
-                />
-              </div>
 
-              <div>
-                <div className="mb-1 text-xs uppercase tracking-[0.16em] text-white/40">
-                  Assist
+                <div>
+                  <div className="mb-1 text-xs uppercase tracking-[0.16em] text-[var(--foreground)]/40">
+                    Assist
+                  </div>
+                  <input
+                    value={stats[p.id]?.assists ?? ""}
+                    placeholder="0"
+                    onChange={(e) => setPlayerStat(p.id, "assists", e.target.value)}
+                    inputMode="numeric"
+                    className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-center font-bold text-[var(--foreground)] outline-none focus:border-[var(--accent)]/40"
+                  />
                 </div>
-                <input
-                  value={stats[p.id]?.assists ?? ""}
-                  placeholder="0"
-                  onChange={(e) => setPlayerStat(p.id, "assists", e.target.value)}
-                  inputMode="numeric"
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-3 text-center font-bold text-white outline-none focus:border-[var(--accent)]/40"
-                />
               </div>
             </div>
           ))}

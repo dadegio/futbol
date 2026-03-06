@@ -10,10 +10,13 @@ import {
   Users,
   BarChart3,
   Search,
+  X,
 } from "lucide-react";
 
 type SidebarProps = {
   leagueId?: string;
+  mobile?: boolean;
+  onNavigate?: () => void;
 };
 
 function NavItem({
@@ -21,15 +24,18 @@ function NavItem({
   icon,
   label,
   active = false,
+  onNavigate,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  onNavigate?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       className={[
         "flex items-center gap-3 rounded-2xl px-4 py-3 transition",
         active
@@ -38,12 +44,12 @@ function NavItem({
       ].join(" ")}
     >
       <span className="opacity-90">{icon}</span>
-      <span className="text-[17px] font-medium">{label}</span>
+      <span className="text-[16px] md:text-[17px] font-medium">{label}</span>
     </Link>
   );
 }
 
-export default function Sidebar({ leagueId }: SidebarProps) {
+export default function Sidebar({ leagueId, mobile = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -61,30 +67,50 @@ export default function Sidebar({ leagueId }: SidebarProps) {
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
-
     if (!leagueId) return;
 
     const q = search.trim();
 
     if (!q) {
       router.push(`/leagues/${leagueId}/players`);
+      onNavigate?.();
       return;
     }
 
     router.push(`/leagues/${leagueId}/players?q=${encodeURIComponent(q)}`);
+    onNavigate?.();
   }
 
   return (
-    <aside className="w-[280px] shrink-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/95 p-6 text-[var(--foreground)] shadow-2xl shadow-black/15">
-      <div className="mb-8">
-        <Link href="/" className="text-[20px] font-extrabold tracking-tight">
+    <aside
+      className={[
+        "shrink-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/95 text-[var(--foreground)] shadow-2xl shadow-black/15",
+        mobile ? "w-full p-5" : "hidden w-[280px] p-6 lg:block",
+      ].join(" ")}
+    >
+      <div className="mb-6 flex items-center justify-between">
+        <Link
+          href="/"
+          onClick={onNavigate}
+          className="text-[20px] font-extrabold tracking-tight"
+        >
           <span className="text-[var(--accent)] italic">FUTBOL</span>
         </Link>
+
+        {mobile ? (
+          <button
+            onClick={onNavigate}
+            className="rounded-xl border border-[var(--border)] bg-white/5 p-2 text-[var(--foreground)]/80"
+            aria-label="Chiudi menu"
+          >
+            <X size={18} />
+          </button>
+        ) : null}
       </div>
 
       <form
         onSubmit={submitSearch}
-        className="mb-8 flex items-center gap-2 rounded-2xl bg-black/5 px-3 py-3"
+        className="mb-6 flex items-center gap-2 rounded-2xl bg-black/5 px-3 py-3"
       >
         <Search size={18} className="shrink-0 text-[var(--foreground)]/50" />
 
@@ -113,11 +139,10 @@ export default function Sidebar({ leagueId }: SidebarProps) {
             icon={item.icon}
             label={item.label}
             active={pathname === item.href}
+            onNavigate={onNavigate}
           />
         ))}
       </nav>
-
-      <div className="my-8 h-px bg-[var(--border)]" />
     </aside>
   );
 }

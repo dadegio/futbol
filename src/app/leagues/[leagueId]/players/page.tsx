@@ -10,6 +10,8 @@ type Row = {
   firstName: string;
   lastName: string;
   number: number;
+  position?: string | null;
+  photoUrl?: string | null;
   team: { id: string; name: string };
 };
 
@@ -59,12 +61,14 @@ export default function PlayersPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-6 shadow-2xl shadow-black/20">
+        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 md:p-6 shadow-2xl shadow-black/20">
           <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
             Players
           </div>
-          <h1 className="mt-2 text-3xl font-black text-white">Giocatori</h1>
-          <p className="mt-2 text-sm text-white/60">
+          <h1 className="mt-2 text-2xl md:text-3xl font-black text-[var(--foreground)]">
+            Giocatori
+          </h1>
+          <p className="mt-2 text-sm text-[var(--foreground)]/60">
             {loading ? "Caricamento…" : `Totale risultati: ${rows.length}`}
           </p>
 
@@ -73,7 +77,7 @@ export default function PlayersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cerca per nome, cognome, numero o squadra"
-              className="h-14 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35 focus:border-[var(--accent)]/40"
+              className="h-14 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35 focus:border-[var(--accent)]/40"
             />
             <button
               type="submit"
@@ -90,32 +94,51 @@ export default function PlayersPage() {
           ) : null}
         </section>
 
-        <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
+        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
           {rows.length === 0 && !loading ? (
-            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-white/55">
+            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
               Nessun giocatore trovato.
             </div>
           ) : null}
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             {rows.map((p) => (
               <Link
                 key={p.id}
                 href={`/leagues/${leagueId}/players/${p.id}`}
-                className="rounded-[24px] border border-white/8 bg-[#17171a] p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
+                className="rounded-[24px] border border-white/8 bg-[var(--card-2)] p-4 md:p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-sm uppercase tracking-[0.18em] text-white/40">
-                      {p.team.name}
+                <div className="flex items-start gap-4">
+                  {p.photoUrl ? (
+                    <img
+                      src={p.photoUrl}
+                      alt={`${p.firstName} ${p.lastName}`}
+                      className="h-14 w-14 md:h-16 md:w-16 rounded-2xl border border-white/10 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-white/5 text-xs font-bold text-[var(--foreground)]/35">
+                      N/A
                     </div>
-                    <div className="mt-2 text-xl font-bold text-white">
-                      {p.firstName} {p.lastName}
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="rounded-2xl bg-[var(--accent)] px-4 py-2 text-lg font-black text-black">
-                    #{p.number}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/40">
+                          {p.team.name}
+                        </div>
+                        <div className="mt-2 text-lg md:text-xl font-bold text-[var(--foreground)] break-words">
+                          {p.firstName} {p.lastName}
+                        </div>
+                        <div className="mt-2 text-sm text-[var(--foreground)]/50">
+                          {p.position || "Ruolo non impostato"}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 rounded-2xl bg-[var(--accent)] px-3 md:px-4 py-2 text-base md:text-lg font-black text-black">
+                        #{p.number}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </Link>

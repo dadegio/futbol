@@ -83,21 +83,23 @@ export default function TeamsPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-6 shadow-2xl shadow-black/20">
+        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 md:p-6 shadow-2xl shadow-black/20">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
                 Teams
               </div>
-              <h1 className="mt-2 text-3xl font-black text-white">Squadre</h1>
-              <p className="mt-2 text-sm text-white/60">
+              <h1 className="mt-2 text-2xl md:text-3xl font-black text-[var(--foreground)]">
+                Squadre
+              </h1>
+              <p className="mt-2 text-sm text-[var(--foreground)]/60">
                 Visualizza e gestisci le squadre del torneo.
               </p>
             </div>
 
             <button
               onClick={() => setShowCreateTeam((v) => !v)}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
+              className="w-full sm:w-auto rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
             >
               {showCreateTeam ? "Nascondi creazione squadra" : "Crea nuova squadra"}
             </button>
@@ -117,22 +119,22 @@ export default function TeamsPage() {
         ) : null}
 
         {showCreateTeam ? (
-          <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
-            <div className="mb-4 text-xl font-black text-white">Crea nuova squadra</div>
+          <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 shadow-2xl shadow-black/20">
+            <div className="mb-4 text-xl font-black text-[var(--foreground)]">Crea nuova squadra</div>
 
             <div className="grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nome squadra"
-                className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35 focus:border-[var(--accent)]/40"
+                className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35 focus:border-[var(--accent)]/40"
               />
 
               <input
                 value={badgeUrl}
                 onChange={(e) => setBadgeUrl(e.target.value)}
                 placeholder="Stemma (URL) opzionale"
-                className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35 focus:border-[var(--accent)]/40"
+                className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35 focus:border-[var(--accent)]/40"
               />
 
               <button
@@ -145,27 +147,29 @@ export default function TeamsPage() {
           </section>
         ) : null}
 
-        <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
-          <div className="mb-5 text-xl font-black text-white">Elenco squadre</div>
+        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
+          <div className="mb-5 text-xl font-black text-[var(--foreground)]">Elenco squadre</div>
 
-          {loading ? <div className="text-white/60">Caricamento…</div> : null}
+          {loading ? <div className="text-[var(--foreground)]/60">Caricamento…</div> : null}
 
           {!loading && teams.length === 0 ? (
-            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-white/55">
+            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
               Nessuna squadra presente.
             </div>
           ) : null}
 
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             {teams.map((t) => (
               <Link
                 key={t.id}
                 href={`/leagues/${leagueId}/teams/${t.id}`}
-                className="flex items-center justify-between gap-4 rounded-[24px] border border-white/8 bg-[#17171a] p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
+                className="flex items-center justify-between gap-4 rounded-[24px] border border-white/8 bg-[var(--card-2)] p-4 md:p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
               >
                 <div className="min-w-0">
-                  <div className="text-xl font-bold text-white">{t.name}</div>
-                  <div className="mt-2 text-sm text-white/50">
+                  <div className="text-lg md:text-xl font-bold text-[var(--foreground)] break-words">
+                    {t.name}
+                  </div>
+                  <div className="mt-2 text-sm text-[var(--foreground)]/50">
                     Rosa: {t.players?.length ?? t._count?.players ?? 0}/16
                   </div>
                 </div>
@@ -174,13 +178,13 @@ export default function TeamsPage() {
                   <img
                     src={t.badgeUrl}
                     alt=""
-                    className="h-14 w-14 rounded-2xl border border-white/10 object-cover"
+                    className="h-12 w-12 md:h-14 md:w-14 rounded-2xl border border-white/10 object-cover"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = "none";
                     }}
                   />
                 ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-xs font-bold text-white/35">
+                  <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-white/5 text-xs font-bold text-[var(--foreground)]/35">
                     N/A
                   </div>
                 )}
