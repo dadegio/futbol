@@ -3,67 +3,44 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function toNonNegInt(value: any) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return null;
-  const i = Math.floor(n);
-  if (i <= 0) return null;
-  return i;
-}
+export async function GET(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+  const { leagueId } = await ctx.params;
 
-export async function POST(req: Request, ctx: { params: Promise<{ teamId: string }> }) {
-  const { teamId } = await ctx.params;
+  const url = new URL(req.url);
+  const qRaw = (url.searchParams.get("q") ?? "").trim();
 
-  const body = await req.json().catch(() => ({}));
-  const firstName = String(body?.firstName ?? "").trim();
-  const lastName = String(body?.lastName ?? "").trim();
-  const number = toNonNegInt(body?.number);
-
-  if (!firstName || !lastName) {
-    return NextResponse.json(
-      { error: "Nome e cognome sono obbligatori" },
-      { status: 400 }
-    );
+  if (!qRaw) {
+    return NextResponse.json([]);
   }
 
-  if (number === null || number > 99) {
-    return NextResponse.json(
-      { error: "Numero maglia non valido (1-99)" },
-      { status: 400 }
-    );
-  }
+  const qNum = Number(qRaw);
+  const isNum = Number.isInteger(qNum) && qNum > 0;
 
-  const team = await prisma.team.findUnique({
-    where: { id: teamId },
-    include: { players: { select: { id: true } } },
+  const players = await prisma.player.findMany({
+    where: {
+      team: { leagueId },
+      OR: [
+        { firstName: { contains: qRaw } },
+        { lastName: { contains: qRaw } },
+        { team: { name: { contains: qRaw } } },
+        ...(isNum ? [{ number: qNum }] : []),
+      ],
+    },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    take: 20,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      number: true,
+      team: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
 
-  if (!team) {
-    return NextResponse.json({ error: "Squadra non valida" }, { status: 404 });
-  }
-
-  if (team.players.length >= 16) {
-    return NextResponse.json(
-      { error: "Rosa completa: massimo 16 giocatori" },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const player = await prisma.player.create({
-      data: {
-        firstName,
-        lastName,
-        number,
-        team: { connect: { id: teamId } },
-      },
-    });
-
-    return NextResponse.json(player);
-  } catch {
-    return NextResponse.json(
-      { error: "Numero maglia già usato in questa squadra" },
-      { status: 409 }
-    );
-  }
+  return NextResponse.json(players);
 }

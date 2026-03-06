@@ -16,24 +16,23 @@ model League {
 }
 
 model Team {
-  id        String   @id @default(cuid())
-  name      String
-  badgeUrl  String?  // stemma opzionale (url o path)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  badgeUrl    String?
+  createdAt   DateTime @default(now())
 
-  leagueId  String
-  league    League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId    String
+  league      League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  players   Player[]
-  homeMatches Match[] @relation("HomeTeam")
-  awayMatches Match[] @relation("AwayTeam")
+  players     Player[]
+  homeMatches Match[]  @relation("HomeTeam")
+  awayMatches Match[]  @relation("AwayTeam")
 
   @@unique([leagueId, name])
 }
 
 model Player {
   id        String   @id @default(cuid())
-
   firstName String
   lastName  String
   number    Int
@@ -44,7 +43,7 @@ model Player {
   stats     MatchPlayerStat[]
 
   @@index([teamId])
-  @@unique([teamId, number]) // numero maglia unico nella squadra
+  @@unique([teamId, number])
 }
 
 model Match {
@@ -72,17 +71,17 @@ model Match {
 }
 
 model MatchPlayerStat {
-  id        String @id @default(cuid())
+  id       String @id @default(cuid())
 
-  matchId   String
-  playerId  String
+  matchId  String
+  playerId String
 
-  goals     Int    @default(0)
-  assists   Int    @default(0)
+  goals    Int    @default(0)
+  assists  Int    @default(0)
 
-  match     Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
-  @@unique([matchId, playerId]) // una riga per giocatore per partita
+  @@unique([matchId, playerId])
   @@index([playerId])
 }
