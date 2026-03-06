@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
-import LeagueTopbar from "src/app/_components/Topbar";
 
 type Row = {
   playerId: string;

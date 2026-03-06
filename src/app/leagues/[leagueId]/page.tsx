@@ -3,7 +3,6 @@ export const runtime = "nodejs";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import DashboardShell from "src/app/_components/dashboard-shell";
-import LeagueTopbar from "src/app/_components/Topbar";
 import Link from "next/link";
 import { CalendarDays, Trophy, Users, BarChart3 } from "lucide-react";
 
