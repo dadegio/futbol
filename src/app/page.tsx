@@ -30,6 +30,7 @@ export default function HomePage() {
   const [name, setName] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showCreateLeague, setShowCreateLeague] = useState(false);
 
   async function load() {
     const ls = await getJSON<League[]>("/api/leagues");
@@ -79,26 +80,35 @@ export default function HomePage() {
   }
 
   return (
-    <DashboardShell active="home">
-      <div className="space-y-6">
+      <div className="mx-auto max-w-[1400px] space-y-6 p-6">
         <HeroBanner />
 
         <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
           <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-                Dashboard
-              </div>
-              <h2 className="mt-1 text-2xl font-extrabold text-white">
-                Crea e gestisci i tuoi tornei
-              </h2>
-            </div>
+  <div>
+    <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
+      Dashboard
+    </div>
+    <h2 className="mt-1 text-2xl font-extrabold text-white">
+      Crea e gestisci i tuoi tornei
+    </h2>
+  </div>
 
-            <div className="rounded-full bg-white/6 px-4 py-2 text-sm text-white/60">
-              {leagues.length} tornei salvati
-            </div>
-          </div>
+  <div className="flex items-center gap-3">
+    <div className="rounded-full bg-white/6 px-4 py-2 text-sm text-white/60">
+      {leagues.length} tornei salvati
+    </div>
 
+    <button
+      onClick={() => setShowCreateLeague((v) => !v)}
+      className="rounded-2xl bg-[var(--accent)] px-4 py-2 text-sm font-bold text-black"
+    >
+      {showCreateLeague ? "Chiudi" : "Nuovo torneo"}
+    </button>
+  </div>
+</div>
+
+          {showCreateLeague ? (
           <div className="rounded-[24px] border border-white/8 bg-[#17171a] p-4">
             <div className="mb-3 text-lg font-bold text-white">Nuovo torneo</div>
 
@@ -124,7 +134,8 @@ export default function HomePage() {
                 {err}
               </div>
             ) : null}
-          </div>
+  </div>
+) : null}
         </section>
 
         <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
@@ -157,6 +168,5 @@ export default function HomePage() {
           )}
         </section>
       </div>
-    </DashboardShell>
   );
 }

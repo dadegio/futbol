@@ -78,7 +78,7 @@ export default function Sidebar({ leagueId }: SidebarProps) {
     <aside className="w-[280px] shrink-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/95 p-6 text-[var(--foreground)] shadow-2xl shadow-black/15">
       <div className="mb-8">
         <Link href="/" className="text-[20px] font-extrabold tracking-tight">
-          FOOTBALL<span className="text-[var(--accent)] italic">SHURU</span>
+          <span className="text-[var(--accent)] italic">FUTBOL</span>
         </Link>
       </div>
 
