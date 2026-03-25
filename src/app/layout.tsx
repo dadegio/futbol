@@ -8,8 +8,12 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "FUTBOL",
   description: "Gestione campionati calcio",
+    manifest: "/manifest.json",
+    icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+    },
 };
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
