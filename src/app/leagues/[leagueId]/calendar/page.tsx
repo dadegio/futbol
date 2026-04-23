@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card, { CardHeader } from "src/app/_components/ui/card";
+import Button from "src/app/_components/ui/button";
+import Input from "src/app/_components/ui/input";
+import Select from "src/app/_components/ui/select";
+import Badge from "src/app/_components/ui/badge";
 
 type Team = { id: string; name: string };
 
@@ -211,60 +216,34 @@ export default function CalendarPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-6 shadow-2xl shadow-black/20">
-          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-            Calendar
-          </div>
-          <h1 className="mt-2 text-3xl font-black text-[var(--foreground)]">
-            Calendario
-          </h1>
-          <p className="mt-2 text-sm text-[var(--foreground)]/60">
-            Mostra automaticamente la giornata corrente. Puoi consultare anche le altre dalla tendina.
-          </p>
-        </section>
+        <Card>
+          <CardHeader
+            tag="Calendar"
+            title="Calendario"
+            description="Mostra automaticamente la giornata corrente. Puoi consultare anche le altre dalla tendina."
+          />
+        </Card>
 
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 shadow-2xl shadow-black/20">
+        <Card>
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setFilter("all")}
-                className={`rounded-2xl px-4 py-2 font-medium transition ${
-                  filter === "all"
-                    ? "bg-[var(--accent)] text-black"
-                    : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-                }`}
-              >
-                Tutte
-              </button>
-
-              <button
-                onClick={() => setFilter("played")}
-                className={`rounded-2xl px-4 py-2 font-medium transition ${
-                  filter === "played"
-                    ? "bg-[var(--accent)] text-black"
-                    : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-                }`}
-              >
-                Giocate
-              </button>
-
-              <button
-                onClick={() => setFilter("pending")}
-                className={`rounded-2xl px-4 py-2 font-medium transition ${
-                  filter === "pending"
-                    ? "bg-[var(--accent)] text-black"
-                    : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-                }`}
-              >
-                Da giocare
-              </button>
+              {(["all", "played", "pending"] as const).map((f) => (
+                <Button
+                  key={f}
+                  variant={filter === f ? "primary" : "secondary"}
+                  size="sm"
+                  onClick={() => setFilter(f)}
+                >
+                  {f === "all" ? "Tutte" : f === "played" ? "Giocate" : "Da giocare"}
+                </Button>
+              ))}
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <select
+              <Select
                 value={selectedRound}
                 onChange={(e) => setSelectedRound(e.target.value)}
-                className="h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-[var(--foreground)] outline-none"
+                className="h-11"
               >
                 <option value="current" className="text-black">
                   Giornata corrente
@@ -274,76 +253,64 @@ export default function CalendarPage() {
                     Giornata {round}
                   </option>
                 ))}
-              </select>
+              </Select>
 
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowCalendarTools((v) => !v)}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
               >
                 {showCalendarTools ? "Nascondi gestione calendario" : "Gestisci calendario"}
-              </button>
+              </Button>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--foreground)]/65">
-            <div className="rounded-2xl bg-white/5 px-4 py-2">
-              Totali: <b className="text-[var(--foreground)]">{matches.length}</b>
-            </div>
-            <div className="rounded-2xl bg-white/5 px-4 py-2">
-              Giocate: <b className="text-[var(--foreground)]">{playedCount}</b>
-            </div>
-            <div className="rounded-2xl bg-white/5 px-4 py-2">
-              Da giocare: <b className="text-[var(--foreground)]">{pendingCount}</b>
-            </div>
-            <div className="rounded-2xl bg-white/5 px-4 py-2">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Badge>Totali: <b className="text-[var(--foreground)]">{matches.length}</b></Badge>
+            <Badge>Giocate: <b className="text-[var(--foreground)]">{playedCount}</b></Badge>
+            <Badge>Da giocare: <b className="text-[var(--foreground)]">{pendingCount}</b></Badge>
+            <Badge>
               Corrente:{" "}
               <b className="text-[var(--foreground)]">
                 {currentRound ? `Giornata ${currentRound}` : "—"}
               </b>
-            </div>
+            </Badge>
           </div>
 
-          {showCalendarTools ? (
+          {showCalendarTools && (
             <div className="mt-6 space-y-6">
-              <section className="rounded-[24px] border border-white/8 bg-[var(--card-2)] p-5">
+              <Card variant="inner">
                 <div className="mb-3 text-lg font-black text-[var(--foreground)]">
                   Genera calendario automatico
                 </div>
                 <p className="mb-4 text-sm leading-6 text-[var(--foreground)]/60">
                   Crea un calendario round robin casuale. Le partite esistenti verranno sostituite.
                 </p>
-                <button
-                  onClick={generateRandom}
-                  disabled={teams.length < 2}
-                  className="rounded-2xl bg-[var(--accent)] px-5 py-3 font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                <Button onClick={generateRandom} disabled={teams.length < 2}>
                   Genera calendario casuale
-                </button>
+                </Button>
 
-                {teams.length < 2 ? (
+                {teams.length < 2 && (
                   <div className="mt-3 text-sm text-[var(--foreground)]/50">
                     Servono almeno 2 squadre.
                   </div>
-                ) : null}
-              </section>
+                )}
+              </Card>
 
-              <section className="rounded-[24px] border border-white/8 bg-[var(--card-2)] p-5">
+              <Card variant="inner">
                 <div className="mb-4 text-lg font-black text-[var(--foreground)]">
                   Inserisci partita manualmente
                 </div>
 
                 <div className="grid gap-3 lg:grid-cols-4">
-                  <input
+                  <Input
                     value={manualRound}
                     onChange={(e) => setManualRound(e.target.value.replace(/[^\d]/g, ""))}
                     placeholder="Giornata"
-                    className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35"
                   />
-
-                  <select
+                  <Select
                     value={manualHomeTeamId}
                     onChange={(e) => setManualHomeTeamId(e.target.value)}
-                    className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none"
                   >
                     <option value="" className="text-black">Squadra casa</option>
                     {teams.map((team) => (
@@ -351,12 +318,10 @@ export default function CalendarPage() {
                         {team.name}
                       </option>
                     ))}
-                  </select>
-
-                  <select
+                  </Select>
+                  <Select
                     value={manualAwayTeamId}
                     onChange={(e) => setManualAwayTeamId(e.target.value)}
-                    className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none"
                   >
                     <option value="" className="text-black">Squadra ospite</option>
                     {teams.map((team) => (
@@ -364,121 +329,109 @@ export default function CalendarPage() {
                         {team.name}
                       </option>
                     ))}
-                  </select>
-
-                  <input
+                  </Select>
+                  <Input
                     type="datetime-local"
                     value={manualDate}
                     onChange={(e) => setManualDate(e.target.value)}
-                    className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none"
                   />
                 </div>
 
-                <button
+                <Button
                   onClick={createManualMatch}
                   disabled={submittingManual}
-                  className="mt-4 rounded-2xl bg-[var(--accent)] px-5 py-3 font-bold text-black disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4"
                 >
                   {submittingManual ? "Creazione..." : "Aggiungi partita"}
-                </button>
-              </section>
+                </Button>
+              </Card>
             </div>
-          ) : null}
+          )}
 
-          {loading ? <div className="mt-5 text-[var(--foreground)]/60">Caricamento…</div> : null}
+          {loading && <div className="mt-5 text-[var(--foreground)]/60">Caricamento…</div>}
 
-          {err ? (
-            <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {err}
-            </div>
-          ) : null}
+          {err && <Badge variant="error" className="mt-5">{err}</Badge>}
 
-          {!loading && !hasSchedule ? (
-            <div className="mt-5 rounded-[24px] border border-white/8 bg-white/[0.03] p-5">
+          {!loading && !hasSchedule && (
+            <Card variant="inner" className="mt-5">
               <div className="text-xl font-bold text-[var(--foreground)]">Nessuna partita trovata</div>
               <p className="mt-2 text-sm leading-6 text-[var(--foreground)]/60">
-                Usa “Gestisci calendario” per generare o inserire partite.
+                Usa "Gestisci calendario" per generare o inserire partite.
               </p>
-            </div>
-          ) : null}
+            </Card>
+          )}
 
-          {!loading && hasSchedule ? (
+          {!loading && hasSchedule && (
             <div className="mt-5 space-y-4">
-              {grouped.length === 0 ? (
-                <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
-                  Nessuna partita per questo filtro.
-                </div>
-              ) : null}
+              {grouped.length === 0 && (
+                <Card variant="flat">
+                  <span className="text-[var(--foreground)]/55">Nessuna partita per questo filtro.</span>
+                </Card>
+              )}
 
               {grouped.map(([round, ms]) => (
-                <div
-                  key={round}
-                  className="rounded-[24px] border border-white/8 bg-[var(--card-2)] p-5"
-                >
+                <Card key={round} variant="inner">
                   <div className="mb-4 text-xl font-black text-[var(--foreground)]">
                     Giornata {round}
                   </div>
 
                   <div className="space-y-3">
-  {ms.map((m) => {
-    const played = isPlayed(m);
+                    {ms.map((m) => {
+                      const played = isPlayed(m);
 
-    return (
-      <div
-        key={m.id}
-        className="rounded-2xl border border-white/8 bg-white/[0.03] p-4"
-      >
+                      return (
+                        <div
+                          key={m.id}
+                          className="rounded-2xl border border-white/8 bg-white/[0.03] p-4"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="break-words text-base font-bold text-[var(--foreground)] sm:text-lg">
+                                {m.homeTeam.name}{" "}
+                                <span className="text-[var(--foreground)]/35">vs</span>{" "}
+                                {m.awayTeam.name}
+                              </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-  <div className="min-w-0 flex-1">
-    <div className="break-words text-base font-bold text-[var(--foreground)] sm:text-lg">
-      {m.homeTeam.name}{" "}
-      <span className="text-[var(--foreground)]/35">vs</span>{" "}
-      {m.awayTeam.name}
-    </div>
+                              {!played ? (
+                                <div className="mt-1 text-sm text-[var(--foreground)]/55">
+                                  Risultato non inserito
+                                </div>
+                              ) : (
+                                <div className="mt-3">
+                                  <Link
+                                    href={`/leagues/${leagueId}/matches/${m.id}`}
+                                    className="inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
+                                  >
+                                    Modifica risultato
+                                  </Link>
+                                </div>
+                              )}
+                            </div>
 
-    {!played ? (
-      <div className="mt-1 text-sm text-[var(--foreground)]/55">
-        Risultato non inserito
-      </div>
-    ) : (
-      <div className="mt-3">
-        <Link
-          href={`/leagues/${leagueId}/matches/${m.id}`}
-          className="inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
-        >
-          Modifica risultato
-        </Link>
-      </div>
-    )}
-  </div>
-
-  <div className="w-full shrink-0 sm:w-auto">
-    {played ? (
-      <div className="inline-flex rounded-2xl bg-[var(--accent)] px-4 py-2 text-lg font-black text-black">
-        {m.homeGoals} - {m.awayGoals}
-      </div>
-    ) : (
-      <Link
-        href={`/leagues/${leagueId}/matches/${m.id}`}
-        className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-black sm:w-auto"
-      >
-        Inserisci risultato
-      </Link>
-    )}
-  </div>
-</div>
-
-      </div>
-    );
-  })}
-</div>
-
-                </div>
+                            <div className="w-full shrink-0 sm:w-auto">
+                              {played ? (
+                                <Badge variant="accent" className="text-lg">
+                                  {m.homeGoals} - {m.awayGoals}
+                                </Badge>
+                              ) : (
+                                <Link
+                                  href={`/leagues/${leagueId}/matches/${m.id}`}
+                                  className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-black sm:w-auto"
+                                >
+                                  Inserisci risultato
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
               ))}
             </div>
-          ) : null}
-        </section>
+          )}
+        </Card>
       </div>
     </DashboardShell>
   );

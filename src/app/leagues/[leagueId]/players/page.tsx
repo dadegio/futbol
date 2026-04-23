@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card, { CardHeader } from "src/app/_components/ui/card";
+import Button from "src/app/_components/ui/button";
+import Input from "src/app/_components/ui/input";
+import Badge from "src/app/_components/ui/badge";
 
 type Row = {
   id: string;
@@ -61,45 +65,32 @@ export default function PlayersPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 md:p-6 shadow-2xl shadow-black/20">
-          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-            Players
-          </div>
-          <h1 className="mt-2 text-2xl md:text-3xl font-black text-[var(--foreground)]">
-            Giocatori
-          </h1>
-          <p className="mt-2 text-sm text-[var(--foreground)]/60">
-            {loading ? "Caricamento…" : `Totale risultati: ${rows.length}`}
-          </p>
+        <Card>
+          <CardHeader
+            tag="Players"
+            title="Giocatori"
+            description={loading ? "Caricamento…" : `Totale risultati: ${rows.length}`}
+          />
 
           <form onSubmit={submitSearch} className="mt-5 flex flex-col gap-3 md:flex-row">
-            <input
+            <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cerca per nome, cognome, numero o squadra"
-              className="h-14 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35 focus:border-[var(--accent)]/40"
+              className="flex-1"
             />
-            <button
-              type="submit"
-              className="h-14 rounded-2xl bg-[var(--accent)] px-6 font-bold text-black"
-            >
-              Cerca
-            </button>
+            <Button className="h-14">Cerca</Button>
           </form>
 
-          {err ? (
-            <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {err}
-            </div>
-          ) : null}
-        </section>
+          {err && <Badge variant="error" className="mt-4">{err}</Badge>}
+        </Card>
 
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
-          {rows.length === 0 && !loading ? (
-            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
-              Nessun giocatore trovato.
-            </div>
-          ) : null}
+        <Card>
+          {rows.length === 0 && !loading && (
+            <Card variant="flat">
+              <span className="text-[var(--foreground)]/55">Nessun giocatore trovato.</span>
+            </Card>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-2">
             {rows.map((p) => (
@@ -135,16 +126,16 @@ export default function PlayersPage() {
                         </div>
                       </div>
 
-                      <div className="shrink-0 rounded-2xl bg-[var(--accent)] px-3 md:px-4 py-2 text-base md:text-lg font-black text-black">
+                      <Badge variant="accent" className="shrink-0 text-base md:text-lg">
                         #{p.number}
-                      </div>
+                      </Badge>
                     </div>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
-        </section>
+        </Card>
       </div>
     </DashboardShell>
   );

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card from "src/app/_components/ui/card";
+import Badge from "src/app/_components/ui/badge";
 
 type Row = {
   playerId: string;
@@ -41,77 +43,50 @@ export default function StatsPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-
-        {err ? (
-          <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {err}
-          </div>
-        ) : null}
+        {err && <Badge variant="error">{err}</Badge>}
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
+          <Card>
             <div className="mb-4 text-xl font-black text-white">Top 5 Marcatori</div>
+            <StatList rows={scorers} />
+          </Card>
 
-            <div className="space-y-3">
-              {scorers.map((r, i) => (
-                <div
-                  key={r.playerId}
-                  className="flex items-center justify-between gap-4 rounded-2xl bg-white/[0.04] px-4 py-4"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm text-white/45">#{i + 1}</div>
-                    <div className="truncate font-bold text-white">
-                      {r.firstName} {r.lastName}
-                    </div>
-                    <div className="truncate text-sm text-white/50">{r.teamName}</div>
-                  </div>
-
-                  <div className="rounded-2xl bg-[var(--accent)] px-4 py-2 text-xl font-black text-black">
-                    {r.value}
-                  </div>
-                </div>
-              ))}
-
-              {scorers.length === 0 ? (
-                <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-white/55">
-                  Nessun dato.
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
+          <Card>
             <div className="mb-4 text-xl font-black text-white">Top 5 Assistman</div>
-
-            <div className="space-y-3">
-              {assists.map((r, i) => (
-                <div
-                  key={r.playerId}
-                  className="flex items-center justify-between gap-4 rounded-2xl bg-white/[0.04] px-4 py-4"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm text-white/45">#{i + 1}</div>
-                    <div className="truncate font-bold text-white">
-                      {r.firstName} {r.lastName}
-                    </div>
-                    <div className="truncate text-sm text-white/50">{r.teamName}</div>
-                  </div>
-
-                  <div className="rounded-2xl bg-[var(--accent)] px-4 py-2 text-xl font-black text-black">
-                    {r.value}
-                  </div>
-                </div>
-              ))}
-
-              {assists.length === 0 ? (
-                <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-white/55">
-                  Nessun dato.
-                </div>
-              ) : null}
-            </div>
-          </div>
+            <StatList rows={assists} />
+          </Card>
         </section>
       </div>
     </DashboardShell>
+  );
+}
+
+function StatList({ rows }: { rows: Row[] }) {
+  return (
+    <div className="space-y-3">
+      {rows.map((r, i) => (
+        <Card key={r.playerId} variant="flat">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-sm text-white/45">#{i + 1}</div>
+              <div className="truncate font-bold text-white">
+                {r.firstName} {r.lastName}
+              </div>
+              <div className="truncate text-sm text-white/50">{r.teamName}</div>
+            </div>
+
+            <Badge variant="accent" className="text-xl">
+              {r.value}
+            </Badge>
+          </div>
+        </Card>
+      ))}
+
+      {rows.length === 0 && (
+        <Card variant="flat">
+          <span className="text-white/55">Nessun dato.</span>
+        </Card>
+      )}
+    </div>
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card, { CardHeader } from "src/app/_components/ui/card";
+import Badge from "src/app/_components/ui/badge";
 
 type Row = {
   teamId: string;
@@ -42,29 +44,21 @@ export default function TablePage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 md:p-6 shadow-2xl shadow-black/20">
-          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-            Table
-          </div>
-          <h1 className="mt-2 text-2xl md:text-3xl font-black text-[var(--foreground)]">
-            Classifica
-          </h1>
-          <p className="mt-2 text-sm text-[var(--foreground)]/60">
-            Punti, risultati e differenza reti aggiornati in base alle partite giocate.
-          </p>
-        </section>
+        <Card>
+          <CardHeader
+            tag="Table"
+            title="Classifica"
+            description="Punti, risultati e differenza reti aggiornati in base alle partite giocate."
+          />
+        </Card>
 
-        {err ? (
-          <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {err}
-          </div>
-        ) : null}
+        {err && <Badge variant="error">{err}</Badge>}
 
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
+        <Card>
           {rows.length === 0 ? (
-            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
-              Nessuna partita con risultato inserito.
-            </div>
+            <Card variant="flat">
+              <span className="text-[var(--foreground)]/55">Nessuna partita con risultato inserito.</span>
+            </Card>
           ) : (
             <>
               <div className="hidden md:block overflow-x-auto">
@@ -117,9 +111,9 @@ export default function TablePage() {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl bg-[var(--accent)] px-4 py-2 text-lg font-black text-black">
+                      <Badge variant="accent" className="text-lg">
                         {r.points} pt
-                      </div>
+                      </Badge>
                     </div>
 
                     <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
@@ -139,7 +133,7 @@ export default function TablePage() {
               </div>
             </>
           )}
-        </section>
+        </Card>
       </div>
     </DashboardShell>
   );

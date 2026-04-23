@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card, { CardHeader } from "src/app/_components/ui/card";
+import Button from "src/app/_components/ui/button";
+import Badge from "src/app/_components/ui/badge";
 import PlayoffSetup from "./playoff-setup";
 import BracketView from "./bracket";
 import type { SeriesData } from "./series-card";
@@ -104,23 +107,15 @@ export default function PlayoffsPage() {
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
         {/* Header */}
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-6 shadow-2xl shadow-black/20">
-          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-            Playoff
-          </div>
-          <h1 className="mt-2 text-3xl font-black text-[var(--foreground)]">
-            Fase a eliminazione
-          </h1>
-          <p className="mt-2 text-sm text-[var(--foreground)]/60">
-            Configura e gestisci i playoff del torneo.
-          </p>
-        </section>
+        <Card>
+          <CardHeader
+            tag="Playoff"
+            title="Fase a eliminazione"
+            description="Configura e gestisci i playoff del torneo."
+          />
+        </Card>
 
-        {err && (
-          <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {err}
-          </div>
-        )}
+        {err && <Badge variant="error">{err}</Badge>}
 
         {loading && (
           <div className="text-[var(--foreground)]/60">Caricamento...</div>
@@ -128,7 +123,7 @@ export default function PlayoffsPage() {
 
         {/* Setup form when no playoffs configured */}
         {!loading && data && !data.configured && (
-          <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-6 shadow-2xl shadow-black/20">
+          <Card>
             <div className="mb-4 text-lg font-black text-[var(--foreground)]">
               Configura playoff
             </div>
@@ -143,79 +138,71 @@ export default function PlayoffsPage() {
                 onCreated={load}
               />
             )}
-          </section>
+          </Card>
         )}
 
         {/* Bracket display when playoffs are configured */}
         {!loading && data?.configured && data.series && (
           <>
             {/* Controls */}
-            <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 shadow-2xl shadow-black/20">
+            <Card>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-3">
-                  <button
+                  <Button
+                    variant={view === "bracket" ? "primary" : "secondary"}
+                    size="sm"
                     onClick={() => setView("bracket")}
-                    className={`rounded-2xl px-4 py-2 font-medium transition ${
-                      view === "bracket"
-                        ? "bg-[var(--accent)] text-black"
-                        : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-                    }`}
                   >
                     Tabellone
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant={view === "list" ? "primary" : "secondary"}
+                    size="sm"
                     onClick={() => setView("list")}
-                    className={`rounded-2xl px-4 py-2 font-medium transition ${
-                      view === "list"
-                        ? "bg-[var(--accent)] text-black"
-                        : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-                    }`}
                   >
                     Lista
-                  </button>
+                  </Button>
                 </div>
 
-                <div className="flex flex-wrap gap-3 text-sm text-[var(--foreground)]/65">
-                  <div className="rounded-2xl bg-white/5 px-4 py-2">
+                <div className="flex flex-wrap gap-3">
+                  <Badge>
                     Formato:{" "}
                     <b className="text-[var(--foreground)]">
                       {data.format === "TWO_LEG" ? "Andata e ritorno" : "Eliminazione diretta"}
                     </b>
-                  </div>
-                  <div className="rounded-2xl bg-white/5 px-4 py-2">
+                  </Badge>
+                  <Badge>
                     Squadre: <b className="text-[var(--foreground)]">{data.teamCount}</b>
-                  </div>
-                  <button
+                  </Badge>
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm text-red-300 hover:bg-red-500/20 disabled:opacity-50"
                   >
                     {deleting ? "Eliminazione..." : "Elimina playoff"}
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </section>
+            </Card>
 
             {/* Bracket view */}
             {view === "bracket" && (
-              <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-6 shadow-2xl shadow-black/20">
+              <Card>
                 <BracketView
                   series={data.series}
                   leagueId={leagueId}
                   format={data.format!}
                   teamCount={data.teamCount!}
                 />
-              </section>
+              </Card>
             )}
 
             {/* List view */}
             {view === "list" && (
               <div className="space-y-4">
                 {groupByRound(data.series, data.teamCount!).map(([round, roundSeries]) => (
-                  <section
-                    key={round}
-                    className="rounded-[24px] border border-white/8 bg-[var(--card)]/95 p-5 shadow-2xl shadow-black/20"
-                  >
+                  <Card key={round} variant="inner">
                     <div className="mb-4 text-xl font-black text-[var(--foreground)]">
                       {ROUND_NAMES[round] ?? `Round ${round}`}
                     </div>
@@ -290,13 +277,13 @@ export default function PlayoffsPage() {
                                     ))}
 
                                     {allPlayed && (
-                                      <button
+                                      <Button
+                                        size="sm"
                                         onClick={() => handleAdvance(s.id)}
                                         disabled={advancing === s.id}
-                                        className="rounded-2xl bg-[var(--accent)] px-4 py-2 text-sm font-bold text-black disabled:opacity-50"
                                       >
                                         {advancing === s.id ? "..." : "Avanza vincitore"}
-                                      </button>
+                                      </Button>
                                     )}
                                   </>
                                 )}
@@ -306,7 +293,7 @@ export default function PlayoffsPage() {
                         );
                       })}
                     </div>
-                  </section>
+                  </Card>
                 ))}
               </div>
             )}

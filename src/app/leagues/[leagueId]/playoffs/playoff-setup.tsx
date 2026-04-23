@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Button from "src/app/_components/ui/button";
+import Badge from "src/app/_components/ui/badge";
 
 type Props = {
   leagueId: string;
@@ -49,26 +51,20 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
           Formato
         </label>
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
+            variant={format === "SINGLE_ELIM" ? "primary" : "secondary"}
+            size="sm"
             onClick={() => setFormat("SINGLE_ELIM")}
-            className={`rounded-2xl px-4 py-2 font-medium transition ${
-              format === "SINGLE_ELIM"
-                ? "bg-[var(--accent)] text-black"
-                : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-            }`}
           >
             Eliminazione diretta
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={format === "TWO_LEG" ? "primary" : "secondary"}
+            size="sm"
             onClick={() => setFormat("TWO_LEG")}
-            className={`rounded-2xl px-4 py-2 font-medium transition ${
-              format === "TWO_LEG"
-                ? "bg-[var(--accent)] text-black"
-                : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-            }`}
           >
             Andata e ritorno
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -78,17 +74,14 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
         </label>
         <div className="flex flex-wrap gap-3">
           {availableCounts.map((n) => (
-            <button
+            <Button
               key={n}
+              variant={count === n ? "primary" : "secondary"}
+              size="sm"
               onClick={() => setCount(n)}
-              className={`rounded-2xl px-4 py-2 font-medium transition ${
-                count === n
-                  ? "bg-[var(--accent)] text-black"
-                  : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-              }`}
             >
               Top {n}
-            </button>
+            </Button>
           ))}
         </div>
         <p className="mt-2 text-xs text-[var(--foreground)]/50">
@@ -101,42 +94,28 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
           Tabellone
         </label>
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
+            variant={autoSeed ? "primary" : "secondary"}
+            size="sm"
             onClick={() => setAutoSeed(true)}
-            className={`rounded-2xl px-4 py-2 font-medium transition ${
-              autoSeed
-                ? "bg-[var(--accent)] text-black"
-                : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-            }`}
           >
             Automatico da classifica
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={!autoSeed ? "primary" : "secondary"}
+            size="sm"
             onClick={() => setAutoSeed(false)}
-            className={`rounded-2xl px-4 py-2 font-medium transition ${
-              !autoSeed
-                ? "bg-[var(--accent)] text-black"
-                : "border border-white/10 bg-white/5 text-[var(--foreground)]/80"
-            }`}
           >
             Manuale
-          </button>
+          </Button>
         </div>
       </div>
 
-      {err && (
-        <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {err}
-        </div>
-      )}
+      {err && <Badge variant="error">{err}</Badge>}
 
-      <button
-        onClick={handleCreate}
-        disabled={submitting}
-        className="rounded-2xl bg-[var(--accent)] px-6 py-3 font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <Button onClick={handleCreate} disabled={submitting}>
         {submitting ? "Creazione..." : "Crea playoff"}
-      </button>
+      </Button>
     </div>
   );
 }

@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card, { CardHeader } from "src/app/_components/ui/card";
+import Button from "src/app/_components/ui/button";
+import Input from "src/app/_components/ui/input";
+import Badge from "src/app/_components/ui/badge";
 
 type TeamRow = {
   id: string;
@@ -70,7 +74,7 @@ export default function TeamsPage() {
 
       setName("");
       setBadgeUrl("");
-      setMsg("Squadra creata ✅");
+      setMsg("Squadra creata");
       setShowCreateTeam(false);
       await load();
     } catch (e: any) {
@@ -83,80 +87,55 @@ export default function TeamsPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 md:p-6 shadow-2xl shadow-black/20">
+        <Card>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-                Teams
-              </div>
-              <h1 className="mt-2 text-2xl md:text-3xl font-black text-[var(--foreground)]">
-                Squadre
-              </h1>
-              <p className="mt-2 text-sm text-[var(--foreground)]/60">
-                Visualizza e gestisci le squadre del torneo.
-              </p>
-            </div>
-
-            <button
+            <CardHeader tag="Teams" title="Squadre" description="Visualizza e gestisci le squadre del torneo." />
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowCreateTeam((v) => !v)}
-              className="w-full sm:w-auto rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
+              className="w-full sm:w-auto"
             >
               {showCreateTeam ? "Nascondi creazione squadra" : "Crea nuova squadra"}
-            </button>
+            </Button>
           </div>
-        </section>
+        </Card>
 
-        {msg ? (
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-            {msg}
-          </div>
-        ) : null}
+        {msg && <Badge variant="success">{msg}</Badge>}
+        {err && <Badge variant="error">{err}</Badge>}
 
-        {err ? (
-          <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {err}
-          </div>
-        ) : null}
-
-        {showCreateTeam ? (
-          <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-5 shadow-2xl shadow-black/20">
+        {showCreateTeam && (
+          <Card>
             <div className="mb-4 text-xl font-black text-[var(--foreground)]">Crea nuova squadra</div>
 
             <div className="grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
-              <input
+              <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nome squadra"
-                className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35 focus:border-[var(--accent)]/40"
               />
-
-              <input
+              <Input
                 value={badgeUrl}
                 onChange={(e) => setBadgeUrl(e.target.value)}
                 placeholder="Stemma (URL) opzionale"
-                className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/35 focus:border-[var(--accent)]/40"
               />
-
-              <button
-                onClick={createTeam}
-                className="h-14 rounded-2xl bg-[var(--accent)] px-6 font-bold text-black transition hover:bg-[var(--accent-2)]"
-              >
+              <Button onClick={createTeam} className="h-14">
                 Crea squadra
-              </button>
+              </Button>
             </div>
-          </section>
-        ) : null}
+          </Card>
+        )}
 
-        <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
+        <Card>
           <div className="mb-5 text-xl font-black text-[var(--foreground)]">Elenco squadre</div>
 
-          {loading ? <div className="text-[var(--foreground)]/60">Caricamento…</div> : null}
+          {loading && <div className="text-[var(--foreground)]/60">Caricamento…</div>}
 
-          {!loading && teams.length === 0 ? (
-            <div className="rounded-2xl bg-white/[0.04] px-4 py-4 text-[var(--foreground)]/55">
-              Nessuna squadra presente.
-            </div>
-          ) : null}
+          {!loading && teams.length === 0 && (
+            <Card variant="flat">
+              <span className="text-[var(--foreground)]/55">Nessuna squadra presente.</span>
+            </Card>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-2">
             {teams.map((t) => (
@@ -191,7 +170,7 @@ export default function TeamsPage() {
               </Link>
             ))}
           </div>
-        </section>
+        </Card>
       </div>
     </DashboardShell>
   );
