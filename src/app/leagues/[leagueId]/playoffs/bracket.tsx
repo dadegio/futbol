@@ -140,6 +140,7 @@ export default function BracketView({ series, leagueId, format, teamCount }: Pro
               stroke="var(--accent)"
               strokeOpacity={0.25}
               strokeWidth={2}
+              className="transition-all duration-700"
             />
           );
         })}

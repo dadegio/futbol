@@ -175,6 +175,13 @@ export default function PlayoffsPage() {
                     Squadre: <b className="text-[var(--foreground)]">{data.teamCount}</b>
                   </Badge>
                   <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => window.print()}
+                  >
+                    Stampa
+                  </Button>
+                  <Button
                     variant="destructive"
                     size="sm"
                     onClick={handleDelete}

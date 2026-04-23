@@ -56,3 +56,29 @@ input,
 select {
   font: inherit;
 }
+
+/* Bracket animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Accent color themes */
+html[data-accent="sky"] { --accent: #7dd3fc; --accent-2: #38bdf8; }
+html[data-accent="emerald"] { --accent: #6ee7b7; --accent-2: #34d399; }
+html[data-accent="violet"] { --accent: #c4b5fd; --accent-2: #a78bfa; }
+html[data-accent="rose"] { --accent: #fda4af; --accent-2: #fb7185; }
+html[data-accent="amber"] { --accent: #fcd34d; --accent-2: #fbbf24; }
+html[data-accent="orange"] { --accent: #fdba74; --accent-2: #fb923c; }
+
+/* Print styles for bracket */
+@media print {
+  body { background: white !important; color: black !important; }
+  aside, nav, .no-print { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  * { box-shadow: none !important; }
+}

@@ -28,7 +28,7 @@ export default function BottomTabs({ leagueId }: BottomTabsProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl lg:hidden">
+    <nav className="no-print fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-[var(--card)]/95 backdrop-blur-xl lg:hidden">
       <div className="mx-auto flex max-w-lg items-stretch justify-around">
         {TABS.map((tab) => {
           const href = `/leagues/${leagueId}${tab.path}`;

@@ -96,10 +96,22 @@ export async function POST(req: Request, ctx: Ctx) {
     );
   }
 
-  // Get seeding from standings if autoSeed
+  // Get seeding: auto from standings or manual from request
   let seedTeamIds: string[] | null = null;
   if (autoSeed) {
     seedTeamIds = await getStandingsTeamIds(leagueId, teamCount);
+  } else if (Array.isArray(body?.manualTeamIds) && body.manualTeamIds.length === teamCount) {
+    // Validate all IDs belong to this league
+    const validTeams = await prisma.team.findMany({
+      where: { leagueId, id: { in: body.manualTeamIds } },
+      select: { id: true },
+    });
+    const validIds = new Set(validTeams.map((t: { id: string }) => t.id));
+    const allValid = body.manualTeamIds.every((id: string) => validIds.has(id));
+    if (!allValid) {
+      return NextResponse.json({ error: "Alcune squadre non sono valide per questa lega" }, { status: 400 });
+    }
+    seedTeamIds = body.manualTeamIds;
   }
 
   const bracket = generateBracket(teamCount);

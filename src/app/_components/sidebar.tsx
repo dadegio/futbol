@@ -12,6 +12,7 @@ import {
   Search,
   Swords,
 } from "lucide-react";
+import ThemePicker from "./theme-picker";
 
 type SidebarProps = {
   leagueId?: string;
@@ -143,6 +144,13 @@ export default function Sidebar({ leagueId }: SidebarProps) {
           />
         ))}
       </nav>
+
+      <div className="mt-6 border-t border-[var(--border)] pt-4">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)]/35">
+          Tema
+        </div>
+        <ThemePicker />
+      </div>
     </aside>
   );
 }

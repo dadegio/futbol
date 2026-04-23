@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "src/app/_components/ui/button";
 import Badge from "src/app/_components/ui/badge";
 
@@ -9,6 +9,8 @@ type Props = {
   teamCount: number;
   onCreated: () => void;
 };
+
+type TeamRow = { teamId: string; teamName: string; points: number; gd: number };
 
 export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) {
   const [format, setFormat] = useState<"SINGLE_ELIM" | "TWO_LEG">("SINGLE_ELIM");
@@ -22,7 +24,54 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Manual seeding state
+  const [standings, setStandings] = useState<TeamRow[]>([]);
+  const [seedOrder, setSeedOrder] = useState<TeamRow[]>([]);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
   const availableCounts = [2, 4, 8, 16].filter((n) => n <= teamCount);
+
+  const loadStandings = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/leagues/${leagueId}/table`, { cache: "no-store" });
+      const data: TeamRow[] = await res.json();
+      setStandings(data);
+      setSeedOrder(data.slice(0, count));
+    } catch {
+      // standings not critical for setup
+    }
+  }, [leagueId, count]);
+
+  useEffect(() => {
+    if (!autoSeed) {
+      loadStandings();
+    }
+  }, [autoSeed, loadStandings]);
+
+  useEffect(() => {
+    if (standings.length > 0) {
+      setSeedOrder(standings.slice(0, count));
+    }
+  }, [count, standings]);
+
+  function handleDragStart(idx: number) {
+    setDragIdx(idx);
+  }
+
+  function handleDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === idx) return;
+
+    const updated = [...seedOrder];
+    const [moved] = updated.splice(dragIdx, 1);
+    updated.splice(idx, 0, moved);
+    setSeedOrder(updated);
+    setDragIdx(idx);
+  }
+
+  function handleDragEnd() {
+    setDragIdx(null);
+  }
 
   async function handleCreate() {
     setErr(null);
@@ -32,7 +81,14 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
       const res = await fetch(`/api/leagues/${leagueId}/playoffs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format, teamCount: count, autoSeed }),
+        body: JSON.stringify({
+          format,
+          teamCount: count,
+          autoSeed,
+          ...(!autoSeed && seedOrder.length > 0
+            ? { manualTeamIds: seedOrder.map((t) => t.teamId) }
+            : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((data as any)?.error ?? "Errore");
@@ -46,6 +102,7 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
 
   return (
     <div className="space-y-5">
+      {/* Format */}
       <div>
         <label className="mb-2 block text-sm font-medium text-[var(--foreground)]/70">
           Formato
@@ -68,6 +125,7 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
         </div>
       </div>
 
+      {/* Team count */}
       <div>
         <label className="mb-2 block text-sm font-medium text-[var(--foreground)]/70">
           Squadre qualificate
@@ -89,6 +147,7 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
         </p>
       </div>
 
+      {/* Seeding mode */}
       <div>
         <label className="mb-2 block text-sm font-medium text-[var(--foreground)]/70">
           Tabellone
@@ -110,6 +169,43 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
           </Button>
         </div>
       </div>
+
+      {/* Manual seeding — drag to reorder */}
+      {!autoSeed && seedOrder.length > 0 && (
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[var(--foreground)]/70">
+            Ordine teste di serie (trascina per riordinare)
+          </label>
+          <div className="space-y-1.5">
+            {seedOrder.map((team, idx) => (
+              <div
+                key={team.teamId}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+                className={[
+                  "flex cursor-grab items-center gap-3 rounded-2xl border px-4 py-3 transition active:cursor-grabbing",
+                  dragIdx === idx
+                    ? "border-[var(--accent)]/40 bg-[var(--accent)]/10"
+                    : "border-white/8 bg-white/[0.03] hover:border-white/15",
+                ].join(" ")}
+              >
+                <span className="w-7 text-center text-sm font-bold text-[var(--accent)]">
+                  {idx + 1}
+                </span>
+                <span className="flex-1 text-sm font-semibold text-[var(--foreground)]">
+                  {team.teamName}
+                </span>
+                <span className="text-xs text-[var(--foreground)]/40">
+                  {team.points} pt &middot; {team.gd > 0 ? "+" : ""}{team.gd} dr
+                </span>
+                <span className="text-[var(--foreground)]/25">⠿</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {err && <Badge variant="error">{err}</Badge>}
 
