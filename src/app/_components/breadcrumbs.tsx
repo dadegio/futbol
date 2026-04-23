@@ -18,6 +18,9 @@ const SECTION_LABELS: Record<string, string> = {
   matches: "Partita",
 };
 
+// Sections that don't have an index page — render as text, not a link
+const NO_INDEX_SECTIONS = new Set(["matches"]);
+
 export default function Breadcrumbs({ leagueId }: BreadcrumbsProps) {
   const pathname = usePathname();
 
@@ -39,7 +42,8 @@ export default function Breadcrumbs({ leagueId }: BreadcrumbsProps) {
     accumulated += `/${seg}`;
     const label = SECTION_LABELS[seg] ?? seg;
     const isLast = i === segments.length - 1;
-    crumbs.push({ label, href: isLast ? undefined : accumulated });
+    const noIndex = NO_INDEX_SECTIONS.has(seg);
+    crumbs.push({ label, href: isLast || noIndex ? undefined : accumulated });
   }
 
   return (
