@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Link from "next/link";
-import { CalendarDays, Trophy, Users, BarChart3 } from "lucide-react";
+import { CalendarDays, Trophy, Users, BarChart3, Swords } from "lucide-react";
 
 export default async function LeagueHome({
   params,
@@ -18,6 +18,7 @@ export default async function LeagueHome({
     select: {
       id: true,
       name: true,
+      playoffFormat: true,
       _count: {
         select: {
           teams: true,
@@ -53,6 +54,14 @@ export default async function LeagueHome({
       value: "Top 5",
       icon: <BarChart3 size={18} />,
       href: `/leagues/${leagueId}/stats`,
+    },
+    {
+      label: "Playoff",
+      value: league.playoffFormat
+        ? league.playoffFormat === "TWO_LEG" ? "A/R" : "Diretta"
+        : "—",
+      icon: <Swords size={18} />,
+      href: `/leagues/${leagueId}/playoffs`,
     },
   ];
 
@@ -132,6 +141,21 @@ export default async function LeagueHome({
                   className="mt-4 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-2 font-semibold text-black"
                 >
                   Vai alle stats
+                </Link>
+              </div>
+
+              <div className="rounded-2xl bg-white/[0.04] p-5">
+                <div className="text-lg font-bold text-white">Playoff</div>
+                <p className="mt-2 text-sm leading-6 text-white/60">
+                  {league.playoffFormat
+                    ? "Gestisci il tabellone, inserisci risultati e avanza le squadre."
+                    : "Configura la fase a eliminazione dopo il campionato."}
+                </p>
+                <Link
+                  href={`/leagues/${leagueId}/playoffs`}
+                  className="mt-4 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-2 font-semibold text-black"
+                >
+                  {league.playoffFormat ? "Vai ai playoff" : "Configura playoff"}
                 </Link>
               </div>
             </div>

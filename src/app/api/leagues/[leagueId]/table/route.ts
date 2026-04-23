@@ -28,6 +28,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string 
   const matches = await prisma.match.findMany({
     where: {
       leagueId,
+      seriesId: null,
       homeGoals: { not: null },
       awayGoals: { not: null },
     },

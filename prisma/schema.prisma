@@ -7,13 +7,23 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+enum PlayoffFormat {
+  SINGLE_ELIM
+  TWO_LEG
+}
+
 model League {
   id        String   @id @default(cuid())
   name      String
   createdAt DateTime @default(now())
 
-  teams     Team[]
-  matches   Match[]
+  playoffFormat    PlayoffFormat?
+  playoffTeamCount Int?
+  playoffSeeded    Boolean @default(true)
+
+  teams          Team[]
+  matches        Match[]
+  playoffSeries  PlayoffSeries[]
 }
 
 model Team {
@@ -28,6 +38,10 @@ model Team {
   players     Player[]
   homeMatches Match[]  @relation("HomeTeam")
   awayMatches Match[]  @relation("AwayTeam")
+
+  homeSeries  PlayoffSeries[] @relation("SeriesHome")
+  awaySeries  PlayoffSeries[] @relation("SeriesAway")
+  wonSeries   PlayoffSeries[] @relation("SeriesWinner")
 
   @@unique([leagueId, name])
 }
@@ -62,16 +76,21 @@ model Match {
   homeGoals  Int?
   awayGoals  Int?
 
+  seriesId   String?
+  leg        Int?
+
   createdAt  DateTime @default(now())
 
   league     League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam   Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  series     PlayoffSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
   stats      MatchPlayerStat[]
 
   @@index([leagueId, round])
-  @@unique([leagueId, round, homeTeamId, awayTeamId])
+  @@index([seriesId])
+  @@unique([seriesId, leg])
 }
 
 model MatchPlayerStat {
@@ -88,4 +107,34 @@ model MatchPlayerStat {
 
   @@unique([matchId, playerId])
   @@index([playerId])
+}
+
+model PlayoffSeries {
+  id          String   @id @default(cuid())
+  leagueId    String
+
+  bracketRound  Int
+  position      Int
+
+  homeTeamId    String?
+  awayTeamId    String?
+
+  homeSeed      Int?
+  awaySeed      Int?
+
+  winnerId      String?
+
+  feedsIntoSeriesId String?
+
+  league     League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeam   Team?  @relation("SeriesHome", fields: [homeTeamId], references: [id])
+  awayTeam   Team?  @relation("SeriesAway", fields: [awayTeamId], references: [id])
+  winner     Team?  @relation("SeriesWinner", fields: [winnerId], references: [id])
+  feedsInto  PlayoffSeries? @relation("BracketProgression", fields: [feedsIntoSeriesId], references: [id])
+
+  feederSeries PlayoffSeries[] @relation("BracketProgression")
+  matches      Match[]
+
+  @@unique([leagueId, bracketRound, position])
+  @@index([leagueId])
 }

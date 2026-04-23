@@ -11,6 +11,7 @@ import {
   BarChart3,
   Search,
   X,
+  Swords,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -59,6 +60,7 @@ export default function Sidebar({ leagueId, mobile = false, onNavigate }: Sideba
         { href: `/leagues/${leagueId}`, label: "Overview", icon: <Home size={20} /> },
         { href: `/leagues/${leagueId}/table`, label: "Leader Board", icon: <Trophy size={20} /> },
         { href: `/leagues/${leagueId}/calendar`, label: "Calendar", icon: <CalendarDays size={20} /> },
+        { href: `/leagues/${leagueId}/playoffs`, label: "Playoff", icon: <Swords size={20} /> },
         { href: `/leagues/${leagueId}/teams`, label: "Teams", icon: <Users size={20} /> },
         { href: `/leagues/${leagueId}/players`, label: "Players", icon: <Users size={20} /> },
         { href: `/leagues/${leagueId}/stats`, label: "Stats", icon: <BarChart3 size={20} /> },

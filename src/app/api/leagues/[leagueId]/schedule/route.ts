@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateRoundRobin } from "@/lib/scheduler";
 
-export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await ctx.params;
 
+  const { searchParams } = new URL(req.url);
+  const phase = searchParams.get("phase") ?? "league";
+
+  const seriesFilter =
+    phase === "playoff"
+      ? { seriesId: { not: null as unknown as string } }
+      : phase === "all"
+        ? {}
+        : { seriesId: null };
+
   const matches = await prisma.match.findMany({
-    where: { leagueId },
+    where: { leagueId, ...seriesFilter },
     orderBy: [{ round: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,
@@ -15,6 +25,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string 
       date: true,
       homeGoals: true,
       awayGoals: true,
+      seriesId: true,
+      leg: true,
       homeTeam: { select: { id: true, name: true } },
       awayTeam: { select: { id: true, name: true } },
     },
@@ -101,7 +113,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
     return NextResponse.json({ error: "Servono almeno 2 squadre" }, { status: 400 });
   }
 
-  await prisma.match.deleteMany({ where: { leagueId } });
+  await prisma.match.deleteMany({ where: { leagueId, seriesId: null } });
 
   const pairings = generateRoundRobin(teamIds, { random, seed });
 
