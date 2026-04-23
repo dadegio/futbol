@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+  const { leagueId } = await ctx.params;
+
+  const league = await prisma.league.findUnique({
+    where: { id: leagueId },
+    select: { id: true, name: true, playoffFormat: true, playoffTeamCount: true },
+  });
+
+  if (!league) {
+    return NextResponse.json({ error: "Campionato non trovato" }, { status: 404 });
+  }
+
+  return NextResponse.json(league);
+}
+
 export async function DELETE(_: Request, ctx: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await ctx.params;
 

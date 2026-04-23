@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Home,
   Trophy,
@@ -10,14 +10,11 @@ import {
   Users,
   BarChart3,
   Search,
-  X,
   Swords,
 } from "lucide-react";
 
 type SidebarProps = {
   leagueId?: string;
-  mobile?: boolean;
-  onNavigate?: () => void;
 };
 
 function NavItem({
@@ -25,18 +22,15 @@ function NavItem({
   icon,
   label,
   active = false,
-  onNavigate,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   active?: boolean;
-  onNavigate?: () => void;
 }) {
   return (
     <Link
       href={href}
-      onClick={onNavigate}
       className={[
         "flex items-center gap-3 rounded-2xl px-4 py-3 transition",
         active
@@ -50,20 +44,31 @@ function NavItem({
   );
 }
 
-export default function Sidebar({ leagueId, mobile = false, onNavigate }: SidebarProps) {
+export default function Sidebar({ leagueId }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [leagueName, setLeagueName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!leagueId) return;
+    fetch(`/api/leagues/${leagueId}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.name) setLeagueName(d.name);
+      })
+      .catch(() => {});
+  }, [leagueId]);
 
   const links = leagueId
     ? [
         { href: `/leagues/${leagueId}`, label: "Overview", icon: <Home size={20} /> },
-        { href: `/leagues/${leagueId}/table`, label: "Leader Board", icon: <Trophy size={20} /> },
-        { href: `/leagues/${leagueId}/calendar`, label: "Calendar", icon: <CalendarDays size={20} /> },
+        { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Trophy size={20} /> },
+        { href: `/leagues/${leagueId}/calendar`, label: "Calendario", icon: <CalendarDays size={20} /> },
         { href: `/leagues/${leagueId}/playoffs`, label: "Playoff", icon: <Swords size={20} /> },
-        { href: `/leagues/${leagueId}/teams`, label: "Teams", icon: <Users size={20} /> },
-        { href: `/leagues/${leagueId}/players`, label: "Players", icon: <Users size={20} /> },
-        { href: `/leagues/${leagueId}/stats`, label: "Stats", icon: <BarChart3 size={20} /> },
+        { href: `/leagues/${leagueId}/teams`, label: "Squadre", icon: <Users size={20} /> },
+        { href: `/leagues/${leagueId}/players`, label: "Giocatori", icon: <Users size={20} /> },
+        { href: `/leagues/${leagueId}/stats`, label: "Statistiche", icon: <BarChart3 size={20} /> },
       ]
     : [{ href: `/`, label: "Home", icon: <Home size={20} /> }];
 
@@ -75,40 +80,34 @@ export default function Sidebar({ leagueId, mobile = false, onNavigate }: Sideba
 
     if (!q) {
       router.push(`/leagues/${leagueId}/players`);
-      onNavigate?.();
       return;
     }
 
     router.push(`/leagues/${leagueId}/players?q=${encodeURIComponent(q)}`);
-    onNavigate?.();
   }
 
   return (
-    <aside
-      className={[
-        "shrink-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/95 text-[var(--foreground)] shadow-2xl shadow-black/15",
-        mobile ? "w-full p-5" : "hidden w-[280px] p-6 lg:block",
-      ].join(" ")}
-    >
-      <div className="mb-6 flex items-center justify-between">
+    <aside className="hidden w-[280px] shrink-0 rounded-[28px] border border-[var(--border)] bg-[var(--card)]/95 p-6 text-[var(--foreground)] shadow-2xl shadow-black/15 lg:block">
+      <div className="mb-6">
         <Link
           href="/"
-          onClick={onNavigate}
           className="text-[20px] font-extrabold tracking-tight"
         >
           <span className="text-[var(--accent)] italic">FUTBOL</span>
         </Link>
-
-        {mobile ? (
-          <button
-            onClick={onNavigate}
-            className="rounded-xl border border-[var(--border)] bg-white/5 p-2 text-[var(--foreground)]/80"
-            aria-label="Chiudi menu"
-          >
-            <X size={18} />
-          </button>
-        ) : null}
       </div>
+
+      {/* League name header */}
+      {leagueId && leagueName && (
+        <div className="mb-5 rounded-2xl bg-white/[0.04] px-4 py-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)]/35">
+            Torneo
+          </div>
+          <div className="mt-0.5 truncate text-sm font-bold text-[var(--foreground)]">
+            {leagueName}
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={submitSearch}
@@ -141,7 +140,6 @@ export default function Sidebar({ leagueId, mobile = false, onNavigate }: Sideba
             icon={item.icon}
             label={item.label}
             active={pathname === item.href}
-            onNavigate={onNavigate}
           />
         ))}
       </nav>
