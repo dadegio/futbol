@@ -6,9 +6,28 @@
  * Call once:  POST /api/setup   (no body needed)
  * Response:   table of created credentials
  */
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/session";
+
+/** 12-character random password: letters + digits + a symbol. ~71 bits of entropy. */
+function randomPassword(): string {
+  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const symbols = "!@#$%&*";
+  // 10 random alphanumeric + 1 symbol + 1 digit, then shuffle
+  const bytes = crypto.randomBytes(12);
+  const base = Array.from({ length: 10 }, (_, i) => chars[bytes[i]! % chars.length]);
+  base.push(symbols[bytes[10]! % symbols.length]!);
+  base.push(String(bytes[11]! % 10));
+  // Fisher-Yates shuffle using more random bytes
+  const shuffle = crypto.randomBytes(12);
+  for (let i = base.length - 1; i > 0; i--) {
+    const j = shuffle[i]! % (i + 1);
+    [base[i], base[j]] = [base[j]!, base[i]!];
+  }
+  return base.join("");
+}
 
 function slugify(name: string): string {
   return name
@@ -41,7 +60,7 @@ export async function POST() {
   const results: { username: string; password: string; role: string; team: string }[] = [];
 
   // Create admin
-  const adminPassword = "admin123";
+  const adminPassword = randomPassword();
   await prisma.user.create({
     data: {
       username: "admin",
@@ -63,7 +82,7 @@ export async function POST() {
     }
     seen.add(username);
 
-    const password = username; // initial password = username
+    const password = randomPassword();
     await prisma.user.create({
       data: {
         username,

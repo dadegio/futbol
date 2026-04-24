@@ -74,6 +74,36 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(user, { status: 201 });
 }
 
+// ── PATCH /api/users?id=… ─────────────────────────────────────────────────────
+export async function PATCH(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "Parametro id mancante" }, { status: 400 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const { password } = body as { password?: string };
+
+  if (!password || password.length < 8) {
+    return NextResponse.json({ error: "Password minimo 8 caratteri" }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    return NextResponse.json({ error: "Utente non trovato" }, { status: 404 });
+  }
+
+  await prisma.user.update({
+    where: { id },
+    data: { passwordHash: hashPassword(password) },
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
 // ── DELETE /api/users?id=… ────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
   const denied = await requireAdmin();

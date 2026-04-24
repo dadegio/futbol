@@ -31,6 +31,11 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [changingPwdId, setChangingPwdId] = useState<string | null>(null);
+  const [newPwd, setNewPwd] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdErr, setPwdErr] = useState<string | null>(null);
+  const [pwdMsg, setPwdMsg] = useState<string | null>(null);
 
   // New user form
   const [showForm, setShowForm] = useState(false);
@@ -94,6 +99,36 @@ export default function AdminUsersPage() {
       setErr(e.message);
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  function openChangePwd(id: string) {
+    setChangingPwdId(id);
+    setNewPwd("");
+    setPwdErr(null);
+    setPwdMsg(null);
+  }
+
+  async function handleChangePwd(id: string) {
+    setPwdErr(null);
+    setPwdMsg(null);
+    if (newPwd.length < 8) { setPwdErr("Password minimo 8 caratteri"); return; }
+    setPwdSaving(true);
+    try {
+      const res = await authFetch(`/api/users?id=${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPwd }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d?.error ?? "Errore");
+      setPwdMsg("Password aggiornata");
+      setNewPwd("");
+      setTimeout(() => { setChangingPwdId(null); setPwdMsg(null); }, 1500);
+    } catch (e: any) {
+      setPwdErr(e.message);
+    } finally {
+      setPwdSaving(false);
     }
   }
 
@@ -205,37 +240,74 @@ export default function AdminUsersPage() {
                 {users.map((u) => (
                   <div
                     key={u.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-base font-bold text-[var(--foreground)]">
-                          {u.username}
-                        </span>
-                        <span
-                          className={[
-                            "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                            u.role === "ADMIN"
-                              ? "bg-[var(--accent)]/20 text-[var(--accent)]"
-                              : "bg-white/10 text-[var(--foreground)]/70",
-                          ].join(" ")}
-                        >
-                          {u.role === "ADMIN" ? "Admin" : "Capitano"}
-                        </span>
+                    {/* Row 1: info + action buttons */}
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-[var(--foreground)]">{u.username}</span>
+                          <span
+                            className={[
+                              "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                              u.role === "ADMIN"
+                                ? "bg-[var(--accent)]/20 text-[var(--accent)]"
+                                : "bg-white/10 text-[var(--foreground)]/70",
+                            ].join(" ")}
+                          >
+                            {u.role === "ADMIN" ? "Admin" : "Capitano"}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-sm text-[var(--foreground)]/50">
+                          {u.team ? `Squadra: ${u.team.name}` : "Nessuna squadra"}
+                        </div>
                       </div>
-                      <div className="mt-1 text-sm text-[var(--foreground)]/50">
-                        {u.team ? `Squadra: ${u.team.name}` : "Nessuna squadra"}
+
+                      <div className="flex shrink-0 gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            changingPwdId === u.id ? setChangingPwdId(null) : openChangePwd(u.id)
+                          }
+                        >
+                          {changingPwdId === u.id ? "Annulla" : "Cambia password"}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(u)}
+                          disabled={deletingId === u.id}
+                        >
+                          {deletingId === u.id ? "..." : "Elimina"}
+                        </Button>
                       </div>
                     </div>
 
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(u)}
-                      disabled={deletingId === u.id}
-                    >
-                      {deletingId === u.id ? "..." : "Elimina"}
-                    </Button>
+                    {/* Row 2: inline change-password form */}
+                    {changingPwdId === u.id && (
+                      <div className="mt-3 flex flex-col gap-2 border-t border-[var(--border)] pt-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Nuova password (min 8 caratteri)"
+                            value={newPwd}
+                            onChange={(e) => setNewPwd(e.target.value)}
+                            className="flex-1"
+                            aria-label={`Nuova password per ${u.username}`}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleChangePwd(u.id)}
+                            disabled={pwdSaving}
+                          >
+                            {pwdSaving ? "Salvataggio…" : "Salva"}
+                          </Button>
+                        </div>
+                        {pwdErr && <Badge variant="error">{pwdErr}</Badge>}
+                        {pwdMsg && <Badge variant="success">{pwdMsg}</Badge>}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
