@@ -2,22 +2,22 @@
 
 :root {
   --background: #0b0b0c;
-  --foreground: #f5f5f5;
-  --card: #151517;
-  --card-2: #1b1b1e;
+  --foreground: #f0f0f0;
+  --card: #131315;
+  --card-2: #18181b;
   --muted: #9ca3af;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.09);
   --accent: #7dd3fc;
   --accent-2: #38bdf8;
 }
 
 html[data-theme="light"] {
-  --background: #f5f7fb;
+  --background: #f4f6fa;
   --foreground: #111827;
   --card: #ffffff;
-  --card-2: #f3f4f6;
+  --card-2: #f1f3f7;
   --muted: #6b7280;
-  --border: rgba(17, 24, 39, 0.08);
+  --border: rgba(17, 24, 39, 0.09);
   --accent: #0ea5e9;
   --accent-2: #0284c7;
 }
@@ -36,14 +36,18 @@ html[data-theme="light"] {
 html {
   min-height: 100%;
   background: var(--background);
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, system-ui, sans-serif);
   background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -53,8 +57,25 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Bracket animations */
@@ -64,16 +85,16 @@ select {
 }
 
 .animate-fade-in {
-  animation: fade-in 0.5s ease-out;
+  animation: fade-in 0.4s ease-out;
 }
 
 /* Accent color themes */
-html[data-accent="sky"] { --accent: #7dd3fc; --accent-2: #38bdf8; }
+html[data-accent="sky"]     { --accent: #7dd3fc; --accent-2: #38bdf8; }
 html[data-accent="emerald"] { --accent: #6ee7b7; --accent-2: #34d399; }
-html[data-accent="violet"] { --accent: #c4b5fd; --accent-2: #a78bfa; }
-html[data-accent="rose"] { --accent: #fda4af; --accent-2: #fb7185; }
-html[data-accent="amber"] { --accent: #fcd34d; --accent-2: #fbbf24; }
-html[data-accent="orange"] { --accent: #fdba74; --accent-2: #fb923c; }
+html[data-accent="violet"]  { --accent: #c4b5fd; --accent-2: #a78bfa; }
+html[data-accent="rose"]    { --accent: #fda4af; --accent-2: #fb7185; }
+html[data-accent="amber"]   { --accent: #fcd34d; --accent-2: #fbbf24; }
+html[data-accent="orange"]  { --accent: #fdba74; --accent-2: #fb923c; }
 
 /* Print styles for bracket */
 @media print {

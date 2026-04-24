@@ -5,13 +5,14 @@ type BadgeProps = {
 };
 
 const variants = {
-  default: "rounded-2xl bg-white/5 px-4 py-2 text-sm text-[var(--foreground)]/65",
+  default:
+    "inline-flex items-center rounded-lg bg-white/5 px-3 py-1.5 text-xs text-[var(--foreground)]/60",
   accent:
-    "rounded-2xl bg-[var(--accent)] px-4 py-2 font-black text-black",
+    "inline-flex items-center rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-bold text-black",
   error:
-    "rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200",
+    "flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300",
   success:
-    "rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200",
+    "flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300",
 } as const;
 
 export default function Badge({ children, variant = "default", className = "" }: BadgeProps) {
