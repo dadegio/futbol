@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
-import Card, { CardHeader } from "src/app/_components/ui/card";
+import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
 
 type Row = {
   teamId: string;
   teamName: string;
+  badgeUrl: string | null;
   played: number;
   wins: number;
   draws: number;
@@ -27,109 +29,175 @@ export default function TablePage() {
   useEffect(() => {
     if (!leagueId) return;
 
-    (async () => {
+    async function load() {
       setErr(null);
-      const res = await fetch(`/api/leagues/${leagueId}/table`, { cache: "no-store" });
+
+      const res = await fetch(`/api/leagues/${leagueId}/table`, {
+        cache: "no-store",
+      });
+
       const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
         setErr(data?.error ?? "Errore classifica");
         return;
       }
+
       setRows(data);
-    })();
+    }
+
+    load();
   }, [leagueId]);
+
+  const currentRound = useMemo(() => {
+    const maxPlayed = Math.max(...rows.map((row) => row.played), 0);
+    return maxPlayed || 1;
+  }, [rows]);
 
   if (!leagueId) return <div>Caricamento…</div>;
 
   return (
     <DashboardShell leagueId={leagueId}>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader
-            tag="Table"
-            title="Classifica"
-            description="Punti, risultati e differenza reti aggiornati in base alle partite giocate."
-          />
-        </Card>
+      <div className="mx-auto w-full max-w-[480px] space-y-6 px-4 pb-8">
+        <header className="pt-2">
+          <Link
+            href={`/leagues/${leagueId}`}
+            className="mb-8 flex items-center gap-3 text-sm text-[var(--muted)]"
+          >
+            <span className="text-xl leading-none">‹</span>
+            <span>Coppa Primavera 2026</span>
+          </Link>
+
+          <div className="flex items-end justify-between">
+            <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
+              Classifica
+            </h1>
+
+            <span className="text-sm font-semibold text-[var(--muted)]">
+              G{currentRound}
+            </span>
+          </div>
+        </header>
+
+        <div className="flex gap-8 border-b border-[var(--border)] text-base">
+          <button
+            type="button"
+            className="border-b-2 border-[var(--accent)] pb-3 font-medium text-[var(--foreground)]"
+          >
+            Generale
+          </button>
+
+          <button
+            type="button"
+            className="pb-3 font-medium text-[var(--muted)]"
+          >
+            Casa
+          </button>
+
+          <button
+            type="button"
+            className="pb-3 font-medium text-[var(--muted)]"
+          >
+            Trasferta
+          </button>
+        </div>
 
         {err && <Badge variant="error">{err}</Badge>}
 
-        <Card>
+        <Card className="overflow-hidden !p-0">
           {rows.length === 0 ? (
-            <Card variant="flat">
-              <span className="text-[var(--foreground)]/55">Nessuna partita con risultato inserito.</span>
-            </Card>
+            <div className="p-5 text-sm text-[var(--muted)]">
+              Nessuna partita con risultato inserito.
+            </div>
           ) : (
             <>
-              <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full border-separate border-spacing-y-2 text-sm">
-                  <thead>
-                    <tr className="text-[var(--foreground)]/45">
-                      {["#", "Squadra", "Pt", "G", "V", "N", "P", "GF", "GS", "DR"].map((h) => (
-                        <th
-                          key={h}
-                          className={`px-4 py-3 ${h === "Squadra" ? "text-left" : "text-center"}`}
+              <table className="w-full table-fixed text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--border)] text-xs font-medium text-[var(--muted)]">
+                    <th className="w-[34px] px-2 py-3 text-center">#</th>
+                    <th className="px-1 py-3 text-left">Squadra</th>
+                    <th className="w-[34px] px-1 py-3 text-center">G</th>
+                    <th className="w-[34px] px-1 py-3 text-center">V</th>
+                    <th className="w-[42px] px-1 py-3 text-center">DR</th>
+                    <th className="w-[42px] px-3 py-3 text-right">PT</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {rows.map((row, index) => {
+                    const isPromotion = index < 2;
+                    const isRelegation = index === rows.length - 1;
+
+                    return (
+                      <tr
+                        key={row.teamId}
+                        className="border-b border-[var(--border)] last:border-b-0"
+                      >
+                        <td className="relative px-2 py-4 text-center text-[var(--muted)]">
+                          {isPromotion && (
+                            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
+                          )}
+
+                          {isRelegation && (
+                            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
+                          )}
+
+                          {index + 1}
+                        </td>
+
+                        <td className="min-w-0 px-1 py-4">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <TeamLogo
+                              name={row.teamName}
+                              badgeUrl={row.badgeUrl}
+                            />
+
+                            <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--foreground)]">
+                              {row.teamName}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className="px-1 py-4 text-center text-[var(--muted)]">
+                          {row.played}
+                        </td>
+
+                        <td className="px-1 py-4 text-center text-[var(--muted)]">
+                          {row.wins}
+                        </td>
+
+                        <td
+                          className={[
+                            "px-1 py-4 text-center font-semibold",
+                            row.gd > 0
+                              ? "text-emerald-700"
+                              : row.gd < 0
+                                ? "text-red-600"
+                                : "text-[var(--muted)]",
+                          ].join(" ")}
                         >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
+                          {row.gd > 0 ? `+${row.gd}` : row.gd}
+                        </td>
 
-                  <tbody>
-                    {rows.map((r, i) => (
-                      <tr key={r.teamId} className="bg-white/[0.04] text-[var(--foreground)]">
-                        <td className="rounded-l-2xl px-4 py-4 text-center text-[var(--foreground)]/70">{i + 1}</td>
-                        <td className="px-4 py-4 font-semibold">{r.teamName}</td>
-                        <td className="px-4 py-4 text-center font-black text-[var(--accent)]">{r.points}</td>
-                        <td className="px-4 py-4 text-center">{r.played}</td>
-                        <td className="px-4 py-4 text-center">{r.wins}</td>
-                        <td className="px-4 py-4 text-center">{r.draws}</td>
-                        <td className="px-4 py-4 text-center">{r.losses}</td>
-                        <td className="px-4 py-4 text-center">{r.gf}</td>
-                        <td className="px-4 py-4 text-center">{r.ga}</td>
-                        <td className="rounded-r-2xl px-4 py-4 text-center">{r.gd}</td>
+                        <td className="px-3 py-4 text-right text-base font-black text-[var(--foreground)]">
+                          {row.points}
+                        </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
 
-              <div className="space-y-3 md:hidden">
-                {rows.map((r, i) => (
-                  <div
-                    key={r.teamId}
-                    className="rounded-2xl border border-white/8 bg-white/[0.04] p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-xs uppercase tracking-[0.18em] text-[var(--foreground)]/40">
-                          #{i + 1}
-                        </div>
-                        <div className="mt-1 truncate text-lg font-bold text-[var(--foreground)]">
-                          {r.teamName}
-                        </div>
-                      </div>
+              <div className="flex gap-4 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+                  Promozione
+                </span>
 
-                      <Badge variant="accent" className="text-lg">
-                        {r.points} pt
-                      </Badge>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-                      <StatChip label="G" value={r.played} />
-                      <StatChip label="V" value={r.wins} />
-                      <StatChip label="N" value={r.draws} />
-                      <StatChip label="P" value={r.losses} />
-                      <StatChip label="GF" value={r.gf} />
-                      <StatChip label="GS" value={r.ga} />
-                    </div>
-
-                    <div className="mt-2">
-                      <StatChip label="DR" value={r.gd} wide />
-                    </div>
-                  </div>
-                ))}
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[var(--danger)]" />
+                  Retrocessione
+                </span>
               </div>
             </>
           )}
@@ -139,21 +207,46 @@ export default function TablePage() {
   );
 }
 
-function StatChip({
-  label,
-  value,
-  wide = false,
+function TeamLogo({
+  name,
+  badgeUrl,
 }: {
-  label: string;
-  value: number;
-  wide?: boolean;
+  name: string;
+  badgeUrl: string | null;
 }) {
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (badgeUrl) {
+    return (
+      <img
+        src={badgeUrl}
+        alt={`Logo ${name}`}
+        className="h-8 w-8 shrink-0 rounded-lg object-cover"
+      />
+    );
+  }
+
+  const colors = [
+    "bg-green-200 text-green-900",
+    "bg-pink-200 text-pink-900",
+    "bg-cyan-200 text-cyan-900",
+    "bg-orange-200 text-orange-900",
+    "bg-violet-200 text-violet-900",
+    "bg-fuchsia-200 text-fuchsia-900",
+  ];
+
+  const index = initials.charCodeAt(0) % colors.length;
+
   return (
-    <div className={`rounded-xl bg-black/5 px-3 py-2 ${wide ? "w-full" : ""}`}>
-      <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)]/40">
-        {label}
-      </div>
-      <div className="mt-1 font-bold text-[var(--foreground)]">{value}</div>
-    </div>
+    <span
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black ${colors[index]}`}
+    >
+      {initials}
+    </span>
   );
 }
