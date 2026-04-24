@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ArrowLeft, Pencil } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import Card from "src/app/_components/ui/card";
+import Button from "src/app/_components/ui/button";
+import Badge from "src/app/_components/ui/badge";
+import Input from "src/app/_components/ui/input";
+import Select from "src/app/_components/ui/select";
 
 type Player = {
   id: string;
@@ -24,18 +30,9 @@ const POSITIONS = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];
 async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-
-  const res = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
-
+  const res = await fetch("/api/upload", { method: "POST", body: formData });
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error((data as any)?.error ?? "Errore upload immagine");
-  }
-
+  if (!res.ok) throw new Error((data as any)?.error ?? "Errore upload immagine");
   return data.url as string;
 }
 
@@ -51,7 +48,6 @@ export default function PlayerPage() {
   const [number, setNumber] = useState("");
   const [position, setPosition] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
-
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
 
@@ -64,27 +60,17 @@ export default function PlayerPage() {
   async function load() {
     setErr(null);
     setLoading(true);
-
     try {
       const playerRes = await fetch(`/api/players/${playerId}`, { cache: "no-store" });
       const playerData = await playerRes.json().catch(() => ({}));
+      if (!playerRes.ok) throw new Error((playerData as any)?.error ?? "Errore caricamento giocatore");
 
-      if (!playerRes.ok) {
-        throw new Error((playerData as any)?.error ?? "Errore caricamento giocatore");
-      }
-
-      const statsRes = await fetch(`/api/players/${playerId}/stats`, {
-        cache: "no-store",
-      });
+      const statsRes = await fetch(`/api/players/${playerId}/stats`, { cache: "no-store" });
       const statsData = await statsRes.json().catch(() => ({}));
 
-      const g = statsRes.ok ? (statsData.goals ?? 0) : 0;
-      const a = statsRes.ok ? (statsData.assists ?? 0) : 0;
-
       setPlayer(playerData);
-      setGoals(g);
-      setAssists(a);
-
+      setGoals(statsRes.ok ? (statsData.goals ?? 0) : 0);
+      setAssists(statsRes.ok ? (statsData.assists ?? 0) : 0);
       setFirstName(playerData.firstName ?? "");
       setLastName(playerData.lastName ?? "");
       setNumber(String(playerData.number ?? ""));
@@ -113,36 +99,17 @@ export default function PlayerPage() {
   async function savePlayer() {
     setErr(null);
     setMsg(null);
-
     const n = Number(number);
-
-    if (!firstName.trim() || !lastName.trim()) {
-      setErr("Inserisci nome e cognome");
-      return;
-    }
-
-    if (!Number.isInteger(n) || n <= 0 || n > 99) {
-      setErr("Numero maglia non valido");
-      return;
-    }
-
+    if (!firstName.trim() || !lastName.trim()) { setErr("Inserisci nome e cognome"); return; }
+    if (!Number.isInteger(n) || n <= 0 || n > 99) { setErr("Numero maglia non valido"); return; }
     try {
       setSaving(true);
-
       let finalPhotoUrl: string | null = removePhoto ? null : photoUrl.trim() || null;
-
       if (photoFile) {
-        if (!photoFile.type.startsWith("image/")) {
-          throw new Error("Seleziona un'immagine valida");
-        }
-
-        if (photoFile.size > 5 * 1024 * 1024) {
-          throw new Error("La foto deve essere massimo 5 MB");
-        }
-
+        if (!photoFile.type.startsWith("image/")) throw new Error("Seleziona un'immagine valida");
+        if (photoFile.size > 5 * 1024 * 1024) throw new Error("La foto deve essere massimo 5 MB");
         finalPhotoUrl = await uploadImage(photoFile);
       }
-
       const res = await fetch(`/api/players/${playerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -154,14 +121,9 @@ export default function PlayerPage() {
           photoUrl: finalPhotoUrl,
         }),
       });
-
       const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error((data as any)?.error ?? "Errore aggiornamento giocatore");
-      }
-
-      setMsg("Profilo giocatore aggiornato ✅");
+      if (!res.ok) throw new Error((data as any)?.error ?? "Errore aggiornamento giocatore");
+      setMsg("Profilo aggiornato");
       setEditing(false);
       await load();
     } catch (e: any) {
@@ -174,7 +136,7 @@ export default function PlayerPage() {
   if (loading) {
     return (
       <DashboardShell leagueId={leagueId}>
-        <div className="text-white/70">Caricamento…</div>
+        <div className="text-[var(--foreground)]/60">Caricamento…</div>
       </DashboardShell>
     );
   }
@@ -182,192 +144,170 @@ export default function PlayerPage() {
   if (!player) {
     return (
       <DashboardShell leagueId={leagueId}>
-        <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {err ?? "Giocatore non trovato"}
-        </div>
+        <Badge variant="error">{err ?? "Giocatore non trovato"}</Badge>
       </DashboardShell>
     );
   }
 
   return (
     <DashboardShell leagueId={leagueId}>
-      <div className="space-y-6">
-        <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-6 shadow-2xl shadow-black/20">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="space-y-5">
+
+        {/* Header */}
+        <Card>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               {player.photoUrl ? (
                 <img
                   src={player.photoUrl}
                   alt={`${player.firstName} ${player.lastName}`}
-                  className="h-24 w-24 rounded-3xl border border-white/10 object-cover"
+                  className="h-16 w-16 rounded-2xl border border-[var(--border)] object-cover"
                 />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 text-sm font-bold text-white/35">
-                  NO PHOTO
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-xs font-bold text-[var(--foreground)]/35">
+                  N/A
                 </div>
               )}
-
               <div className="min-w-0">
-                <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-                  Player
-                </div>
-                <h1 className="mt-2 break-words text-3xl font-black text-white">
-                  #{player.number} {player.firstName} {player.lastName}
+                <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
+                  {player.team.name}
+                </p>
+                <h1 className="mt-0.5 text-2xl font-bold text-[var(--foreground)]">
+                  <span className="mr-1.5 text-[var(--foreground)]/40">#{player.number}</span>
+                  {player.firstName} {player.lastName}
                 </h1>
-                <p className="mt-2 text-sm text-white/60">
-                  {player.position || "Ruolo non impostato"} • {player.team.name}
+                <p className="mt-0.5 text-sm text-[var(--foreground)]/50">
+                  {player.position || "Ruolo non impostato"}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 onClick={() => setEditing((v) => !v)}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
+                aria-label={editing ? "Chiudi modifica profilo" : "Modifica profilo"}
+                aria-pressed={editing}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-[var(--border)] bg-white/5 text-[var(--foreground)]/60 transition-colors hover:bg-white/10 hover:text-[var(--foreground)]"
               >
-                {editing ? "Chiudi modifica" : "Modifica profilo"}
+                <Pencil size={15} />
               </button>
-
               <Link
                 href={`/leagues/${leagueId}/teams/${player.team.id}`}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
+                className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs text-[var(--foreground)]/60 hover:text-[var(--foreground)]"
               >
-                ← Vai alla squadra
+                <ArrowLeft size={13} /> Squadra
               </Link>
             </div>
           </div>
-        </section>
+        </Card>
 
-        {msg ? (
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-            {msg}
-          </div>
-        ) : null}
+        {msg && <Badge variant="success">{msg}</Badge>}
+        {err && <Badge variant="error">{err}</Badge>}
 
-        {err ? (
-          <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {err}
-          </div>
-        ) : null}
+        {/* Stat cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            { label: "Squadra", value: player.team.name },
+            { label: "Gol", value: goals },
+            { label: "Assist", value: assists },
+          ].map((s) => (
+            <Card key={s.label} variant="inner">
+              <p className="text-xs font-medium uppercase tracking-widest text-[var(--foreground)]/50">
+                {s.label}
+              </p>
+              <p className="mt-2 text-2xl font-black text-[var(--foreground)]">{s.value}</p>
+            </Card>
+          ))}
+        </div>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-[24px] border border-white/8 bg-[#121214]/95 p-5 shadow-xl shadow-black/15">
-            <div className="text-sm uppercase tracking-[0.18em] text-white/40">Squadra</div>
-            <div className="mt-2 text-2xl font-black text-white">{player.team.name}</div>
-          </div>
-
-          <div className="rounded-[24px] border border-white/8 bg-[#121214]/95 p-5 shadow-xl shadow-black/15">
-            <div className="text-sm uppercase tracking-[0.18em] text-white/40">Gol</div>
-            <div className="mt-2 text-2xl font-black text-white">{goals}</div>
-          </div>
-
-          <div className="rounded-[24px] border border-white/8 bg-[#121214]/95 p-5 shadow-xl shadow-black/15">
-            <div className="text-sm uppercase tracking-[0.18em] text-white/40">Assist</div>
-            <div className="mt-2 text-2xl font-black text-white">{assists}</div>
-          </div>
-        </section>
-
-        {editing ? (
-          <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
-            <div className="mb-4 text-xl font-black text-white">Modifica giocatore</div>
+        {/* Edit form */}
+        {editing && (
+          <Card>
+            <h2 className="mb-4 text-lg font-black text-[var(--foreground)]">Modifica giocatore</h2>
 
             <div className="grid gap-4">
-              <div className="grid gap-4 lg:grid-cols-[120px_minmax(0,1fr)] lg:items-start">
+              {/* Photo section */}
+              <div className="grid gap-4 lg:grid-cols-[96px_minmax(0,1fr)] lg:items-start">
                 <div>
                   {photoPreview ? (
                     <img
                       src={photoPreview}
-                      alt="Preview giocatore"
-                      className="h-24 w-24 rounded-3xl border border-white/10 object-cover"
+                      alt="Preview"
+                      className="h-24 w-24 rounded-2xl border border-[var(--border)] object-cover"
                     />
                   ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 text-xs font-bold text-white/35">
-                      NO PHOTO
+                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/5 text-xs font-bold text-[var(--foreground)]/35">
+                      N/A
                     </div>
                   )}
                 </div>
-
                 <div className="space-y-3">
                   <input
                     type="file"
                     accept="image/*"
+                    aria-label="Carica foto giocatore"
                     onChange={(e) => {
                       const file = e.target.files?.[0] ?? null;
                       setPhotoFile(file);
-                      if (file) {
-                        setRemovePhoto(false);
-                      }
+                      if (file) setRemovePhoto(false);
                     }}
-                    className="block w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white file:mr-4 file:rounded-xl file:border-0 file:bg-[var(--accent)] file:px-4 file:py-2 file:font-semibold file:text-black"
+                    className="block w-full rounded-xl border border-[var(--border)] bg-white/5 px-3.5 py-2.5 text-sm text-[var(--foreground)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-black"
                   />
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPhotoFile(null);
-                      setPhotoUrl("");
-                      setRemovePhoto(true);
-                    }}
-                    className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm text-red-200"
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => { setPhotoFile(null); setPhotoUrl(""); setRemovePhoto(true); }}
                   >
                     Rimuovi foto
-                  </button>
-
-                  <p className="text-sm text-white/50">
-                    Carica un’immagine dal dispositivo. Max 5 MB.
-                  </p>
+                  </Button>
+                  <p className="text-xs text-[var(--foreground)]/50">Max 5 MB.</p>
                 </div>
               </div>
 
+              {/* Fields */}
               <div className="grid gap-3 lg:grid-cols-2">
-                <input
+                <Input
+                  aria-label="Nome"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Nome"
-                  className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35"
                 />
-
-                <input
+                <Input
+                  aria-label="Cognome"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Cognome"
-                  className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35"
                 />
-
-                <input
+                <Input
+                  aria-label="Numero maglia"
                   value={number}
                   onChange={(e) => setNumber(e.target.value.replace(/[^\d]/g, ""))}
                   placeholder="Numero"
                   inputMode="numeric"
-                  className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none placeholder:text-white/35"
                 />
-
-                <select
+                <Select
+                  aria-label="Ruolo"
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="h-14 rounded-2xl border border-white/10 bg-white/5 px-4 text-white outline-none"
                 >
-                  <option value="" className="text-black">
-                    Ruolo
-                  </option>
+                  <option value="" className="text-black">Ruolo</option>
                   {POSITIONS.map((p) => (
-                    <option key={p} value={p} className="text-black">
-                      {p}
-                    </option>
+                    <option key={p} value={p} className="text-black">{p}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
 
-            <button
-              onClick={savePlayer}
-              disabled={saving}
-              className="mt-4 rounded-2xl bg-[var(--accent)] px-5 py-3 font-bold text-black disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? "Salvataggio..." : "Salva modifiche"}
-            </button>
-          </section>
-        ) : null}
+            <div className="mt-4 flex gap-3">
+              <Button onClick={savePlayer} disabled={saving}>
+                {saving ? "Salvataggio…" : "Salva modifiche"}
+              </Button>
+              <Button variant="secondary" onClick={() => setEditing(false)}>
+                Annulla
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
     </DashboardShell>
   );

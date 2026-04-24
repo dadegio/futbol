@@ -79,7 +79,7 @@ export default function PlayersPage() {
               placeholder="Cerca per nome, cognome, numero o squadra"
               className="flex-1"
             />
-            <Button className="h-14">Cerca</Button>
+            <Button>Cerca</Button>
           </form>
 
           {err && <Badge variant="error" className="mt-4">{err}</Badge>}
@@ -97,7 +97,7 @@ export default function PlayersPage() {
               <Link
                 key={p.id}
                 href={`/leagues/${leagueId}/players/${p.id}`}
-                className="rounded-[24px] border border-white/8 bg-[var(--card-2)] p-4 md:p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4 md:p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
               >
                 <div className="flex items-start gap-4">
                   {p.photoUrl ? (

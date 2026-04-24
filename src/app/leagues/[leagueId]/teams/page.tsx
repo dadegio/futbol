@@ -119,7 +119,7 @@ export default function TeamsPage() {
                 onChange={(e) => setBadgeUrl(e.target.value)}
                 placeholder="Stemma (URL) opzionale"
               />
-              <Button onClick={createTeam} className="h-14">
+              <Button onClick={createTeam}>
                 Crea squadra
               </Button>
             </div>
@@ -142,7 +142,7 @@ export default function TeamsPage() {
               <Link
                 key={t.id}
                 href={`/leagues/${leagueId}/teams/${t.id}`}
-                className="flex items-center justify-between gap-4 rounded-[24px] border border-white/8 bg-[var(--card-2)] p-4 md:p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
+                className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4 md:p-5 transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
               >
                 <div className="min-w-0">
                   <div className="text-lg md:text-xl font-bold text-[var(--foreground)] break-words">
