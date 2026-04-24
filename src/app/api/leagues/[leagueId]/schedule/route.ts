@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { generateRoundRobin } from "@/lib/scheduler";
 import { requireAdmin } from "@/lib/server-auth";
 
-export async function GET(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+export async function GET(
+  req: Request,
+  ctx: { params: Promise<{ leagueId: string }> }
+) {
   const { leagueId } = await ctx.params;
 
   const { searchParams } = new URL(req.url);
@@ -28,15 +31,30 @@ export async function GET(req: Request, ctx: { params: Promise<{ leagueId: strin
       awayGoals: true,
       seriesId: true,
       leg: true,
-      homeTeam: { select: { id: true, name: true } },
-      awayTeam: { select: { id: true, name: true } },
+      homeTeam: {
+        select: {
+          id: true,
+          name: true,
+          badgeUrl: true,
+        },
+      },
+      awayTeam: {
+        select: {
+          id: true,
+          name: true,
+          badgeUrl: true,
+        },
+      },
     },
   });
 
   return NextResponse.json(matches);
 }
 
-export async function POST(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+export async function POST(
+  req: Request,
+  ctx: { params: Promise<{ leagueId: string }> }
+) {
   const authErr = await requireAdmin();
   if (authErr) return authErr;
 
@@ -53,15 +71,24 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
     const dateRaw = body?.date ? String(body.date).trim() : null;
 
     if (!Number.isInteger(round) || round <= 0) {
-      return NextResponse.json({ error: "Giornata non valida" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Giornata non valida" },
+        { status: 400 }
+      );
     }
 
     if (!homeTeamId || !awayTeamId) {
-      return NextResponse.json({ error: "Squadre mancanti" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Squadre mancanti" },
+        { status: 400 }
+      );
     }
 
     if (homeTeamId === awayTeamId) {
-      return NextResponse.json({ error: "Una squadra non può giocare contro se stessa" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Una squadra non può giocare contro se stessa" },
+        { status: 400 }
+      );
     }
 
     const teams = await prisma.team.findMany({
@@ -73,7 +100,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
     });
 
     if (teams.length !== 2) {
-      return NextResponse.json({ error: "Squadre non valide per questa lega" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Squadre non valide per questa lega" },
+        { status: 400 }
+      );
     }
 
     try {
@@ -98,8 +128,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
 
   // modalità automatica
   const random = body?.random !== false;
+
   const seed =
-    body?.seed === undefined || body?.seed === null || String(body.seed).trim() === ""
+    body?.seed === undefined ||
+    body?.seed === null ||
+    String(body.seed).trim() === ""
       ? undefined
       : Number(body.seed);
 
@@ -113,11 +146,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
   });
 
   const teamIds = teams.map((t) => t.id);
+
   if (teamIds.length < 2) {
-    return NextResponse.json({ error: "Servono almeno 2 squadre" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Servono almeno 2 squadre" },
+      { status: 400 }
+    );
   }
 
-  await prisma.match.deleteMany({ where: { leagueId, seriesId: null } });
+  await prisma.match.deleteMany({
+    where: { leagueId, seriesId: null },
+  });
 
   const pairings = generateRoundRobin(teamIds, { random, seed });
 
@@ -130,6 +169,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
     })),
   });
 
-  const rounds = pairings.length ? Math.max(...pairings.map((p) => p.round)) : 0;
-  return NextResponse.json({ created: pairings.length, rounds });
+  const rounds = pairings.length
+    ? Math.max(...pairings.map((p) => p.round))
+    : 0;
+
+  return NextResponse.json({
+    created: pairings.length,
+    rounds,
+  });
 }
