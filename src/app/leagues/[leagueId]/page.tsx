@@ -1,176 +1,383 @@
-export const runtime = "nodejs";
+"use client";
 
-import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import DashboardShell from "src/app/_components/dashboard-shell";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Trophy, Users, BarChart3, Swords } from "lucide-react";
+import { useParams } from "next/navigation";
+import DashboardShell from "src/app/_components/dashboard-shell";
+import Card from "src/app/_components/ui/card";
 
-export default async function LeagueHome({
-  params,
-}: {
-  params: Promise<{ leagueId: string }>;
-}) {
-  const { leagueId } = await params;
+type League = {
+  id: string;
+  name: string;
+};
 
-  const league = await prisma.league.findUnique({
-    where: { id: leagueId },
-    select: {
-      id: true,
-      name: true,
-      playoffFormat: true,
-      _count: {
-        select: {
-          teams: true,
-          matches: true,
-        },
-      },
-    },
-  });
+type Team = {
+  id: string;
+  name: string;
+};
 
-  if (!league) return notFound();
+type Match = {
+  id: string;
+  leagueId: string;
+  round: number;
+  date: string | null;
+  homeGoals: number | null;
+  awayGoals: number | null;
+  homeTeam: Team;
+  awayTeam: Team;
+};
 
-  const stats = [
-    {
-      label: "Squadre",
-      value: league._count.teams,
-      icon: <Users size={18} />,
-      href: `/leagues/${leagueId}/teams`,
-    },
-    {
-      label: "Partite",
-      value: league._count.matches,
-      icon: <CalendarDays size={18} />,
-      href: `/leagues/${leagueId}/calendar`,
-    },
-    {
-      label: "Classifica",
-      value: "Live",
-      icon: <Trophy size={18} />,
-      href: `/leagues/${leagueId}/table`,
-    },
-    {
-      label: "Statistiche",
-      value: "Top 5",
-      icon: <BarChart3 size={18} />,
-      href: `/leagues/${leagueId}/stats`,
-    },
-    {
-      label: "Playoff",
-      value: league.playoffFormat
-        ? league.playoffFormat === "TWO_LEG" ? "A/R" : "Diretta"
-        : "—",
-      icon: <Swords size={18} />,
-      href: `/leagues/${leagueId}/playoffs`,
-    },
-  ];
+type TableRow = {
+  teamId: string;
+  teamName: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  gf: number;
+  ga: number;
+  gd: number;
+  points: number;
+};
+
+async function getJSON<T>(url: string): Promise<T> {
+  const res = await fetch(url, { cache: "no-store" });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error((data as any)?.error ?? "Errore caricamento dati");
+  }
+
+  return data as T;
+}
+
+function isPlayed(match: Match) {
+  return match.homeGoals !== null && match.awayGoals !== null;
+}
+
+export default function LeagueHomePage() {
+  const { leagueId } = useParams<{ leagueId: string }>();
+
+  const [league, setLeague] = useState<League | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [table, setTable] = useState<TableRow[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!leagueId) return;
+
+    async function load() {
+      try {
+        setErr(null);
+
+        const [leagueData, teamsData, matchesData, tableData] =
+          await Promise.all([
+            getJSON<League>(`/api/leagues/${leagueId}`),
+            getJSON<any[]>(`/api/leagues/${leagueId}/teams`),
+            getJSON<Match[]>(`/api/leagues/${leagueId}/schedule`),
+            getJSON<TableRow[]>(`/api/leagues/${leagueId}/table`),
+          ]);
+
+        setLeague(leagueData);
+        setTeams(teamsData.map((team) => ({ id: team.id, name: team.name })));
+        setMatches(matchesData);
+        setTable(tableData);
+      } catch (error: any) {
+        setErr(error.message);
+      }
+    }
+
+    load();
+  }, [leagueId]);
+
+  const rounds = useMemo(
+    () => [...new Set(matches.map((match) => match.round))].sort((a, b) => a - b),
+    [matches]
+  );
+
+  const totalRounds = rounds.length || Math.max(teams.length * 2 - 2, 1);
+
+  const currentRound = useMemo(() => {
+    if (rounds.length === 0) return 1;
+
+    for (const round of rounds) {
+      const roundMatches = matches.filter((match) => match.round === round);
+      const allPlayed =
+        roundMatches.length > 0 && roundMatches.every((match) => isPlayed(match));
+
+      if (!allPlayed) return round;
+    }
+
+    return rounds[rounds.length - 1] ?? 1;
+  }, [matches, rounds]);
+
+  const playedMatches = useMemo(
+    () => matches.filter((match) => isPlayed(match)),
+    [matches]
+  );
+
+  const totalGoals = useMemo(
+    () =>
+      playedMatches.reduce(
+        (sum, match) => sum + (match.homeGoals ?? 0) + (match.awayGoals ?? 0),
+        0
+      ),
+    [playedMatches]
+  );
+
+  const liveMatch = useMemo(() => {
+    const withScore = matches.find((match) => isPlayed(match));
+    return withScore ?? matches[0] ?? null;
+  }, [matches]);
+
+  const nextMatches = useMemo(
+    () => matches.filter((match) => !isPlayed(match)).slice(0, 2),
+    [matches]
+  );
+
+  if (!leagueId) return null;
 
   return (
     <DashboardShell leagueId={leagueId}>
-      <div className="space-y-5">
+      <div className="mx-auto max-w-[480px] space-y-6 px-1 pb-8">
+        <header className="pt-2">
+          <Link
+            href="/"
+            className="mb-8 flex items-center gap-3 text-sm text-[var(--muted)]"
+          >
+            <span className="text-xl leading-none">‹</span>
+            <span>{league?.name ?? "Torneo"}</span>
+          </Link>
 
-        {/* Stat cards */}
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {stats.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)]/30"
-            >
-              <div className="mb-3 inline-flex rounded-xl bg-[var(--accent)]/10 p-2.5 text-[var(--accent)]">
-                {item.icon}
-              </div>
-              <div className="text-xs font-medium uppercase tracking-widest text-[var(--foreground)]/45">
-                {item.label}
-              </div>
-              <div className="mt-1 text-2xl font-black text-[var(--foreground)]">{item.value}</div>
-            </Link>
-          ))}
-        </section>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
+              {league?.name ?? "Coppa Primavera"}
+            </h1>
 
-        <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          {/* Quick links */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
-              Cosa puoi fare
-            </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {[
-                {
-                  title: "Calendario partite",
-                  description: "Visualizza tutte le giornate, genera il calendario e inserisci i risultati.",
-                  href: `/leagues/${leagueId}/calendar`,
-                  cta: "Vai al calendario",
-                },
-                {
-                  title: "Gestione squadre",
-                  description: "Crea nuove squadre, gestisci le rose e tieni organizzato il torneo.",
-                  href: `/leagues/${leagueId}/teams`,
-                  cta: "Vai alle squadre",
-                },
-                {
-                  title: "Classifica live",
-                  description: "Controlla punti, vittorie, differenza reti e andamento del campionato.",
-                  href: `/leagues/${leagueId}/table`,
-                  cta: "Vai alla classifica",
-                },
-                {
-                  title: "Top stats",
-                  description: "Guarda top marcatori e assistman del torneo in una vista leggibile.",
-                  href: `/leagues/${leagueId}/stats`,
-                  cta: "Vai alle stats",
-                },
-                {
-                  title: "Playoff",
-                  description: league.playoffFormat
-                    ? "Gestisci il tabellone, inserisci risultati e avanza le squadre."
-                    : "Configura la fase a eliminazione dopo il campionato.",
-                  href: `/leagues/${leagueId}/playoffs`,
-                  cta: league.playoffFormat ? "Vai ai playoff" : "Configura playoff",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4"
-                >
-                  <p className="font-semibold text-[var(--foreground)]">{item.title}</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-[var(--foreground)]/55">
-                    {item.description}
-                  </p>
-                  <Link
-                    href={item.href}
-                    className="mt-3 inline-flex rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-black transition-colors hover:bg-[var(--accent-2)]"
-                  >
-                    {item.cta}
-                  </Link>
-                </div>
-              ))}
+            <span className="rounded-full bg-[#d9f6df] px-4 py-2 text-sm font-bold text-green-800">
+              In corso
+            </span>
+          </div>
+        </header>
+
+        {err && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {err}
+          </div>
+        )}
+
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="text-base font-semibold">Stagione regolare</div>
+            <div className="text-sm font-semibold text-[var(--muted)]">
+              G{currentRound}
+              <span className="mx-2 text-[var(--muted)]">/</span>
+              {totalRounds}
             </div>
           </div>
 
-          {/* Snapshot */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
-              Snapshot
-            </p>
-            <div className="mt-4 space-y-3">
-              {[
-                { label: "Nome torneo", value: league.name },
-                { label: "Squadre registrate", value: league._count.teams },
-                { label: "Partite create", value: league._count.matches },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4"
-                >
-                  <p className="text-xs text-[var(--foreground)]/50">{s.label}</p>
-                  <p className="mt-1 text-xl font-bold text-[var(--foreground)]">{s.value}</p>
-                </div>
-              ))}
+          <div className="h-1 rounded-full bg-[#ece9df]">
+            <div
+              className="h-1 rounded-full bg-[var(--accent)]"
+              style={{
+                width: `${Math.min((currentRound / totalRounds) * 100, 100)}%`,
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 pt-1">
+            <SummaryStat label="Squadre" value={teams.length} />
+            <SummaryStat label="Partite" value={matches.length} />
+            <SummaryStat label="Goal" value={totalGoals} />
+          </div>
+        </Card>
+
+        {liveMatch && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-[-0.03em]">
+                In diretta
+              </h2>
+
+              <Link
+                href={`/leagues/${leagueId}/calendar`}
+                className="text-sm font-semibold text-[var(--accent)]"
+              >
+                Dettagli →
+              </Link>
             </div>
+
+            <Card>
+              <div className="mb-4 flex items-center justify-between text-sm">
+                <span className="font-semibold text-red-600">
+                  <span className="mr-2 inline-block h-2 w-2 rounded-full bg-red-600" />
+                  67&apos;
+                </span>
+                <span className="font-semibold text-[var(--muted)]">
+                  G{liveMatch.round}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <div className="flex items-center gap-3">
+                  <TeamBadge name={liveMatch.homeTeam.name} />
+                  <span className="truncate text-base font-semibold">
+                    {liveMatch.homeTeam.name}
+                  </span>
+                </div>
+
+                <div className="whitespace-nowrap text-[38px] font-black tracking-[-0.08em]">
+                  {liveMatch.homeGoals ?? 0}
+                  <span className="mx-2 text-[var(--muted)]">-</span>
+                  {liveMatch.awayGoals ?? 0}
+                </div>
+
+                <div className="flex items-center justify-end gap-3">
+                  <span className="truncate text-right text-base font-semibold">
+                    {liveMatch.awayTeam.name}
+                  </span>
+                  <TeamBadge name={liveMatch.awayTeam.name} />
+                </div>
+              </div>
+            </Card>
+          </section>
+        )}
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-[-0.03em]">
+              Classifica
+            </h2>
+
+            <Link
+              href={`/leagues/${leagueId}/table`}
+              className="text-sm font-semibold text-[var(--accent)]"
+            >
+              Vedi tutto →
+            </Link>
+          </div>
+
+          <Card className="overflow-hidden !p-0">
+            {table.slice(0, 4).map((row, index) => (
+              <div
+                key={row.teamId}
+                className="grid grid-cols-[34px_32px_1fr_auto] items-center gap-3 border-b border-[var(--border)] px-4 py-4 last:border-b-0"
+              >
+                <span className="text-sm font-medium text-[var(--muted)]">
+                  {index + 1}
+                </span>
+
+                <TeamBadge name={row.teamName} size="sm" />
+
+                <span className="truncate font-semibold">{row.teamName}</span>
+
+                <span className="text-lg font-black">{row.points}</span>
+              </div>
+            ))}
+          </Card>
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-[-0.03em]">
+              Prossime
+            </h2>
+
+            <span className="text-sm font-semibold text-[var(--muted)]">
+              G{currentRound}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {nextMatches.length === 0 ? (
+              <Card className="col-span-2">
+                <p className="text-sm text-[var(--muted)]">
+                  Nessuna prossima partita disponibile.
+                </p>
+              </Card>
+            ) : (
+              nextMatches.map((match) => (
+                <NextMatchCard key={match.id} match={match} />
+              ))
+            )}
           </div>
         </section>
       </div>
     </DashboardShell>
+  );
+}
+
+function SummaryStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="text-sm font-medium text-[var(--muted)]">{label}</div>
+      <div className="mt-1 text-2xl font-black tracking-[-0.05em]">{value}</div>
+    </div>
+  );
+}
+
+function NextMatchCard({ match }: { match: Match }) {
+  return (
+    <Card className="min-h-[136px]">
+      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        SAB 25 APR · 15:00
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <TeamBadge name={match.homeTeam.name} size="sm" />
+          <span className="truncate text-sm font-semibold">
+            {match.homeTeam.name}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <TeamBadge name={match.awayTeam.name} size="sm" />
+          <span className="truncate text-sm font-semibold">
+            {match.awayTeam.name}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function TeamBadge({
+  name,
+  size = "md",
+}: {
+  name: string;
+  size?: "sm" | "md";
+}) {
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const colors = [
+    "bg-green-200 text-green-900",
+    "bg-pink-200 text-pink-900",
+    "bg-cyan-200 text-cyan-900",
+    "bg-orange-200 text-orange-900",
+    "bg-violet-200 text-violet-900",
+    "bg-fuchsia-200 text-fuchsia-900",
+  ];
+
+  const index = initials.charCodeAt(0) % colors.length;
+
+  const sizes = {
+    sm: "h-7 w-7 rounded-lg text-[10px]",
+    md: "h-11 w-11 rounded-[14px] text-base",
+  };
+
+  return (
+    <span
+      className={`flex shrink-0 items-center justify-center font-black ${sizes[size]} ${colors[index]}`}
+    >
+      {initials}
+    </span>
   );
 }
