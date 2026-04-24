@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { determineSeriesWinner } from "@/lib/bracket";
+import { requireAdmin } from "@/lib/server-auth";
 
 type Ctx = { params: Promise<{ leagueId: string }> };
 

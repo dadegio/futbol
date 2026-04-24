@@ -7,6 +7,7 @@ import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Badge from "src/app/_components/ui/badge";
+import { useIsAdmin, authFetch } from "@/lib/client-auth";
 
 type League = { id: string; name: string };
 
@@ -18,7 +19,7 @@ async function getJSON<T>(url: string): Promise<T> {
 }
 
 async function postJSON<T>(url: string, body: any): Promise<T> {
-  const res = await fetch(url, {
+  const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -29,6 +30,7 @@ async function postJSON<T>(url: string, body: any): Promise<T> {
 }
 
 export default function HomePage() {
+  const isAdmin = useIsAdmin();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [name, setName] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export default function HomePage() {
     if (!ok) return;
 
     try {
-      const res = await fetch(`/api/leagues/${id}`, { method: "DELETE" });
+      const res = await authFetch(`/api/leagues/${id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((data as any)?.error ?? "Errore eliminazione");
       await load();
@@ -101,13 +103,15 @@ export default function HomePage() {
               <div className="rounded-full bg-white/6 px-4 py-2 text-sm text-white/60">
                 {leagues.length} tornei salvati
               </div>
-              <Button size="sm" onClick={() => setShowCreateLeague((v) => !v)}>
-                {showCreateLeague ? "Chiudi" : "Nuovo torneo"}
-              </Button>
+              {isAdmin && (
+                <Button size="sm" onClick={() => setShowCreateLeague((v) => !v)}>
+                  {showCreateLeague ? "Chiudi" : "Nuovo torneo"}
+                </Button>
+              )}
             </div>
           </div>
 
-          {showCreateLeague && (
+          {isAdmin && showCreateLeague && (
             <Card variant="inner">
               <div className="mb-3 text-lg font-bold text-white">Nuovo torneo</div>
 

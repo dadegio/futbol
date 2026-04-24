@@ -10,6 +10,7 @@ import Badge from "src/app/_components/ui/badge";
 import PlayoffSetup from "./playoff-setup";
 import BracketView from "./bracket";
 import type { SeriesData } from "./series-card";
+import { useAuth, useIsAdmin, authFetch } from "@/lib/client-auth";
 
 type PlayoffData = {
   configured: boolean;
@@ -30,6 +31,8 @@ const ROUND_NAMES: Record<number, string> = {
 
 export default function PlayoffsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
+  const isAdmin = useIsAdmin();
+  const { user } = useAuth();
 
   const [data, setData] = useState<PlayoffData | null>(null);
   const [teamCount, setTeamCount] = useState(0);
@@ -70,7 +73,7 @@ export default function PlayoffsPage() {
     setAdvancing(seriesId);
     setErr(null);
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/playoffs/advance`, {
+      const res = await authFetch(`/api/leagues/${leagueId}/playoffs/advance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seriesId }),
@@ -90,7 +93,7 @@ export default function PlayoffsPage() {
     setDeleting(true);
     setErr(null);
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/playoffs`, { method: "DELETE" });
+      const res = await authFetch(`/api/leagues/${leagueId}/playoffs`, { method: "DELETE" });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d?.error ?? "Errore");
       await load();
@@ -121,8 +124,8 @@ export default function PlayoffsPage() {
           <div className="text-[var(--foreground)]/60">Caricamento...</div>
         )}
 
-        {/* Setup form when no playoffs configured */}
-        {!loading && data && !data.configured && (
+        {/* Setup form when no playoffs configured — admin only */}
+        {!loading && data && !data.configured && isAdmin && (
           <Card>
             <div className="mb-4 text-lg font-black text-[var(--foreground)]">
               Configura playoff
@@ -181,14 +184,16 @@ export default function PlayoffsPage() {
                   >
                     Stampa
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                  >
-                    {deleting ? "Eliminazione..." : "Elimina playoff"}
-                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                    >
+                      {deleting ? "Eliminazione..." : "Elimina playoff"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
@@ -272,18 +277,23 @@ export default function PlayoffsPage() {
                                 {/* Action buttons */}
                                 {s.homeTeam && s.awayTeam && !s.winnerId && (
                                   <>
-                                    {s.matches.map((m) => (
-                                      <Link
-                                        key={m.id}
-                                        href={`/leagues/${leagueId}/matches/${m.id}`}
-                                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
-                                      >
-                                        {m.homeGoals !== null ? "Modifica" : "Risultato"}
-                                        {data.format === "TWO_LEG" ? ` G${m.leg}` : ""}
-                                      </Link>
-                                    ))}
+                                    {/* Show result links to admin or captains of either team */}
+                                    {(isAdmin ||
+                                      (user?.role === "CAPTAIN" &&
+                                        (user.teamId === s.homeTeam?.id ||
+                                          user.teamId === s.awayTeam?.id))) &&
+                                      s.matches.map((m) => (
+                                        <Link
+                                          key={m.id}
+                                          href={`/leagues/${leagueId}/matches/${m.id}`}
+                                          className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
+                                        >
+                                          {m.homeGoals !== null ? "Modifica" : "Risultato"}
+                                          {data.format === "TWO_LEG" ? ` G${m.leg}` : ""}
+                                        </Link>
+                                      ))}
 
-                                    {allPlayed && (
+                                    {allPlayed && isAdmin && (
                                       <Button
                                         size="sm"
                                         onClick={() => handleAdvance(s.id)}

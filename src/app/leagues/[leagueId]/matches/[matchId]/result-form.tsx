@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import { useAuth, authFetch } from "@/lib/client-auth";
 
 type Player = {
   id: string;
@@ -39,6 +40,12 @@ type Match = {
 };
 
 export default function MatchResultForm({ match }: { match: Match }) {
+  const { user, loading: authLoading } = useAuth();
+  const canEdit =
+    !authLoading &&
+    (user?.role === "ADMIN" ||
+      (user?.role === "CAPTAIN" &&
+        (user.teamId === match.homeTeamId || user.teamId === match.awayTeamId)));
   const router = useRouter();
   const [homeGoals, setHomeGoals] = useState<string>(
     match.homeGoals === null ? "" : String(match.homeGoals)
@@ -138,7 +145,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/matches/${match.id}/result`, {
+      const res = await authFetch(`/api/matches/${match.id}/result`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -199,28 +206,38 @@ export default function MatchResultForm({ match }: { match: Match }) {
         ) : null}
 
         <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-6 shadow-2xl shadow-black/20">
+          {!canEdit && (
+            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[var(--foreground)]/60">
+              Sola lettura — accedi come admin o capitano per modificare il risultato.
+            </div>
+          )}
+
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div className="grid gap-4 md:grid-cols-2">
               <ScoreBox
                 label={match.homeTeam.name}
                 value={homeGoals}
-                onChange={(v) => setHomeGoals(v.replace(/[^\d]/g, ""))}
+                onChange={(v) => canEdit && setHomeGoals(v.replace(/[^\d]/g, ""))}
+                readOnly={!canEdit}
               />
               <ScoreBox
                 label={match.awayTeam.name}
                 value={awayGoals}
-                onChange={(v) => setAwayGoals(v.replace(/[^\d]/g, ""))}
+                onChange={(v) => canEdit && setAwayGoals(v.replace(/[^\d]/g, ""))}
+                readOnly={!canEdit}
               />
             </div>
 
             <div className="flex flex-col gap-3 xl:items-end">
-              <button
-                onClick={save}
-                disabled={saving}
-                className="rounded-2xl bg-[var(--accent)] px-5 py-3 font-bold text-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {saving ? "Salvataggio..." : "Salva risultato + stats"}
-              </button>
+              {canEdit && (
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="rounded-2xl bg-[var(--accent)] px-5 py-3 font-bold text-black disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? "Salvataggio..." : "Salva risultato + stats"}
+                </button>
+              )}
 
               <div className="flex flex-wrap gap-3 text-sm text-white/65">
                 <div className="rounded-2xl bg-white/5 px-4 py-2">
@@ -240,6 +257,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
             players={homePlayers}
             stats={stats}
             setPlayerStat={setPlayerStat}
+            readOnly={!canEdit}
           />
 
           <TeamStatsCard
@@ -247,6 +265,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
             players={awayPlayers}
             stats={stats}
             setPlayerStat={setPlayerStat}
+            readOnly={!canEdit}
           />
         </section>
 
@@ -267,10 +286,12 @@ function ScoreBox({
   label,
   value,
   onChange,
+  readOnly,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  readOnly?: boolean;
 }) {
   return (
     <div className="rounded-[24px] border border-white/8 bg-[#17171a] p-5">
@@ -280,7 +301,11 @@ function ScoreBox({
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
         inputMode="numeric"
-        className="mt-4 h-16 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-center text-3xl font-black text-white outline-none placeholder:text-white/20 focus:border-[var(--accent)]/40"
+        readOnly={readOnly}
+        className={[
+          "mt-4 h-16 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-center text-3xl font-black text-white outline-none placeholder:text-white/20",
+          readOnly ? "cursor-default opacity-75" : "focus:border-[var(--accent)]/40",
+        ].join(" ")}
       />
     </div>
   );
@@ -291,11 +316,13 @@ function TeamStatsCard({
   players,
   stats,
   setPlayerStat,
+  readOnly,
 }: {
   title: string;
   players: Player[];
   stats: Record<string, { goals: string; assists: string }>;
   setPlayerStat: (playerId: string, key: "goals" | "assists", value: string) => void;
+  readOnly?: boolean;
 }) {
   return (
     <section className="rounded-[28px] border border-white/8 bg-[var(--card)]/95 p-4 md:p-5 shadow-2xl shadow-black/20">
@@ -326,9 +353,10 @@ function TeamStatsCard({
                   <input
                     value={stats[p.id]?.goals ?? ""}
                     placeholder="0"
-                    onChange={(e) => setPlayerStat(p.id, "goals", e.target.value)}
+                    onChange={(e) => !readOnly && setPlayerStat(p.id, "goals", e.target.value)}
                     inputMode="numeric"
-                    className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-center font-bold text-[var(--foreground)] outline-none focus:border-[var(--accent)]/40"
+                    readOnly={readOnly}
+                    className={["h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-center font-bold text-[var(--foreground)] outline-none", readOnly ? "cursor-default opacity-75" : "focus:border-[var(--accent)]/40"].join(" ")}
                   />
                 </div>
 
@@ -339,9 +367,10 @@ function TeamStatsCard({
                   <input
                     value={stats[p.id]?.assists ?? ""}
                     placeholder="0"
-                    onChange={(e) => setPlayerStat(p.id, "assists", e.target.value)}
+                    onChange={(e) => !readOnly && setPlayerStat(p.id, "assists", e.target.value)}
                     inputMode="numeric"
-                    className="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-center font-bold text-[var(--foreground)] outline-none focus:border-[var(--accent)]/40"
+                    readOnly={readOnly}
+                    className={["h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-center font-bold text-[var(--foreground)] outline-none", readOnly ? "cursor-default opacity-75" : "focus:border-[var(--accent)]/40"].join(" ")}
                   />
                 </div>
               </div>

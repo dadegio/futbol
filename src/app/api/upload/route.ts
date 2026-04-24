@@ -1,5 +1,6 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { getServerSession } from "@/lib/server-auth";
 
 export const runtime = "nodejs";
 

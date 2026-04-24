@@ -9,6 +9,7 @@ import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Select from "src/app/_components/ui/select";
 import Badge from "src/app/_components/ui/badge";
+import { useIsAdmin, authFetch } from "@/lib/client-auth";
 
 type Team = { id: string; name: string };
 
@@ -33,7 +34,7 @@ async function getJSON<T>(url: string): Promise<T> {
 }
 
 async function postJSON<T>(url: string, body: any): Promise<T> {
-  const res = await fetch(url, {
+  const res = await authFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -49,6 +50,7 @@ function isPlayed(match: Match) {
 
 export default function CalendarPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
+  const isAdmin = useIsAdmin();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -184,7 +186,7 @@ export default function CalendarPage() {
     try {
       setSubmittingManual(true);
 
-      const res = await fetch(`/api/leagues/${leagueId}/schedule`, {
+      const res = await authFetch(`/api/leagues/${leagueId}/schedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -255,13 +257,15 @@ export default function CalendarPage() {
                 ))}
               </Select>
 
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowCalendarTools((v) => !v)}
-              >
-                {showCalendarTools ? "Nascondi gestione calendario" : "Gestisci calendario"}
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowCalendarTools((v) => !v)}
+                >
+                  {showCalendarTools ? "Nascondi gestione calendario" : "Gestisci calendario"}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -277,7 +281,7 @@ export default function CalendarPage() {
             </Badge>
           </div>
 
-          {showCalendarTools && (
+          {isAdmin && showCalendarTools && (
             <div className="mt-6 space-y-6">
               <Card variant="inner">
                 <div className="mb-3 text-lg font-black text-[var(--foreground)]">

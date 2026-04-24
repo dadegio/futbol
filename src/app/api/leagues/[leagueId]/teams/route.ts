@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/server-auth";
 
 export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await ctx.params;
@@ -14,6 +15,9 @@ export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string 
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+  const authErr = await requireAdmin();
+  if (authErr) return authErr;
+
   const { leagueId } = await ctx.params;
 
   const body = await req.json().catch(() => ({}));

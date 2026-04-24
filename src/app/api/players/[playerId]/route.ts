@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminOrCaptainOfPlayer } from "@/lib/server-auth";
 
 function toPositiveInt(value: unknown) {
   const n = Number(value);
@@ -42,6 +43,9 @@ export async function GET(_: Request, ctx: { params: Promise<{ playerId: string 
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ playerId: string }> }) {
   const { playerId } = await ctx.params;
+  const authErr = await requireAdminOrCaptainOfPlayer(playerId);
+  if (authErr) return authErr;
+
 
   const body = await req.json().catch(() => ({}));
   const firstName = String(body?.firstName ?? "").trim();
@@ -92,6 +96,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ playerId: str
 
 export async function DELETE(_: Request, ctx: { params: Promise<{ playerId: string }> }) {
   const { playerId } = await ctx.params;
+  const authErr = await requireAdminOrCaptainOfPlayer(playerId);
+  if (authErr) return authErr;
+
 
   const existing = await prisma.player.findUnique({
     where: { id: playerId },

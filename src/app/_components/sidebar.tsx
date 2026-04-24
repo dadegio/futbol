@@ -13,6 +13,8 @@ import {
   Swords,
 } from "lucide-react";
 import ThemePicker from "./theme-picker";
+import AuthButton from "./auth-button";
+import { useIsAdmin } from "@/lib/client-auth";
 
 type SidebarProps = {
   leagueId?: string;
@@ -48,6 +50,7 @@ function NavItem({
 export default function Sidebar({ leagueId }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isAdmin = useIsAdmin();
   const [search, setSearch] = useState("");
   const [leagueName, setLeagueName] = useState<string | null>(null);
 
@@ -145,11 +148,26 @@ export default function Sidebar({ leagueId }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="mt-6 border-t border-[var(--border)] pt-4">
-        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)]/35">
-          Tema
+      {isAdmin && (
+        <div className="mt-4">
+          <NavItem
+            href="/admin/users"
+            icon={<Users size={20} />}
+            label="Utenti"
+            active={pathname === "/admin/users"}
+          />
         </div>
-        <ThemePicker />
+      )}
+
+      <div className="mt-6 border-t border-[var(--border)] pt-4 space-y-4">
+        <AuthButton />
+
+        <div>
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)]/35">
+            Tema
+          </div>
+          <ThemePicker />
+        </div>
       </div>
     </aside>
   );

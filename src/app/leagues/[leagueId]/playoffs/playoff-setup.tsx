@@ -1,5 +1,7 @@
 "use client";
 
+import { authFetch } from "@/lib/client-auth";
+
 import { useCallback, useEffect, useState } from "react";
 import Button from "src/app/_components/ui/button";
 import Badge from "src/app/_components/ui/badge";
@@ -78,7 +80,7 @@ export default function PlayoffSetup({ leagueId, teamCount, onCreated }: Props) 
     setSubmitting(true);
 
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/playoffs`, {
+      const res = await authFetch(`/api/leagues/${leagueId}/playoffs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -2,8 +2,13 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminOrCaptainOfTeam } from "@/lib/server-auth";
 
 export async function POST(req: Request, ctx: { params: Promise<{ teamId: string }> }) {
+  const { teamId: _swapTeamId } = await ctx.params;
+  const authSwapErr = await requireAdminOrCaptainOfTeam(_swapTeamId);
+  if (authSwapErr) return authSwapErr;
+
   const { teamId } = await ctx.params;
 
   const body = await req.json().catch(() => ({}));

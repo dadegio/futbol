@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminOrCaptainOfMatch } from "@/lib/server-auth";
 
 type Body = {
   homeGoals?: number;
@@ -17,6 +18,9 @@ function asNonNegInt(n: any) {
 
 export async function POST(req: Request, ctx: { params: Promise<{ matchId: string }> }) {
   const { matchId } = await ctx.params;
+  const authErr = await requireAdminOrCaptainOfMatch(matchId);
+  if (authErr) return authErr;
+
   const body = (await req.json().catch(() => ({}))) as Body;
 
   const homeGoals = body.homeGoals === undefined ? undefined : asNonNegInt(body.homeGoals);

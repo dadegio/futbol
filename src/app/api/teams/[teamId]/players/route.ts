@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminOrCaptainOfTeam } from "@/lib/server-auth";
 
 function toNonNegInt(value: any) {
   const n = Number(value);
@@ -11,6 +12,9 @@ function toNonNegInt(value: any) {
 
 export async function POST(req: Request, ctx: { params: Promise<{ teamId: string }> }) {
   const { teamId } = await ctx.params;
+  const authErr = await requireAdminOrCaptainOfTeam(teamId);
+  if (authErr) return authErr;
+
 
   const body = await req.json().catch(() => ({}));
   const firstName = String(body?.firstName ?? "").trim();

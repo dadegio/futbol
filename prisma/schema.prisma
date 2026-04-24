@@ -12,6 +12,21 @@ enum PlayoffFormat {
   TWO_LEG
 }
 
+enum Role {
+  ADMIN
+  CAPTAIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role
+  teamId       String?  @unique
+  team         Team?    @relation("TeamCaptain", fields: [teamId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+}
+
 model League {
   id        String   @id @default(cuid())
   name      String
@@ -42,6 +57,8 @@ model Team {
   homeSeries  PlayoffSeries[] @relation("SeriesHome")
   awaySeries  PlayoffSeries[] @relation("SeriesAway")
   wonSeries   PlayoffSeries[] @relation("SeriesWinner")
+
+  captain     User?           @relation("TeamCaptain")
 
   @@unique([leagueId, name])
 }

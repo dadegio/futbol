@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
+import { useCanEditTeam, authFetch } from "@/lib/client-auth";
 
 type Player = {
   id: string;
@@ -29,7 +30,7 @@ async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("/api/upload", {
+  const res = await authFetch("/api/upload", {
     method: "POST",
     body: formData,
   });
@@ -42,6 +43,7 @@ async function uploadImage(file: File): Promise<string> {
 
 export default function TeamPage() {
   const { leagueId, teamId } = useParams<{ leagueId: string; teamId: string }>();
+  const canEdit = useCanEditTeam(teamId);
 
   const [team, setTeam] = useState<Team | null>(null);
 
@@ -125,7 +127,7 @@ export default function TeamPage() {
         finalBadgeUrl = await uploadImage(badgeFile);
       }
 
-      const res = await fetch(`/api/teams/${teamId}`, {
+      const res = await authFetch(`/api/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -163,7 +165,7 @@ export default function TeamPage() {
       return;
     }
 
-    const res = await fetch(`/api/teams/${teamId}/players`, {
+    const res = await authFetch(`/api/teams/${teamId}/players`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -194,7 +196,7 @@ export default function TeamPage() {
     const ok = window.confirm(`Eliminare il giocatore "${label}"?`);
     if (!ok) return;
 
-    const res = await fetch(`/api/players/${playerId}`, { method: "DELETE" });
+    const res = await authFetch(`/api/players/${playerId}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) return setErr(data?.error ?? "Errore eliminazione giocatore");
@@ -254,19 +256,23 @@ export default function TeamPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setEditingTeam((v) => !v)}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
-              >
-                {editingTeam ? "Chiudi modifica" : "Modifica squadra"}
-              </button>
+              {canEdit && (
+                <>
+                  <button
+                    onClick={() => setEditingTeam((v) => !v)}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
+                  >
+                    {editingTeam ? "Chiudi modifica" : "Modifica squadra"}
+                  </button>
 
-              <button
-                onClick={() => setShowAddPlayer((v) => !v)}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
-              >
-                {showAddPlayer ? "Nascondi aggiunta giocatore" : "Aggiungi giocatore"}
-              </button>
+                  <button
+                    onClick={() => setShowAddPlayer((v) => !v)}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/10"
+                  >
+                    {showAddPlayer ? "Nascondi aggiunta giocatore" : "Aggiungi giocatore"}
+                  </button>
+                </>
+              )}
 
               <Link
                 href={`/leagues/${leagueId}/teams`}
@@ -290,7 +296,7 @@ export default function TeamPage() {
           </div>
         ) : null}
 
-        {editingTeam ? (
+        {canEdit && editingTeam ? (
           <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
             <div className="mb-4 text-xl font-black text-white">Modifica squadra</div>
 
@@ -362,7 +368,7 @@ export default function TeamPage() {
           </section>
         ) : null}
 
-        {showAddPlayer ? (
+        {canEdit && showAddPlayer ? (
           <section className="rounded-[28px] border border-white/8 bg-[#121214]/95 p-5 shadow-2xl shadow-black/20">
             <div className="mb-4 text-xl font-black text-white">Aggiungi giocatore</div>
 
@@ -485,17 +491,19 @@ export default function TeamPage() {
                                   Apri profilo
                                 </Link>
 
-                                <button
-                                  onClick={() =>
-                                    deletePlayer(
-                                      player.id,
-                                      `${player.firstName} ${player.lastName}`
-                                    )
-                                  }
-                                  className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm text-red-200"
-                                >
-                                  Elimina
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    onClick={() =>
+                                      deletePlayer(
+                                        player.id,
+                                        `${player.firstName} ${player.lastName}`
+                                      )
+                                    }
+                                    className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm text-red-200"
+                                  >
+                                    Elimina
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
