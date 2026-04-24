@@ -3,64 +3,123 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+type PlayerInfo = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  team: {
+    name: string;
+    badgeUrl: string | null;
+  } | null;
+};
+
+export async function GET(
+  _: Request,
+  ctx: { params: Promise<{ leagueId: string }> }
+) {
   const { leagueId } = await ctx.params;
 
-  // top scorers
   const scorersAgg = await prisma.matchPlayerStat.groupBy({
     by: ["playerId"],
     _sum: { goals: true },
-    where: { match: { leagueId } },
+    where: {
+      match: { leagueId },
+      goals: { gt: 0 },
+    },
     orderBy: { _sum: { goals: "desc" } },
-    take: 5,
+    take: 10,
   });
 
-  // top assists
   const assistsAgg = await prisma.matchPlayerStat.groupBy({
     by: ["playerId"],
     _sum: { assists: true },
-    where: { match: { leagueId } },
+    where: {
+      match: { leagueId },
+      assists: { gt: 0 },
+    },
     orderBy: { _sum: { assists: "desc" } },
-    take: 5,
+    take: 10,
   });
 
-  const scorerIds = scorersAgg.map(x => x.playerId);
-  const assistIds = assistsAgg.map(x => x.playerId);
-  const allIds = Array.from(new Set([...scorerIds, ...assistIds]));
+  const appearancesAgg = await prisma.matchPlayerStat.groupBy({
+    by: ["playerId"],
+    _count: { playerId: true },
+    where: {
+      match: { leagueId },
+    },
+    orderBy: { _count: { playerId: "desc" } },
+    take: 10,
+  });
 
-  const players = await prisma.player.findMany({
+  const scorerIds = scorersAgg.map((item) => item.playerId);
+  const assistIds = assistsAgg.map((item) => item.playerId);
+  const appearanceIds = appearancesAgg.map((item) => item.playerId);
+
+  const allIds = Array.from(
+    new Set([...scorerIds, ...assistIds, ...appearanceIds])
+  );
+
+  const players: PlayerInfo[] = await prisma.player.findMany({
     where: { id: { in: allIds } },
     select: {
       id: true,
       firstName: true,
       lastName: true,
-      team: { select: { name: true } },
+      team: {
+        select: {
+          name: true,
+          badgeUrl: true,
+        },
+      },
     },
   });
 
-  const byId = new Map(players.map(p => [p.id, p]));
+  const byId = new Map<string, PlayerInfo>(
+    players.map((player) => [player.id, player])
+  );
 
-  const scorers = scorersAgg.map(x => {
-    const p = byId.get(x.playerId);
+  const scorers = scorersAgg.map((item) => {
+    const player = byId.get(item.playerId);
+
     return {
-      playerId: x.playerId,
-      firstName: p?.firstName ?? "",
-      lastName: p?.lastName ?? "",
-      teamName: p?.team?.name ?? "",
-      value: x._sum.goals ?? 0,
+      playerId: item.playerId,
+      firstName: player?.firstName ?? "",
+      lastName: player?.lastName ?? "",
+      teamName: player?.team?.name ?? "",
+      teamBadgeUrl: player?.team?.badgeUrl ?? null,
+      value: item._sum.goals ?? 0,
     };
   });
 
-  const assists = assistsAgg.map(x => {
-    const p = byId.get(x.playerId);
+  const assists = assistsAgg.map((item) => {
+    const player = byId.get(item.playerId);
+
     return {
-      playerId: x.playerId,
-      firstName: p?.firstName ?? "",
-      lastName: p?.lastName ?? "",
-      teamName: p?.team?.name ?? "",
-      value: x._sum.assists ?? 0,
+      playerId: item.playerId,
+      firstName: player?.firstName ?? "",
+      lastName: player?.lastName ?? "",
+      teamName: player?.team?.name ?? "",
+      teamBadgeUrl: player?.team?.badgeUrl ?? null,
+      value: item._sum.assists ?? 0,
     };
   });
 
-  return NextResponse.json({ scorers, assists });
+  const appearances = appearancesAgg.map((item) => {
+    const player = byId.get(item.playerId);
+
+    return {
+      playerId: item.playerId,
+      firstName: player?.firstName ?? "",
+      lastName: player?.lastName ?? "",
+      teamName: player?.team?.name ?? "",
+      teamBadgeUrl: player?.team?.badgeUrl ?? null,
+      value: item._count.playerId ?? 0,
+    };
+  });
+
+  return NextResponse.json({
+    scorers,
+    assists,
+    appearances,
+  });
 }
