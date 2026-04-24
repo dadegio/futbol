@@ -229,24 +229,34 @@ export default function PlayoffsPage() {
                           (m) => m.homeGoals !== null && m.awayGoals !== null
                         );
 
+                        const canAct =
+                          s.homeTeam &&
+                          s.awayTeam &&
+                          !s.winnerId &&
+                          (isAdmin ||
+                            (user?.role === "CAPTAIN" &&
+                              (user.teamId === s.homeTeam?.id ||
+                                user.teamId === s.awayTeam?.id)));
+
                         return (
                           <div
                             key={s.id}
-                            className="rounded-2xl border border-white/8 bg-white/[0.03] p-4"
+                            className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4"
                           >
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="min-w-0 flex-1">
-                                <div className="text-base font-bold text-[var(--foreground)]">
+                            {/* Row 1: teams + scores */}
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[var(--foreground)]">
                                   {s.homeSeed && (
-                                    <span className="mr-1 text-xs text-[var(--foreground)]/40">
+                                    <span className="mr-1 text-xs text-[var(--foreground)]/50">
                                       #{s.homeSeed}
                                     </span>
                                   )}
-                                  {s.homeTeam?.name ?? "TBD"}{" "}
-                                  <span className="text-[var(--foreground)]/35">vs</span>{" "}
+                                  {s.homeTeam?.name ?? "TBD"}
+                                  <span className="mx-2 font-normal text-[var(--foreground)]/35">vs</span>
                                   {s.awayTeam?.name ?? "TBD"}
                                   {s.awaySeed && (
-                                    <span className="ml-1 text-xs text-[var(--foreground)]/40">
+                                    <span className="ml-1 text-xs text-[var(--foreground)]/50">
                                       #{s.awaySeed}
                                     </span>
                                   )}
@@ -262,52 +272,47 @@ export default function PlayoffsPage() {
                                 )}
                               </div>
 
-                              <div className="flex flex-wrap gap-2">
-                                {/* Scores */}
+                              {/* Score badges — stay pinned right, never wrap into text */}
+                              <div className="flex shrink-0 gap-2">
                                 {leg1 && leg1.homeGoals !== null && (
-                                  <div className="rounded-2xl bg-[var(--accent)] px-3 py-1.5 text-sm font-black text-black">
-                                    {data.format === "TWO_LEG" ? "G1: " : ""}
-                                    {leg1.homeGoals} - {leg1.awayGoals}
-                                  </div>
+                                  <span className="rounded-lg bg-[var(--accent)] px-2.5 py-1 text-sm font-bold text-black">
+                                    {data.format === "TWO_LEG" ? "G1 " : ""}
+                                    {leg1.homeGoals}–{leg1.awayGoals}
+                                  </span>
                                 )}
                                 {leg2 && leg2.homeGoals !== null && (
-                                  <div className="rounded-2xl bg-[var(--accent)] px-3 py-1.5 text-sm font-black text-black">
-                                    G2: {leg2.homeGoals} - {leg2.awayGoals}
-                                  </div>
-                                )}
-
-                                {/* Action buttons */}
-                                {s.homeTeam && s.awayTeam && !s.winnerId && (
-                                  <>
-                                    {/* Show result links to admin or captains of either team */}
-                                    {(isAdmin ||
-                                      (user?.role === "CAPTAIN" &&
-                                        (user.teamId === s.homeTeam?.id ||
-                                          user.teamId === s.awayTeam?.id))) &&
-                                      s.matches.map((m) => (
-                                        <Link
-                                          key={m.id}
-                                          href={`/leagues/${leagueId}/matches/${m.id}`}
-                                          className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[var(--foreground)]/80 hover:bg-white/10"
-                                        >
-                                          {m.homeGoals !== null ? "Modifica" : "Risultato"}
-                                          {data.format === "TWO_LEG" ? ` G${m.leg}` : ""}
-                                        </Link>
-                                      ))}
-
-                                    {allPlayed && isAdmin && (
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleAdvance(s.id)}
-                                        disabled={advancing === s.id}
-                                      >
-                                        {advancing === s.id ? "..." : "Avanza vincitore"}
-                                      </Button>
-                                    )}
-                                  </>
+                                  <span className="rounded-lg bg-[var(--accent)] px-2.5 py-1 text-sm font-bold text-black">
+                                    G2 {leg2.homeGoals}–{leg2.awayGoals}
+                                  </span>
                                 )}
                               </div>
                             </div>
+
+                            {/* Row 2: action buttons — own row, never overlap text above */}
+                            {canAct && (
+                              <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
+                                {s.matches.map((m) => (
+                                  <Link
+                                    key={m.id}
+                                    href={`/leagues/${leagueId}/matches/${m.id}`}
+                                    className="rounded-xl border border-[var(--border)] bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--foreground)]/70 hover:bg-white/10 hover:text-[var(--foreground)]"
+                                  >
+                                    {m.homeGoals !== null ? "Modifica" : "Risultato"}
+                                    {data.format === "TWO_LEG" ? ` G${m.leg}` : ""}
+                                  </Link>
+                                ))}
+
+                                {allPlayed && isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleAdvance(s.id)}
+                                    disabled={advancing === s.id}
+                                  >
+                                    {advancing === s.id ? "…" : "Avanza vincitore"}
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
