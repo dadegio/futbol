@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 type Row = {
   teamId: string;
   teamName: string;
+  badgeUrl: string | null;
   played: number;
   wins: number;
   draws: number;
@@ -21,7 +22,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string 
 
   const teams = await prisma.team.findMany({
     where: { leagueId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, badgeUrl: true },
     orderBy: { name: "asc" },
   });
 
@@ -36,10 +37,12 @@ export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string 
   });
 
   const map = new Map<string, Row>();
+
   for (const t of teams) {
     map.set(t.id, {
       teamId: t.id,
       teamName: t.name,
+      badgeUrl: t.badgeUrl,
       played: 0,
       wins: 0,
       draws: 0,
@@ -89,7 +92,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string 
   }
 
   const table = Array.from(map.values()).sort((a, b) => {
-    // punti, diff reti, gol fatti, gol subiti (meno è meglio), nome
     if (b.points !== a.points) return b.points - a.points;
     if (b.gd !== a.gd) return b.gd - a.gd;
     if (b.gf !== a.gf) return b.gf - a.gf;

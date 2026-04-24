@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
@@ -58,16 +57,8 @@ export default function TablePage() {
 
   return (
     <DashboardShell leagueId={leagueId}>
-      <div className="mx-auto w-full max-w-[480px] space-y-6 px-4 pb-8">
+      <div className="w-full space-y-5 pb-8">
         <header className="pt-2">
-          <Link
-            href={`/leagues/${leagueId}`}
-            className="mb-8 flex items-center gap-3 text-sm text-[var(--muted)]"
-          >
-            <span className="text-xl leading-none">‹</span>
-            <span>Coppa Primavera 2026</span>
-          </Link>
-
           <div className="flex items-end justify-between">
             <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
               Classifica
@@ -79,29 +70,6 @@ export default function TablePage() {
           </div>
         </header>
 
-        <div className="flex gap-8 border-b border-[var(--border)] text-base">
-          <button
-            type="button"
-            className="border-b-2 border-[var(--accent)] pb-3 font-medium text-[var(--foreground)]"
-          >
-            Generale
-          </button>
-
-          <button
-            type="button"
-            className="pb-3 font-medium text-[var(--muted)]"
-          >
-            Casa
-          </button>
-
-          <button
-            type="button"
-            className="pb-3 font-medium text-[var(--muted)]"
-          >
-            Trasferta
-          </button>
-        </div>
-
         {err && <Badge variant="error">{err}</Badge>}
 
         <Card className="overflow-hidden !p-0">
@@ -111,82 +79,78 @@ export default function TablePage() {
             </div>
           ) : (
             <>
-              <table className="w-full table-fixed text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--border)] text-xs font-medium text-[var(--muted)]">
-                    <th className="w-[34px] px-2 py-3 text-center">#</th>
-                    <th className="px-1 py-3 text-left">Squadra</th>
-                    <th className="w-[34px] px-1 py-3 text-center">G</th>
-                    <th className="w-[34px] px-1 py-3 text-center">V</th>
-                    <th className="w-[42px] px-1 py-3 text-center">DR</th>
-                    <th className="w-[42px] px-3 py-3 text-right">PT</th>
-                  </tr>
-                </thead>
+              <div className="grid grid-cols-[34px_minmax(0,1fr)_34px_34px_42px_42px] border-b border-[var(--border)] px-2 py-3 text-xs font-medium text-[var(--muted)]">
+                <div className="text-center">#</div>
+                <div className="pl-1 text-left">Squadra</div>
+                <div className="text-center">G</div>
+                <div className="text-center">V</div>
+                <div className="text-center">DR</div>
+                <div className="pr-1 text-right">PT</div>
+              </div>
 
-                <tbody>
-                  {rows.map((row, index) => {
-                    const isPromotion = index < 2;
-                    const isRelegation = index === rows.length - 1;
+              <div>
+                {rows.map((row, index) => {
+                  const isPromotion = index < 2;
+                  const isRelegation = index === rows.length - 1;
 
-                    return (
-                      <tr
-                        key={row.teamId}
-                        className="border-b border-[var(--border)] last:border-b-0"
+                  return (
+                    <div
+                      key={row.teamId}
+                      className="grid grid-cols-[34px_minmax(0,1fr)_34px_34px_42px_42px] items-center border-b border-[var(--border)] px-2 py-4 last:border-b-0"
+                    >
+                      <div className="relative text-center text-sm text-[var(--muted)]">
+                        {isPromotion && (
+                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
+                        )}
+
+                        {isRelegation && (
+                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
+                        )}
+
+                        {index + 1}
+                      </div>
+
+                      <div className="min-w-0 pl-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <TeamLogo
+                            name={row.teamName}
+                            badgeUrl={row.badgeUrl}
+                          />
+
+                          <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--foreground)]">
+                            {row.teamName}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-center text-sm text-[var(--muted)]">
+                        {row.played}
+                      </div>
+
+                      <div className="text-center text-sm text-[var(--muted)]">
+                        {row.wins}
+                      </div>
+
+                      <div
+                        className={[
+                          "text-center text-sm font-semibold",
+                          row.gd > 0
+                            ? "text-emerald-700"
+                            : row.gd < 0
+                              ? "text-red-600"
+                              : "text-[var(--muted)]",
+                        ].join(" ")}
                       >
-                        <td className="relative px-2 py-4 text-center text-[var(--muted)]">
-                          {isPromotion && (
-                            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
-                          )}
+                        {row.gd > 0 ? `+${row.gd}` : row.gd}
+                      </div>
 
-                          {isRelegation && (
-                            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
-                          )}
-
-                          {index + 1}
-                        </td>
-
-                        <td className="min-w-0 px-1 py-4">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <TeamLogo
-                              name={row.teamName}
-                              badgeUrl={row.badgeUrl}
-                            />
-
-                            <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--foreground)]">
-                              {row.teamName}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="px-1 py-4 text-center text-[var(--muted)]">
-                          {row.played}
-                        </td>
-
-                        <td className="px-1 py-4 text-center text-[var(--muted)]">
-                          {row.wins}
-                        </td>
-
-                        <td
-                          className={[
-                            "px-1 py-4 text-center font-semibold",
-                            row.gd > 0
-                              ? "text-emerald-700"
-                              : row.gd < 0
-                                ? "text-red-600"
-                                : "text-[var(--muted)]",
-                          ].join(" ")}
-                        >
-                          {row.gd > 0 ? `+${row.gd}` : row.gd}
-                        </td>
-
-                        <td className="px-3 py-4 text-right text-base font-black text-[var(--foreground)]">
-                          {row.points}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      <div className="pr-1 text-right text-base font-black text-[var(--foreground)]">
+                        {row.points}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
               <div className="flex gap-4 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
                 <span className="flex items-center gap-1.5">
@@ -226,26 +190,13 @@ function TeamLogo({
       <img
         src={badgeUrl}
         alt={`Logo ${name}`}
-        className="h-8 w-8 shrink-0 rounded-lg object-cover"
+        className="h-8 w-8 shrink-0 rounded-lg object-contain"
       />
     );
   }
 
-  const colors = [
-    "bg-green-200 text-green-900",
-    "bg-pink-200 text-pink-900",
-    "bg-cyan-200 text-cyan-900",
-    "bg-orange-200 text-orange-900",
-    "bg-violet-200 text-violet-900",
-    "bg-fuchsia-200 text-fuchsia-900",
-  ];
-
-  const index = initials.charCodeAt(0) % colors.length;
-
   return (
-    <span
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black ${colors[index]}`}
-    >
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef0ec] text-[11px] font-black text-[var(--foreground)]">
       {initials}
     </span>
   );
