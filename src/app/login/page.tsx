@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, setAuthToken } from "@/lib/client-auth";
+import { setAuthToken, useAuth } from "@/lib/client-auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -98,10 +98,6 @@ export default function LoginPage() {
           >
             {loading ? "Accesso in corso..." : "Accedi"}
           </button>
-
-          <p className="mt-4 text-center text-xs text-[var(--foreground)]/30">
-            Solo admin e capitani effettuano il login.
-          </p>
         </form>
       </div>
     </div>
