@@ -25,11 +25,15 @@ export function CardHeader({
   tag,
   title,
   description,
+  level = 2,
 }: {
   tag?: string;
   title: string;
   description?: string;
+  /** Heading level — use 1 only for the true page title, 2 for section headers (default) */
+  level?: 1 | 2 | 3;
 }) {
+  const Tag = `h${level}` as "h1" | "h2" | "h3";
   return (
     <div>
       {tag && (
@@ -37,9 +41,9 @@ export function CardHeader({
           {tag}
         </div>
       )}
-      <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl">
+      <Tag className="text-2xl font-bold text-[var(--foreground)] md:text-3xl">
         {title}
-      </h1>
+      </Tag>
       {description && (
         <p className="mt-1.5 text-sm text-[var(--foreground)]/50">{description}</p>
       )}

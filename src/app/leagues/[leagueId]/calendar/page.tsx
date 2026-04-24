@@ -192,6 +192,7 @@ export default function CalendarPage() {
                 key={f}
                 variant={filter === f ? "primary" : "secondary"}
                 size="sm"
+                aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
               >
                 {f === "all" ? "Tutte" : f === "played" ? "Giocate" : "Da giocare"}
@@ -252,19 +253,20 @@ export default function CalendarPage() {
                 <p className="mb-3 text-sm font-medium text-[var(--foreground)]">Aggiungi partita manualmente</p>
                 <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                   <Input
+                    aria-label="Numero giornata"
                     value={manualRound}
                     onChange={(e) => setManualRound(e.target.value.replace(/[^\d]/g, ""))}
                     placeholder="Giornata"
                   />
-                  <Select value={manualHomeTeamId} onChange={(e) => setManualHomeTeamId(e.target.value)}>
+                  <Select aria-label="Squadra di casa" value={manualHomeTeamId} onChange={(e) => setManualHomeTeamId(e.target.value)}>
                     <option value="" className="text-black">Casa</option>
                     {teams.map((t) => <option key={t.id} value={t.id} className="text-black">{t.name}</option>)}
                   </Select>
-                  <Select value={manualAwayTeamId} onChange={(e) => setManualAwayTeamId(e.target.value)}>
+                  <Select aria-label="Squadra ospite" value={manualAwayTeamId} onChange={(e) => setManualAwayTeamId(e.target.value)}>
                     <option value="" className="text-black">Ospite</option>
                     {teams.map((t) => <option key={t.id} value={t.id} className="text-black">{t.name}</option>)}
                   </Select>
-                  <Input type="datetime-local" value={manualDate} onChange={(e) => setManualDate(e.target.value)} />
+                  <Input aria-label="Data e ora partita" type="datetime-local" value={manualDate} onChange={(e) => setManualDate(e.target.value)} />
                 </div>
                 <Button size="sm" onClick={createManualMatch} disabled={submittingManual} className="mt-3">
                   <span className="flex items-center gap-1.5">

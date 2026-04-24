@@ -47,7 +47,7 @@ export default function Breadcrumbs({ leagueId }: BreadcrumbsProps) {
   }
 
   return (
-    <nav className="mb-4 flex items-center gap-1.5 text-sm text-[var(--foreground)]/45">
+    <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-sm text-[var(--foreground)]/45">
       {crumbs.map((crumb, i) => (
         <span key={i} className="flex items-center gap-1.5">
           {i > 0 && <ChevronRight size={14} className="shrink-0" />}

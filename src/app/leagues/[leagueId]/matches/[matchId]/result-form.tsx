@@ -285,29 +285,31 @@ function TeamStatsCard({
 
               <div className="flex shrink-0 items-center gap-2.5">
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--foreground)]/35">Gol</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--foreground)]/50">Gol</span>
                   <input
+                    aria-label={`Gol di ${p.firstName} ${p.lastName}`}
                     value={stats[p.id]?.goals ?? ""}
                     placeholder="0"
                     onChange={(e) => !readOnly && setPlayerStat(p.id, "goals", e.target.value)}
                     inputMode="numeric"
                     readOnly={readOnly}
                     className={[
-                      "h-9 w-14 rounded-lg border border-[var(--border)] bg-white/5 text-center text-sm font-bold text-[var(--foreground)] outline-none",
+                      "h-9 w-14 rounded-lg border border-[var(--border)] bg-white/5 text-center text-sm font-bold text-[var(--foreground)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]",
                       readOnly ? "cursor-default opacity-60" : "focus:border-[var(--accent)]/50",
                     ].join(" ")}
                   />
                 </div>
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--foreground)]/35">Assist</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--foreground)]/50">Assist</span>
                   <input
+                    aria-label={`Assist di ${p.firstName} ${p.lastName}`}
                     value={stats[p.id]?.assists ?? ""}
                     placeholder="0"
                     onChange={(e) => !readOnly && setPlayerStat(p.id, "assists", e.target.value)}
                     inputMode="numeric"
                     readOnly={readOnly}
                     className={[
-                      "h-9 w-14 rounded-lg border border-[var(--border)] bg-white/5 text-center text-sm font-bold text-[var(--foreground)] outline-none",
+                      "h-9 w-14 rounded-lg border border-[var(--border)] bg-white/5 text-center text-sm font-bold text-[var(--foreground)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]",
                       readOnly ? "cursor-default opacity-60" : "focus:border-[var(--accent)]/50",
                     ].join(" ")}
                   />

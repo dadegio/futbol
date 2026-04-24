@@ -203,9 +203,10 @@ export default function TeamPage() {
               {canEdit && (
                 <button
                   onClick={() => { setEditingTeam((v) => !v); setShowAddPlayer(false); }}
-                  title="Modifica squadra"
+                  aria-label={editingTeam ? "Chiudi modifica squadra" : "Modifica squadra"}
+                  aria-pressed={editingTeam}
                   className={[
-                    "rounded-xl border p-2 transition-colors",
+                    "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border transition-colors",
                     editingTeam
                       ? "border-[var(--accent)]/30 bg-[var(--accent)]/10 text-[var(--accent)]"
                       : "border-[var(--border)] bg-white/5 text-[var(--foreground)]/50 hover:text-[var(--foreground)]",
@@ -325,22 +326,25 @@ export default function TeamPage() {
               <h3 className="mb-3 text-sm font-medium text-[var(--foreground)]">Nuovo giocatore</h3>
               <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                 <Input
+                  aria-label="Nome"
                   value={newFirstName}
                   onChange={(e) => setNewFirstName(e.target.value)}
                   placeholder="Nome"
                 />
                 <Input
+                  aria-label="Cognome"
                   value={newLastName}
                   onChange={(e) => setNewLastName(e.target.value)}
                   placeholder="Cognome"
                 />
                 <Input
+                  aria-label="Numero maglia"
                   value={newNumber}
                   onChange={(e) => setNewNumber(e.target.value.replace(/[^\d]/g, ""))}
                   placeholder="Numero"
                   inputMode="numeric"
                 />
-                <Select value={newPosition} onChange={(e) => setNewPosition(e.target.value)}>
+                <Select aria-label="Ruolo" value={newPosition} onChange={(e) => setNewPosition(e.target.value)}>
                   <option value="" className="text-black">Ruolo</option>
                   {POSITIONS.map((p) => (
                     <option key={p} value={p} className="text-black">{p}</option>
@@ -348,6 +352,7 @@ export default function TeamPage() {
                 </Select>
               </div>
               <Input
+                aria-label="URL foto giocatore"
                 value={newPhotoUrl}
                 onChange={(e) => setNewPhotoUrl(e.target.value)}
                 placeholder="URL foto (opzionale)"
@@ -413,8 +418,8 @@ export default function TeamPage() {
                           {canEdit && (
                             <button
                               onClick={() => deletePlayer(player.id, `${player.firstName} ${player.lastName}`)}
-                              title="Elimina giocatore"
-                              className="rounded-lg border border-[var(--border)] p-1.5 text-[var(--foreground)]/35 transition-colors hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-300"
+                              aria-label={`Elimina ${player.firstName} ${player.lastName}`}
+                              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--border)] text-[var(--foreground)]/35 transition-colors hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-300"
                             >
                               <Trash2 size={13} />
                             </button>

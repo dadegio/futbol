@@ -154,6 +154,7 @@ export default function PlayoffsPage() {
                   <Button
                     variant={view === "bracket" ? "primary" : "secondary"}
                     size="sm"
+                    aria-pressed={view === "bracket"}
                     onClick={() => setView("bracket")}
                   >
                     Tabellone
@@ -161,6 +162,7 @@ export default function PlayoffsPage() {
                   <Button
                     variant={view === "list" ? "primary" : "secondary"}
                     size="sm"
+                    aria-pressed={view === "list"}
                     onClick={() => setView("list")}
                   >
                     Lista

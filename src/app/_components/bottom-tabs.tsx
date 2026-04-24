@@ -42,8 +42,9 @@ export default function BottomTabs({ leagueId }: BottomTabsProps) {
             <Link
               key={tab.key}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={[
-                "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition",
+                "flex flex-1 flex-col items-center gap-0.5 py-3 text-[10px] font-medium transition",
                 active
                   ? "text-[var(--accent)]"
                   : "text-[var(--foreground)]/45 active:text-[var(--foreground)]/70",
