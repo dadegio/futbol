@@ -55,6 +55,51 @@ function isPlayed(match: Match) {
   return match.homeGoals !== null && match.awayGoals !== null;
 }
 
+function isToday(date: Date) {
+  const now = new Date();
+
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+function isLiveMatch(match: Match) {
+  if (!match.date) return false;
+
+  const start = new Date(match.date);
+
+  if (Number.isNaN(start.getTime())) return false;
+  if (!isToday(start)) return false;
+
+  const now = new Date();
+
+  // Consideriamo live una partita da inizio gara fino a 2 ore dopo.
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
+  return now >= start && now <= end;
+}
+
+function getLiveMinute(match: Match) {
+  if (!match.date) return null;
+
+  const start = new Date(match.date);
+  const now = new Date();
+
+  if (Number.isNaN(start.getTime())) return null;
+
+  const diffMinutes = Math.floor((now.getTime() - start.getTime()) / 60000);
+
+  if (diffMinutes < 0 || diffMinutes > 120) return null;
+
+  if (diffMinutes <= 45) return `${diffMinutes}'`;
+  if (diffMinutes <= 60) return "45'+";
+  if (diffMinutes <= 105) return `${diffMinutes - 15}'`;
+
+  return "90'+";
+}
+
 export default function LeagueHomePage() {
   const { leagueId } = useParams<{ leagueId: string }>();
 
@@ -127,9 +172,12 @@ export default function LeagueHomePage() {
   );
 
   const liveMatch = useMemo(() => {
-    const withScore = matches.find((match) => isPlayed(match));
-    return withScore ?? matches[0] ?? null;
+    return matches.find((match) => isLiveMatch(match)) ?? null;
   }, [matches]);
+
+  const liveMinute = useMemo(() => {
+    return liveMatch ? getLiveMinute(liveMatch) : null;
+  }, [liveMatch]);
 
   const nextMatches = useMemo(
     () => matches.filter((match) => !isPlayed(match)).slice(0, 2),
@@ -140,8 +188,8 @@ export default function LeagueHomePage() {
 
   return (
     <DashboardShell leagueId={leagueId}>
-      <div className="mx-auto max-w-[480px] space-y-6 px-1 pb-8">
-        <header className="pt-2">
+    <div className="mx-auto w-full max-w-[480px] space-y-6 px-4 pb-8">
+      <header className="pt-2">
           <Link
             href="/"
             className="mb-8 flex items-center gap-3 text-sm text-[var(--muted)]"
@@ -212,34 +260,35 @@ export default function LeagueHomePage() {
               <div className="mb-4 flex items-center justify-between text-sm">
                 <span className="font-semibold text-red-600">
                   <span className="mr-2 inline-block h-2 w-2 rounded-full bg-red-600" />
-                  67&apos;
+                  {liveMinute ?? "Live"};
                 </span>
                 <span className="font-semibold text-[var(--muted)]">
                   G{liveMatch.round}
                 </span>
               </div>
 
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                <div className="flex items-center gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                <div className="flex min-w-0 flex-col items-center gap-2 text-center">
                   <TeamBadge name={liveMatch.homeTeam.name} />
-                  <span className="truncate text-base font-semibold">
+                  <span className="max-w-full truncate text-sm font-semibold">
                     {liveMatch.homeTeam.name}
                   </span>
                 </div>
 
-                <div className="whitespace-nowrap text-[38px] font-black tracking-[-0.08em]">
+                <div className="whitespace-nowrap px-1 text-center text-[36px] font-black tracking-[-0.08em]">
                   {liveMatch.homeGoals ?? 0}
                   <span className="mx-2 text-[var(--muted)]">-</span>
                   {liveMatch.awayGoals ?? 0}
                 </div>
 
-                <div className="flex items-center justify-end gap-3">
-                  <span className="truncate text-right text-base font-semibold">
+                <div className="flex min-w-0 flex-col items-center gap-2 text-center">
+                  <TeamBadge name={liveMatch.awayTeam.name} />
+                  <span className="max-w-full truncate text-sm font-semibold">
                     {liveMatch.awayTeam.name}
                   </span>
-                  <TeamBadge name={liveMatch.awayTeam.name} />
                 </div>
               </div>
+
             </Card>
           </section>
         )}
