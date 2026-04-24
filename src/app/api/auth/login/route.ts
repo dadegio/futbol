@@ -23,12 +23,21 @@ export async function POST(req: Request) {
     );
   }
 
-  const token = createToken({
-    userId: user.id,
-    username: user.username,
-    role: user.role as "ADMIN" | "CAPTAIN",
-    teamId: user.teamId ?? null,
-  });
+  let token: string;
+  try {
+    token = createToken({
+      userId: user.id,
+      username: user.username,
+      role: user.role as "ADMIN" | "CAPTAIN",
+      teamId: user.teamId ?? null,
+    });
+  } catch (e: any) {
+    console.error("[login] createToken failed:", e?.message);
+    return NextResponse.json(
+      { error: `Errore interno: ${e?.message ?? "createToken"}` },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({
     token,
