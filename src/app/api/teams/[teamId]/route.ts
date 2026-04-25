@@ -11,12 +11,27 @@ export async function GET(_: Request, ctx: { params: Promise<{ teamId: string }>
     where: { id: teamId },
     include: {
       league: { select: { id: true, name: true } },
-      players: { orderBy: { number: "asc" } },
+      players: {
+        orderBy: { number: "asc" },
+        include: {
+          stats: {
+            select: { goals: true, assists: true },
+          },
+        },
+      },
     },
   });
 
   if (!team) return NextResponse.json({ error: "Squadra non trovata" }, { status: 404 });
-  return NextResponse.json(team);
+
+  // Aggregate stats per player
+  const players = team.players.map(({ stats, ...p }) => ({
+    ...p,
+    goals: stats.reduce((s, r) => s + r.goals, 0),
+    assists: stats.reduce((s, r) => s + r.assists, 0),
+  }));
+
+  return NextResponse.json({ ...team, players });
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ teamId: string }> }) {
