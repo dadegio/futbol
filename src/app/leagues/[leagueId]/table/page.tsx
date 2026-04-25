@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
@@ -25,28 +25,22 @@ export default function TablePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!leagueId) return;
-
-    async function load() {
-      setErr(null);
-
-      const res = await fetch(`/api/leagues/${leagueId}/table`, {
-        cache: "no-store",
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setErr(data?.error ?? "Errore classifica");
-        return;
-      }
-
-      setRows(data);
-    }
-
-    load();
+    setErr(null);
+    const res = await fetch(`/api/leagues/${leagueId}/table`, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setErr(data?.error ?? "Errore classifica"); return; }
+    setRows(data);
   }, [leagueId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Re-fetch whenever the tab regains focus (e.g. after entering a result in another tab)
+  useEffect(() => {
+    window.addEventListener("focus", load);
+    return () => window.removeEventListener("focus", load);
+  }, [load]);
 
   const currentRound = useMemo(() => {
     const maxPlayed = Math.max(...rows.map((row) => row.played), 0);
@@ -79,11 +73,17 @@ export default function TablePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-[34px_minmax(0,1fr)_34px_34px_42px_42px] border-b border-[var(--border)] px-2 py-3 text-xs font-medium text-[var(--muted)]">
+              {/* Header */}
+              <div
+                className="grid border-b border-[var(--border)] px-2 py-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]"
+                style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 42px 36px" }}
+              >
                 <div className="text-center">#</div>
                 <div className="pl-1 text-left">Squadra</div>
                 <div className="text-center">G</div>
                 <div className="text-center">V</div>
+                <div className="text-center">P</div>
+                <div className="text-center">S</div>
                 <div className="text-center">DR</div>
                 <div className="pr-1 text-right">PT</div>
               </div>
@@ -96,56 +96,64 @@ export default function TablePage() {
                   return (
                     <div
                       key={row.teamId}
-                      className="grid grid-cols-[34px_minmax(0,1fr)_34px_34px_42px_42px] items-center border-b border-[var(--border)] px-2 py-4 last:border-b-0"
+                      className="grid items-center border-b border-[var(--border)] px-2 py-3.5 last:border-b-0"
+                      style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 42px 36px" }}
                     >
+                      {/* Position */}
                       <div className="relative text-center text-sm text-[var(--muted)]">
                         {isPromotion && (
                           <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
                         )}
-
                         {isRelegation && (
                           <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
                         )}
-
                         {index + 1}
                       </div>
 
+                      {/* Team */}
                       <div className="min-w-0 pl-1">
                         <div className="flex min-w-0 items-center gap-2">
-                          <TeamLogo
-                            name={row.teamName}
-                            badgeUrl={row.badgeUrl}
-                          />
-
-                          <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--foreground)]">
+                          <TeamLogo name={row.teamName} badgeUrl={row.badgeUrl} />
+                          <span className="min-w-0 truncate text-[14px] font-semibold text-[var(--foreground)]">
                             {row.teamName}
                           </span>
                         </div>
                       </div>
 
-                      <div className="text-center text-sm text-[var(--muted)]">
+                      {/* G — played */}
+                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
                         {row.played}
                       </div>
 
-                      <div className="text-center text-sm text-[var(--muted)]">
+                      {/* V — wins */}
+                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
                         {row.wins}
                       </div>
 
+                      {/* P — draws */}
+                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                        {row.draws}
+                      </div>
+
+                      {/* S — losses */}
+                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                        {row.losses}
+                      </div>
+
+                      {/* DR — goal difference */}
                       <div
                         className={[
-                          "text-center text-sm font-semibold",
-                          row.gd > 0
-                            ? "text-emerald-700"
-                            : row.gd < 0
-                              ? "text-red-600"
-                              : "text-[var(--muted)]",
+                          "text-center text-[13px] font-semibold tabular-nums",
+                          row.gd > 0 ? "text-emerald-700" : row.gd < 0 ? "text-red-600" : "text-[var(--muted)]",
                         ].join(" ")}
+                        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
                       >
                         {row.gd > 0 ? `+${row.gd}` : row.gd}
                       </div>
 
+                      {/* PT — points */}
                       <div
-                        className="pr-1 text-right text-[15px] font-semibold tabular-nums text-[var(--foreground)]"
+                        className="pr-1 text-right text-[15px] font-black tabular-nums text-[var(--foreground)]"
                         style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
                       >
                         {row.points}
