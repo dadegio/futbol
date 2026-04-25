@@ -429,14 +429,41 @@ function SummaryStat({ label, value }: { label: string; value: number }) {
   );
 }
 
+function formatMatchDate(date: string | null): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const timeStr = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+
+  if (sameDay(d, today)) return `Oggi ${timeStr}`;
+  if (sameDay(d, tomorrow)) return `Domani ${timeStr}`;
+
+  const day = d.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short" });
+  return `${day} ${timeStr}`;
+}
+
 function NextMatchCard({ match }: { match: Match }) {
+  const dateLabel = formatMatchDate(match.date);
+
   return (
     <Card>
       <div
-        className="mb-3 text-[11px] text-[var(--muted)]"
+        className="mb-3 flex items-center justify-between gap-2"
         style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
       >
-        G{match.round}
+        <span className="text-[11px] text-[var(--muted)]">G{match.round}</span>
+        {dateLabel && (
+          <span className="text-[11px] font-medium text-[var(--accent)]">{dateLabel}</span>
+        )}
       </div>
 
       <div className="space-y-2">
