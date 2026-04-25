@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/server-auth";
 
 type Ctx = { params: Promise<{ leagueId: string; seriesId: string }> };
 
@@ -86,6 +87,45 @@ export async function PUT(req: Request, ctx: Ctx) {
         }
       }
     }
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function PATCH(req: Request, ctx: Ctx) {
+  const { leagueId, seriesId } = await ctx.params;
+
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
+  const body = await req.json().catch(() => ({}));
+
+  const ph = body?.penaltiesHome;
+  const pa = body?.penaltiesAway;
+
+  if (
+    !Number.isInteger(ph) || ph < 0 ||
+    !Number.isInteger(pa) || pa < 0 ||
+    ph === pa
+  ) {
+    return NextResponse.json(
+      { error: "Inserisci due valori interi non negativi e diversi per i rigori" },
+      { status: 400 }
+    );
+  }
+
+  const series = await prisma.playoffSeries.findUnique({
+    where: { id: seriesId },
+    select: { id: true, leagueId: true },
+  });
+
+  if (!series || series.leagueId !== leagueId) {
+    return NextResponse.json({ error: "Serie non trovata" }, { status: 404 });
+  }
+
+  await prisma.playoffSeries.update({
+    where: { id: seriesId },
+    data: { penaltiesHome: ph, penaltiesAway: pa },
   });
 
   return NextResponse.json({ ok: true });

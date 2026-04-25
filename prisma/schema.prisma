@@ -139,6 +139,9 @@ model PlayoffSeries {
   homeSeed      Int?
   awaySeed      Int?
 
+  penaltiesHome Int?
+  penaltiesAway Int?
+
   winnerId      String?
 
   feedsIntoSeriesId String?

@@ -21,6 +21,8 @@ export type SeriesData = {
   awayTeam: Team | null;
   homeSeed: number | null;
   awaySeed: number | null;
+  penaltiesHome: number | null;
+  penaltiesAway: number | null;
   winnerId: string | null;
   matches: Match[];
 };
@@ -43,10 +45,10 @@ export default function SeriesCard({ series, leagueId, format }: Props) {
   return (
     <div
       className={[
-        "w-[220px] rounded-2xl border shadow-lg shadow-black/20 transition-all duration-500",
+        "w-[220px] overflow-hidden rounded-2xl border shadow-[0_2px_8px_rgba(0,0,0,0.06)]",
         winnerId
           ? "border-[var(--accent)]/30 bg-[var(--card)]"
-          : "border-white/10 bg-[var(--card)]/95",
+          : "border-[var(--border)] bg-[var(--card)]",
       ].join(" ")}
     >
       {/* Home team row */}
@@ -74,13 +76,13 @@ export default function SeriesCard({ series, leagueId, format }: Props) {
 
       {/* Action link */}
       {homeTeam && awayTeam && !winnerId && matches.length > 0 && (
-        <div className="border-t border-white/8 px-3 py-2">
+        <div className="border-t border-[var(--border)] px-3 py-2">
           <div className="flex gap-2">
             {matches.map((m) => (
               <Link
                 key={m.id}
                 href={`/leagues/${leagueId}/matches/${m.id}`}
-                className="flex-1 rounded-xl bg-white/5 px-2 py-1.5 text-center text-xs font-medium text-[var(--accent)] hover:bg-white/10"
+                className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-2 py-1.5 text-center text-xs font-medium text-[var(--accent)] hover:bg-[var(--card)] transition-colors"
               >
                 {m.homeGoals !== null ? "Modifica" : "Risultato"}
                 {format === "TWO_LEG" ? ` G${m.leg}` : ""}
@@ -90,9 +92,19 @@ export default function SeriesCard({ series, leagueId, format }: Props) {
         </div>
       )}
 
+      {/* Penalties badge */}
+      {series.penaltiesHome !== null && series.penaltiesAway !== null && (
+        <div
+          className="border-t border-[var(--border)] px-3 py-1.5 text-center text-[10px] font-semibold text-[var(--muted)]"
+          style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+        >
+          Rig. {series.penaltiesHome}–{series.penaltiesAway}
+        </div>
+      )}
+
       {/* Winner badge */}
       {winnerId && (
-        <div className="animate-fade-in border-t border-white/8 px-3 py-1.5 text-center text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--accent)]">
+        <div className="animate-fade-in border-t border-[var(--border)] px-3 py-1.5 text-center text-[10px] font-semibold text-[var(--accent)]">
           Qualificato
         </div>
       )}
@@ -122,25 +134,25 @@ function TeamRow({
   return (
     <div
       className={[
-        "flex items-center gap-2 px-3 py-2.5 transition-colors duration-500",
-        border ? "border-b border-white/8" : "",
-        won ? "bg-[var(--accent)]/10" : "",
-        lost ? "opacity-50" : "",
+        "flex items-center gap-2 px-3 py-2.5 transition-colors",
+        border ? "border-b border-[var(--border)]" : "",
+        won ? "bg-[oklch(0.96_0.02_258)]" : "",
+        lost ? "opacity-45" : "",
       ].join(" ")}
     >
       {seed && (
-        <span className="w-5 text-center text-xs font-medium text-[var(--foreground)]/40">
+        <span className="w-5 shrink-0 text-center text-xs font-medium text-[var(--muted)]">
           {seed}
         </span>
       )}
       <span
         className={[
-          "flex-1 truncate text-sm font-semibold transition-colors duration-500",
+          "flex-1 truncate text-sm font-semibold",
           won
             ? "text-[var(--accent)]"
             : name
               ? "text-[var(--foreground)]"
-              : "text-[var(--foreground)]/30 italic",
+              : "italic text-[var(--muted)]",
         ].join(" ")}
       >
         {name ?? "TBD"}
@@ -164,22 +176,28 @@ function ScoreDisplay({
   isTwoLeg: boolean;
 }) {
   if (leg1Score === null && leg2Score === null) {
-    return <span className="text-xs text-[var(--foreground)]/25">-</span>;
+    return <span className="text-xs text-[var(--border-strong)]">—</span>;
   }
 
   if (isTwoLeg) {
     return (
-      <div className="flex gap-1 text-sm font-bold text-[var(--foreground)]">
-        <span>{leg1Score ?? "-"}</span>
-        <span className="text-[var(--foreground)]/25">|</span>
-        <span>{leg2Score ?? "-"}</span>
+      <div
+        className="flex gap-1 text-sm font-semibold tabular-nums text-[var(--foreground)]"
+        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+      >
+        <span>{leg1Score ?? "—"}</span>
+        <span className="text-[var(--border-strong)]">|</span>
+        <span>{leg2Score ?? "—"}</span>
       </div>
     );
   }
 
   return (
-    <span className="text-sm font-bold text-[var(--foreground)]">
-      {leg1Score ?? "-"}
+    <span
+      className="text-sm font-semibold tabular-nums text-[var(--foreground)]"
+      style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+    >
+      {leg1Score ?? "—"}
     </span>
   );
 }

@@ -40,6 +40,34 @@ type TableRow = {
   points: number;
 };
 
+type PlayoffMatch = {
+  id: string;
+  leg: number | null;
+  homeGoals: number | null;
+  awayGoals: number | null;
+};
+
+type PlayoffSeries = {
+  id: string;
+  bracketRound: number;
+  position: number;
+  homeTeam: { id: string; name: string } | null;
+  awayTeam: { id: string; name: string } | null;
+  homeSeed: number | null;
+  awaySeed: number | null;
+  penaltiesHome: number | null;
+  penaltiesAway: number | null;
+  winnerId: string | null;
+  matches: PlayoffMatch[];
+};
+
+type PlayoffData = {
+  configured: boolean;
+  format?: string;
+  teamCount?: number;
+  series?: PlayoffSeries[];
+};
+
 async function getJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
   const data = await res.json().catch(() => ({}));
@@ -107,6 +135,7 @@ export default function LeagueHomePage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [table, setTable] = useState<TableRow[]>([]);
+  const [playoffData, setPlayoffData] = useState<PlayoffData | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -116,18 +145,21 @@ export default function LeagueHomePage() {
       try {
         setErr(null);
 
-        const [leagueData, teamsData, matchesData, tableData] =
+        const [leagueData, teamsData, matchesData, tableData, playoffRes] =
           await Promise.all([
             getJSON<League>(`/api/leagues/${leagueId}`),
             getJSON<any[]>(`/api/leagues/${leagueId}/teams`),
             getJSON<Match[]>(`/api/leagues/${leagueId}/schedule`),
             getJSON<TableRow[]>(`/api/leagues/${leagueId}/table`),
+            fetch(`/api/leagues/${leagueId}/playoffs`, { cache: "no-store" }),
           ]);
 
         setLeague(leagueData);
         setTeams(teamsData.map((team) => ({ id: team.id, name: team.name })));
         setMatches(matchesData);
         setTable(tableData);
+        const pd = await playoffRes.json().catch(() => null);
+        setPlayoffData(playoffRes.ok ? pd : null);
       } catch (error: any) {
         setErr(error.message);
       }
@@ -203,7 +235,10 @@ export default function LeagueHomePage() {
               {league?.name ?? "Coppa Primavera"}
             </h1>
 
-            <span className="rounded-full bg-[#d9f6df] px-4 py-2 text-sm font-bold text-green-800">
+            <span
+              className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+              style={{ background: "oklch(0.92 0.04 148)", color: "var(--success)" }}
+            >
               In corso
             </span>
           </div>
@@ -225,7 +260,7 @@ export default function LeagueHomePage() {
             </div>
           </div>
 
-          <div className="h-1 rounded-full bg-[#ece9df]">
+          <div className="h-1 rounded-full bg-[var(--card-2)]">
             <div
               className="h-1 rounded-full bg-[var(--accent)]"
               style={{
@@ -258,9 +293,9 @@ export default function LeagueHomePage() {
 
             <Card>
               <div className="mb-4 flex items-center justify-between text-sm">
-                <span className="font-semibold text-red-600">
-                  <span className="mr-2 inline-block h-2 w-2 rounded-full bg-red-600" />
-                  {liveMinute ?? "Live"};
+                <span className="font-semibold text-[var(--danger)]">
+                  <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[var(--danger)]" />
+                  {liveMinute ?? "Live"}
                 </span>
                 <span className="font-semibold text-[var(--muted)]">
                   G{liveMatch.round}
@@ -275,9 +310,12 @@ export default function LeagueHomePage() {
                   </span>
                 </div>
 
-                <div className="whitespace-nowrap px-1 text-center text-[36px] font-black tracking-[-0.08em]">
+                <div
+                  className="whitespace-nowrap px-1 text-center text-[36px] font-semibold tabular-nums leading-none tracking-[-0.04em] text-[var(--foreground)]"
+                  style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+                >
                   {liveMatch.homeGoals ?? 0}
-                  <span className="mx-2 text-[var(--muted)]">-</span>
+                  <span className="mx-2 text-[var(--muted)]">–</span>
                   {liveMatch.awayGoals ?? 0}
                 </div>
 
@@ -327,6 +365,26 @@ export default function LeagueHomePage() {
           </Card>
         </section>
 
+        {playoffData?.configured && playoffData.series && playoffData.series.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-[-0.03em]">Playoff</h2>
+              <Link
+                href={`/leagues/${leagueId}/playoffs`}
+                className="text-sm font-semibold text-[var(--accent)]"
+              >
+                Vedi tutto →
+              </Link>
+            </div>
+            <PlayoffRecapSection
+              series={playoffData.series}
+              format={playoffData.format!}
+              teamCount={playoffData.teamCount!}
+              leagueId={leagueId}
+            />
+          </section>
+        )}
+
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold tracking-[-0.03em]">
@@ -360,35 +418,219 @@ export default function LeagueHomePage() {
 function SummaryStat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-sm font-medium text-[var(--muted)]">{label}</div>
-      <div className="mt-1 text-2xl font-black tracking-[-0.05em]">{value}</div>
+      <div className="text-[10px] text-[var(--muted)]">{label}</div>
+      <div
+        className="mt-0.5 text-[18px] font-semibold tabular-nums leading-tight text-[var(--foreground)]"
+        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
 
 function NextMatchCard({ match }: { match: Match }) {
   return (
-    <Card className="min-h-[136px]">
-      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-        SAB 25 APR · 15:00
+    <Card>
+      <div
+        className="mb-3 text-[11px] text-[var(--muted)]"
+        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+      >
+        G{match.round}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center gap-2">
           <TeamBadge name={match.homeTeam.name} size="sm" />
-          <span className="truncate text-sm font-semibold">
+          <span className="truncate text-[12px] font-medium text-[var(--foreground)]">
             {match.homeTeam.name}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <TeamBadge name={match.awayTeam.name} size="sm" />
-          <span className="truncate text-sm font-semibold">
+          <span className="truncate text-[12px] font-medium text-[var(--foreground)]">
             {match.awayTeam.name}
           </span>
         </div>
       </div>
     </Card>
+  );
+}
+
+const ROUND_NAMES: Record<number, string> = {
+  1: "Finale",
+  2: "Semifinali",
+  4: "Quarti di finale",
+  8: "Ottavi di finale",
+};
+
+function PlayoffRecapSection({
+  series,
+  format,
+  teamCount,
+  leagueId,
+}: {
+  series: PlayoffSeries[];
+  format: string;
+  teamCount: number;
+  leagueId: string;
+}) {
+  const isTwoLeg = format === "TWO_LEG";
+
+  // Find the active round: highest bracketRound (earliest) that still has incomplete series.
+  // Fall back to the final (bracketRound=1) if everything is done.
+  const firstRound = teamCount / 2;
+  const roundOrder: number[] = [];
+  for (let r = firstRound; r >= 1; r = r / 2) roundOrder.push(r);
+
+  const activeRound =
+    roundOrder.find((r) => {
+      const roundSeries = series.filter((s) => s.bracketRound === r);
+      return roundSeries.length > 0 && roundSeries.some((s) => !s.winnerId);
+    }) ?? 1;
+
+  const activeSeries = series
+    .filter((s) => s.bracketRound === activeRound)
+    .sort((a, b) => a.position - b.position);
+
+  const allDone = series.every((s) => s.winnerId);
+  const champion = allDone
+    ? series.find((s) => s.bracketRound === 1)
+    : null;
+  const championTeam = champion
+    ? (champion.winnerId === champion.homeTeam?.id ? champion.homeTeam : champion.awayTeam)
+    : null;
+
+  return (
+    <div className="space-y-2">
+      {/* Round label */}
+      <div className="flex items-center justify-between px-0.5">
+        <span
+          className="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted)]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {ROUND_NAMES[activeRound] ?? `Round ${activeRound}`}
+        </span>
+        {championTeam && (
+          <span
+            className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent)]"
+            style={{ background: "oklch(0.94 0.03 258)" }}
+          >
+            Campione: {championTeam.name}
+          </span>
+        )}
+      </div>
+
+      {/* Series cards */}
+      <Card className="overflow-hidden !p-0">
+        {activeSeries.map((s, i) => {
+          const leg1 = s.matches.find((m) => m.leg === 1) ?? s.matches[0];
+          const leg2 = s.matches.find((m) => m.leg === 2);
+          const leg1Played = !!leg1 && leg1.homeGoals !== null && leg1.awayGoals !== null;
+          const leg2Played = !!leg2 && leg2.homeGoals !== null && leg2.awayGoals !== null;
+
+          const homeAgg = isTwoLeg
+            ? (leg1?.homeGoals ?? 0) + (leg2?.awayGoals ?? 0)
+            : null;
+          const awayAgg = isTwoLeg
+            ? (leg1?.awayGoals ?? 0) + (leg2?.homeGoals ?? 0)
+            : null;
+
+          const homeWon = s.winnerId && s.homeTeam && s.winnerId === s.homeTeam.id;
+          const awayWon = s.winnerId && s.awayTeam && s.winnerId === s.awayTeam.id;
+
+          return (
+            <Link
+              key={s.id}
+              href={`/leagues/${leagueId}/playoffs`}
+              className={[
+                "grid items-center gap-3 px-4 py-3 transition-colors hover:bg-[var(--card-2)]",
+                i < activeSeries.length - 1 ? "border-b border-[var(--border)]" : "",
+              ].join(" ")}
+              style={{ gridTemplateColumns: "1fr auto 1fr" }}
+            >
+              {/* Home */}
+              <div className={["flex items-center gap-2 min-w-0", awayWon ? "opacity-40" : ""].join(" ")}>
+                <TeamBadge name={s.homeTeam?.name ?? "?"} size="sm" />
+                <span className={[
+                  "truncate text-[12px] font-semibold",
+                  homeWon ? "text-[var(--accent)]" : "text-[var(--foreground)]",
+                ].join(" ")}>
+                  {s.homeTeam?.name ?? "TBD"}
+                </span>
+              </div>
+
+              {/* Score */}
+              <div
+                className="flex shrink-0 flex-col items-center gap-0.5"
+                style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+              >
+                {isTwoLeg && (leg1Played || leg2Played) ? (
+                  <>
+                    <div className="flex items-center gap-1 text-[11px] tabular-nums text-[var(--muted)]">
+                      <span>{leg1Played ? leg1!.homeGoals : "–"}</span>
+                      <span className="text-[var(--border-strong)]">:</span>
+                      <span>{leg1Played ? leg1!.awayGoals : "–"}</span>
+                      {leg2Played && (
+                        <>
+                          <span className="mx-0.5 text-[var(--border-strong)]">·</span>
+                          <span>{leg2!.homeGoals}</span>
+                          <span className="text-[var(--border-strong)]">:</span>
+                          <span>{leg2!.awayGoals}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-[13px] font-semibold tabular-nums">
+                      <span className={homeWon ? "text-[var(--accent)]" : "text-[var(--foreground)]"}>{homeAgg}</span>
+                      <span className="text-[var(--border-strong)]">:</span>
+                      <span className={awayWon ? "text-[var(--accent)]" : "text-[var(--foreground)]"}>{awayAgg}</span>
+                    </div>
+                    {s.penaltiesHome !== null && s.penaltiesAway !== null && (
+                      <div className="flex items-center gap-0.5 text-[10px] text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                        <span>r.</span>
+                        <span className={(s.penaltiesHome > s.penaltiesAway) ? "font-semibold text-[var(--accent)]" : ""}>{s.penaltiesHome}</span>
+                        <span>:</span>
+                        <span className={(s.penaltiesAway > s.penaltiesHome) ? "font-semibold text-[var(--accent)]" : ""}>{s.penaltiesAway}</span>
+                      </div>
+                    )}
+                  </>
+                ) : leg1Played ? (
+                  <>
+                    <span className="text-[15px] font-semibold tabular-nums text-[var(--foreground)]">
+                      {leg1!.homeGoals}
+                      <span className="mx-0.5 text-[var(--border-strong)]">:</span>
+                      {leg1!.awayGoals}
+                    </span>
+                    {s.penaltiesHome !== null && s.penaltiesAway !== null && (
+                      <div className="flex items-center gap-0.5 text-[10px] text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                        <span>r.</span>
+                        <span className={(s.penaltiesHome > s.penaltiesAway) ? "font-semibold text-[var(--accent)]" : ""}>{s.penaltiesHome}</span>
+                        <span>:</span>
+                        <span className={(s.penaltiesAway > s.penaltiesHome) ? "font-semibold text-[var(--accent)]" : ""}>{s.penaltiesAway}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[13px] text-[var(--border-strong)]">vs</span>
+                )}
+              </div>
+
+              {/* Away */}
+              <div className={["flex items-center gap-2 min-w-0 flex-row-reverse text-right", homeWon ? "opacity-40" : ""].join(" ")}>
+                <TeamBadge name={s.awayTeam?.name ?? "?"} size="sm" />
+                <span className={[
+                  "truncate text-[12px] font-semibold",
+                  awayWon ? "text-[var(--accent)]" : "text-[var(--foreground)]",
+                ].join(" ")}>
+                  {s.awayTeam?.name ?? "TBD"}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </Card>
+    </div>
   );
 }
 

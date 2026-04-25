@@ -27,7 +27,13 @@ export async function POST(req: Request, ctx: Ctx) {
 
   const series = await prisma.playoffSeries.findUnique({
     where: { id: seriesId },
-    include: {
+    select: {
+      id: true,
+      leagueId: true,
+      feedsIntoSeriesId: true,
+      position: true,
+      penaltiesHome: true,
+      penaltiesAway: true,
       matches: {
         select: {
           homeTeamId: true,
@@ -44,7 +50,12 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Serie non trovata" }, { status: 404 });
   }
 
-  const winnerId = determineSeriesWinner(series.matches, league.playoffFormat);
+  const penalties =
+    series.penaltiesHome !== null && series.penaltiesAway !== null
+      ? { home: series.penaltiesHome, away: series.penaltiesAway }
+      : null;
+
+  const winnerId = determineSeriesWinner(series.matches, league.playoffFormat, penalties);
 
   if (!winnerId) {
     return NextResponse.json(

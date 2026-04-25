@@ -80,18 +80,27 @@ function buildSeedOrder(teamCount: number): number[] {
 
 /**
  * Determines the winner of a playoff series based on match results.
+ * When the score is tied (draw in SINGLE_ELIM or aggregate draw in TWO_LEG),
+ * uses penalty shootout scores if provided.
  * Returns the winning team ID, or null if the series is not yet decided.
  */
 export function determineSeriesWinner(
   matches: { homeTeamId: string; awayTeamId: string; homeGoals: number | null; awayGoals: number | null; leg: number | null }[],
-  format: "SINGLE_ELIM" | "TWO_LEG"
+  format: "SINGLE_ELIM" | "TWO_LEG",
+  penalties?: { home: number; away: number } | null
 ): string | null {
+  const homeTeamId = matches[0]?.homeTeamId;
+  const awayTeamId = matches[0]?.awayTeamId;
+
   if (format === "SINGLE_ELIM") {
     const match = matches.find((m) => m.leg === 1);
     if (!match || match.homeGoals === null || match.awayGoals === null) return null;
     if (match.homeGoals > match.awayGoals) return match.homeTeamId;
     if (match.awayGoals > match.homeGoals) return match.awayTeamId;
-    // Draw in single elim — needs extra time/penalties (manual resolution)
+    // Draw — use penalties
+    if (penalties && penalties.home !== penalties.away) {
+      return penalties.home > penalties.away ? homeTeamId : awayTeamId;
+    }
     return null;
   }
 
@@ -108,6 +117,9 @@ export function determineSeriesWinner(
 
   if (homeAggregate > awayAggregate) return leg1.homeTeamId;
   if (awayAggregate > homeAggregate) return leg1.awayTeamId;
-  // Aggregate tied — manual resolution needed
+  // Aggregate tied — use penalties
+  if (penalties && penalties.home !== penalties.away) {
+    return penalties.home > penalties.away ? leg1.homeTeamId : leg1.awayTeamId;
+  }
   return null;
 }
