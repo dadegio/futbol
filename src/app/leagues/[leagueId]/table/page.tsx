@@ -92,9 +92,6 @@ export default function TablePage() {
 
               <div>
                 {rows.map((row, index) => {
-                  const isPromotion = index < 2;
-                  const isRelegation = index === rows.length - 1;
-
                   return (
                     <div
                       key={row.teamId}
@@ -102,13 +99,7 @@ export default function TablePage() {
                       style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 32px 32px 42px 36px" }}
                     >
                       {/* Position */}
-                      <div className="relative text-center text-sm text-[var(--muted)]">
-                        {isPromotion && (
-                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
-                        )}
-                        {isRelegation && (
-                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
-                        )}
+                      <div className="text-center text-sm text-[var(--muted)]">
                         {index + 1}
                       </div>
 
@@ -175,17 +166,6 @@ export default function TablePage() {
                 })}
               </div>
 
-              <div className="flex gap-4 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-                  Promozione
-                </span>
-
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--danger)]" />
-                  Retrocessione
-                </span>
-              </div>
             </>
           )}
         </Card>
