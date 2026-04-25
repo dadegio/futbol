@@ -76,7 +76,7 @@ export default function TablePage() {
               {/* Header */}
               <div
                 className="grid border-b border-[var(--border)] px-2 py-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]"
-                style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 42px 36px" }}
+                style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 32px 32px 42px 36px" }}
               >
                 <div className="text-center">#</div>
                 <div className="pl-1 text-left">Squadra</div>
@@ -84,6 +84,8 @@ export default function TablePage() {
                 <div className="text-center">V</div>
                 <div className="text-center">P</div>
                 <div className="text-center">S</div>
+                <div className="text-center">GF</div>
+                <div className="text-center">GS</div>
                 <div className="text-center">DR</div>
                 <div className="pr-1 text-right">PT</div>
               </div>
@@ -97,7 +99,7 @@ export default function TablePage() {
                     <div
                       key={row.teamId}
                       className="grid items-center border-b border-[var(--border)] px-2 py-3.5 last:border-b-0"
-                      style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 42px 36px" }}
+                      style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 32px 32px 42px 36px" }}
                     >
                       {/* Position */}
                       <div className="relative text-center text-sm text-[var(--muted)]">
@@ -138,6 +140,16 @@ export default function TablePage() {
                       {/* S — losses */}
                       <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
                         {row.losses}
+                      </div>
+
+                      {/* GF — goals for */}
+                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                        {row.gf}
+                      </div>
+
+                      {/* GS — goals against */}
+                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                        {row.ga}
                       </div>
 
                       {/* DR — goal difference */}
