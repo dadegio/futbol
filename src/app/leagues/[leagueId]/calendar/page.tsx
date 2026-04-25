@@ -61,7 +61,8 @@ function isLiveMatch(match: Match) {
   if (!isToday(start)) return false;
 
   const now = new Date();
-  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  // Match lasts 60 min + 2 min half-time break = 62 min live window.
+  const end = new Date(start.getTime() + 62 * 60 * 1000);
 
   return now >= start && now <= end;
 }
@@ -76,12 +77,12 @@ function getLiveMinute(match: Match) {
 
   const diffMinutes = Math.floor((now.getTime() - start.getTime()) / 60000);
 
-  if (diffMinutes < 0 || diffMinutes > 120) return null;
-  if (diffMinutes <= 45) return `${diffMinutes}'`;
-  if (diffMinutes <= 60) return "45'+";
-  if (diffMinutes <= 105) return `${diffMinutes - 15}'`;
+  if (diffMinutes < 0 || diffMinutes > 62) return null;
+  if (diffMinutes <= 30) return `${diffMinutes}'`;
+  if (diffMinutes <= 32) return "30'+";  // half-time break
+  if (diffMinutes <= 62) return `${diffMinutes - 2}'`;
 
-  return "90'+";
+  return "60'+";
 }
 
 function formatTime(date: string | null) {
