@@ -35,6 +35,7 @@ type StatRow = {
 type Match = {
   id: string;
   round: number;
+  date: string | null;
   homeGoals: number | null;
   awayGoals: number | null;
   homeTeam: Team;
@@ -89,6 +90,21 @@ export default function MatchResultForm({ match }: { match: Match }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // date scheduling
+  const toLocalDatetimeValue = (iso: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    // datetime-local needs "YYYY-MM-DDTHH:mm"
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [dateValue, setDateValue] = useState(() => toLocalDatetimeValue(match.date));
+  const [savingDate, setSavingDate] = useState(false);
+  const [dateMsg, setDateMsg] = useState<string | null>(null);
+  const [dateErr, setDateErr] = useState<string | null>(null);
+
   const initial = useMemo(() => {
     const m = new Map<string, { goals: number; assists: number }>();
     for (const s of match.stats) m.set(s.playerId, { goals: s.goals, assists: s.assists });
@@ -128,6 +144,28 @@ export default function MatchResultForm({ match }: { match: Match }) {
       ...prev,
       [playerId]: { ...prev[playerId], [key]: cleaned === "" ? "0" : cleaned },
     }));
+  }
+
+  async function saveDate(clear = false) {
+    setDateErr(null);
+    setDateMsg(null);
+    setSavingDate(true);
+    try {
+      const res = await authFetch(`/api/matches/${match.id}/date`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: clear ? null : (dateValue ? new Date(dateValue).toISOString() : null) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.error ?? "Errore salvataggio data");
+      if (clear) setDateValue("");
+      setDateMsg(clear ? "Data rimossa" : "Data salvata");
+      router.refresh();
+    } catch (e: any) {
+      setDateErr(e.message);
+    } finally {
+      setSavingDate(false);
+    }
   }
 
   async function save() {
@@ -183,6 +221,42 @@ export default function MatchResultForm({ match }: { match: Match }) {
             Giornata {match.round}
           </span>
         </div>
+
+        {/* Date scheduling — only for authorised users */}
+        {canEdit && (
+          <div className="rounded-[14px] border border-[var(--border)] bg-[var(--card)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)]">
+            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]" style={{ fontFamily: "var(--font-display)" }}>
+              Data e ora
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="datetime-local"
+                value={dateValue}
+                onChange={(e) => setDateValue(e.target.value)}
+                className="h-9 flex-1 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-[13px] text-[var(--foreground)] outline-none transition-colors focus:border-[var(--accent)] focus:bg-[var(--card)]"
+                style={{ fontFamily: "var(--font-mono, ui-monospace)", minWidth: 180 }}
+              />
+              <button
+                onClick={() => saveDate(false)}
+                disabled={savingDate || !dateValue}
+                className="h-9 rounded-xl bg-[var(--accent)] px-3 text-[13px] font-semibold text-white transition-opacity disabled:opacity-40"
+              >
+                {savingDate ? "…" : "Salva"}
+              </button>
+              {dateValue && (
+                <button
+                  onClick={() => saveDate(true)}
+                  disabled={savingDate}
+                  className="h-9 rounded-xl border border-red-200 bg-red-50 px-3 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-40"
+                >
+                  Rimuovi
+                </button>
+              )}
+            </div>
+            {dateMsg && <p className="mt-2 text-[12px] font-medium text-emerald-700">{dateMsg}</p>}
+            {dateErr && <p className="mt-2 text-[12px] font-medium text-red-600">{dateErr}</p>}
+          </div>
+        )}
 
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
