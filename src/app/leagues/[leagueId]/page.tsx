@@ -232,7 +232,7 @@ export default function LeagueHomePage() {
 
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
-              {league?.name ?? "Coppa Primavera"}
+              {league?.name ?? ""}
             </h1>
 
             <span

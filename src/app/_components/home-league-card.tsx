@@ -35,7 +35,7 @@ export default function HomeLeagueCard({ id, name, onDelete }: LeagueCardProps) 
       </div>
 
       <Link
-        href={`/leagues/${id}/calendar`}
+        href={`/leagues/${id}`}
         className="inline-flex w-fit items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-2)]"
       >
         Apri torneo
