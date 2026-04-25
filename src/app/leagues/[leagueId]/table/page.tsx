@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardShell from "src/app/_components/dashboard-shell";
-import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
+import Card from "src/app/_components/ui/card";
 
 type Row = {
   teamId: string;
@@ -75,17 +75,14 @@ export default function TablePage() {
             <>
               {/* Header */}
               <div
-                className="grid border-b border-[var(--border)] px-2 py-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]"
-                style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 32px 32px 42px 36px" }}
+                className="grid border-b border-[var(--border)] px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]"
+                style={{ gridTemplateColumns: "28px minmax(0,1fr) 32px 64px 64px 42px 40px" }}
               >
                 <div className="text-center">#</div>
                 <div className="pl-1 text-left">Squadra</div>
                 <div className="text-center">G</div>
-                <div className="text-center">V</div>
-                <div className="text-center">P</div>
-                <div className="text-center">S</div>
-                <div className="text-center">GF</div>
-                <div className="text-center">GS</div>
+                <div className="text-center">V/P/S</div>
+                <div className="text-center">GF:GS</div>
                 <div className="text-center">DR</div>
                 <div className="pr-1 text-right">PT</div>
               </div>
@@ -95,8 +92,8 @@ export default function TablePage() {
                   return (
                     <div
                       key={row.teamId}
-                      className="grid items-center border-b border-[var(--border)] px-2 py-3.5 last:border-b-0"
-                      style={{ gridTemplateColumns: "28px minmax(0,1fr) 28px 28px 28px 28px 32px 32px 42px 36px" }}
+                      className="grid items-center border-b border-[var(--border)] px-3 py-3 last:border-b-0"
+                      style={{ gridTemplateColumns: "28px minmax(0,1fr) 32px 64px 64px 42px 40px" }}
                     >
                       {/* Position */}
                       <div className="text-center text-sm text-[var(--muted)]">
@@ -118,29 +115,14 @@ export default function TablePage() {
                         {row.played}
                       </div>
 
-                      {/* V — wins */}
+                      {/* V — wins / P — draws / S — losses */}
                       <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.wins}
+                        {row.wins}/{row.draws}/{row.losses}
                       </div>
 
-                      {/* P — draws */}
+                      {/* GF — goals for : GS — goals against */}
                       <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.draws}
-                      </div>
-
-                      {/* S — losses */}
-                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.losses}
-                      </div>
-
-                      {/* GF — goals for */}
-                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.gf}
-                      </div>
-
-                      {/* GS — goals against */}
-                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.ga}
+                        {row.gf}:{row.ga}
                       </div>
 
                       {/* DR — goal difference */}
