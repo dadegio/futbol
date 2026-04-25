@@ -275,7 +275,7 @@ export default function CalendarPage() {
                 type="button"
                 onClick={goToPreviousRound}
                 disabled={!visibleRound || rounds.indexOf(visibleRound) <= 0}
-                className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[var(--foreground)] shadow-[0_2px_10px_rgba(23,23,20,0.08)] disabled:opacity-40"
+                className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--card)] text-[var(--foreground)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)] disabled:opacity-40"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -291,7 +291,7 @@ export default function CalendarPage() {
                   !visibleRound ||
                   rounds.indexOf(visibleRound) >= rounds.length - 1
                 }
-                className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[var(--foreground)] shadow-[0_2px_10px_rgba(23,23,20,0.08)] disabled:opacity-40"
+                className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--card)] text-[var(--foreground)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)] disabled:opacity-40"
               >
                 <ChevronRight size={18} />
               </button>
@@ -420,8 +420,8 @@ function CalendarMatchRow({
     >
       <div className="text-center">
         {live ? (
-          <div className="text-xs font-bold text-red-600">
-            <span className="mx-auto mb-1 block h-2 w-2 rounded-full bg-red-600" />
+          <div className="text-xs font-semibold text-[var(--danger)]">
+            <span className="mx-auto mb-1 block h-1.5 w-1.5 rounded-full bg-[var(--danger)]" />
             {liveMinute ?? "Live"}
           </div>
         ) : played ? (

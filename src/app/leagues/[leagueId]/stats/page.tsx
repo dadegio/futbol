@@ -42,19 +42,29 @@ export default function StatsPage() {
 
   return (
     <DashboardShell leagueId={leagueId}>
-      <div className="space-y-6">
+      <div className="w-full space-y-6 pb-8">
+        <header className="pt-2">
+          <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
+            Statistiche
+          </h1>
+        </header>
+
         {err && <Badge variant="error">{err}</Badge>}
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <Card>
-            <div className="mb-4 text-xl font-black text-white">Top 5 Marcatori</div>
+          <div>
+            <div className="mb-3 text-base font-semibold text-[var(--foreground)]">
+              Top 5 Marcatori
+            </div>
             <StatList rows={scorers} />
-          </Card>
+          </div>
 
-          <Card>
-            <div className="mb-4 text-xl font-black text-white">Top 5 Assistman</div>
+          <div>
+            <div className="mb-3 text-base font-semibold text-[var(--foreground)]">
+              Top 5 Assistman
+            </div>
             <StatList rows={assists} />
-          </Card>
+          </div>
         </section>
       </div>
     </DashboardShell>
@@ -62,31 +72,42 @@ export default function StatsPage() {
 }
 
 function StatList({ rows }: { rows: Row[] }) {
+  if (rows.length === 0) {
+    return (
+      <Card>
+        <span className="text-sm text-[var(--muted)]">Nessun dato.</span>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <Card className="overflow-hidden !p-0">
       {rows.map((r, i) => (
-        <Card key={r.playerId} variant="flat">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-sm text-white/45">#{i + 1}</div>
-              <div className="truncate font-bold text-white">
-                {r.firstName} {r.lastName}
-              </div>
-              <div className="truncate text-sm text-white/50">{r.teamName}</div>
+        <div
+          key={r.playerId}
+          className="grid items-center gap-3 border-b border-[var(--border)] px-4 py-3 last:border-b-0"
+          style={{ gridTemplateColumns: "20px 1fr auto" }}
+        >
+          <span
+            className="text-xs tabular-nums text-[var(--muted)]"
+            style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+          >
+            {i + 1}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-[14px] font-semibold text-[var(--foreground)]">
+              {r.firstName} {r.lastName}
             </div>
-
-            <Badge variant="accent" className="text-xl">
-              {r.value}
-            </Badge>
+            <div className="truncate text-xs text-[var(--muted)]">{r.teamName}</div>
           </div>
-        </Card>
+          <div
+            className="text-[22px] font-semibold tabular-nums leading-none text-[var(--foreground)]"
+            style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+          >
+            {r.value}
+          </div>
+        </div>
       ))}
-
-      {rows.length === 0 && (
-        <Card variant="flat">
-          <span className="text-white/55">Nessun dato.</span>
-        </Card>
-      )}
-    </div>
+    </Card>
   );
 }

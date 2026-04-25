@@ -8,11 +8,11 @@ const base =
 
 const variants = {
   primary:
-    "bg-[var(--accent)] text-black hover:bg-[var(--accent-2)]",
+    "bg-[var(--accent)] text-white hover:opacity-90 active:opacity-80",
   secondary:
-    "border border-[var(--border)] bg-white/5 text-[var(--foreground)]/75 hover:bg-white/10 hover:text-[var(--foreground)]",
+    "border border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)] hover:bg-[var(--card)] hover:border-[var(--border-strong)]",
   destructive:
-    "border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20",
+    "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
 } as const;
 
 const sizes = {

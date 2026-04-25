@@ -94,13 +94,13 @@ export default function HomePage() {
               <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
                 Dashboard
               </div>
-              <h2 className="mt-1 text-2xl font-extrabold text-white">
+              <h2 className="mt-1 text-2xl font-bold text-[var(--foreground)]">
                 Crea e gestisci i tuoi tornei
               </h2>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-white/6 px-4 py-2 text-sm text-white/60">
+              <div className="rounded-full bg-[var(--card-2)] px-4 py-2 text-sm text-[var(--muted)]">
                 {leagues.length} tornei salvati
               </div>
               {isAdmin && (
@@ -113,7 +113,7 @@ export default function HomePage() {
 
           {isAdmin && showCreateLeague && (
             <Card variant="inner">
-              <div className="mb-3 text-lg font-bold text-white">Nuovo torneo</div>
+              <div className="mb-3 text-lg font-bold text-[var(--foreground)]">Nuovo torneo</div>
 
               <div className="flex flex-col gap-3 md:flex-row">
                 <Input
@@ -136,16 +136,16 @@ export default function HomePage() {
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <div className="text-sm font-medium uppercase tracking-[0.2em] text-[var(--accent)]">
-                Saved Leagues
+                Tornei
               </div>
-              <h2 className="mt-1 text-2xl font-extrabold text-white">
+              <h2 className="mt-1 text-2xl font-bold text-[var(--foreground)]">
                 Tornei disponibili
               </h2>
             </div>
           </div>
 
           {leagues.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-white/10 bg-white/[0.03] px-5 py-12 text-center text-white/55">
+            <div className="rounded-[18px] border border-dashed border-[var(--border-strong)] bg-[var(--card-2)] px-5 py-12 text-center text-[var(--muted)]">
               Nessun torneo salvato. Crea il primo per iniziare.
             </div>
           ) : (

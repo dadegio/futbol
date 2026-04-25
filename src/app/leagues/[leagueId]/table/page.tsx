@@ -144,7 +144,10 @@ export default function TablePage() {
                         {row.gd > 0 ? `+${row.gd}` : row.gd}
                       </div>
 
-                      <div className="pr-1 text-right text-base font-black text-[var(--foreground)]">
+                      <div
+                        className="pr-1 text-right text-[15px] font-semibold tabular-nums text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+                      >
                         {row.points}
                       </div>
                     </div>

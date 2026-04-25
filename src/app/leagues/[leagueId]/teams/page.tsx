@@ -122,7 +122,7 @@ export default function TeamsPage() {
             <button
               type="button"
               onClick={() => setShowCreateTeam((value) => !value)}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[var(--accent)] shadow-[0_2px_10px_rgba(23,23,20,0.08)] active:scale-95"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-[0_1px_3px_rgba(0,0,0,0.1)] active:opacity-80"
               aria-label={
                 showCreateTeam
                   ? "Nascondi creazione squadra"

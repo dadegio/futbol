@@ -1,33 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f4ef;
-  --foreground: #171714;
-  --card: #ffffff;
-  --card-2: #fafafa;
-  --muted: #a5a39d;
-  --border: #e8e5dd;
-  --accent: #173f7a;
-  --accent-2: #24599d;
-  --success: #d9f6df;
-  --danger: #cf2f32;
-}
-html[data-theme="light"] {
-  --background: #f4f6fa;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-2: #f1f3f7;
-  --muted: #6b7280;
-  --border: rgba(17, 24, 39, 0.09);
-  --accent: #0ea5e9;
-  --accent-2: #0284c7;
+  --background: #F7F6F2;
+  --foreground: #17160E;
+  --card: #FFFFFF;
+  --card-2: #EFEDE6;
+  --muted: rgba(0, 0, 0, 0.36);
+  --border: rgba(0, 0, 0, 0.07);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --accent: oklch(0.38 0.10 258);
+  --accent-2: oklch(0.30 0.12 258);
+  --success: oklch(0.44 0.13 148);
+  --danger: oklch(0.50 0.18 27);
+  --warn: oklch(0.62 0.15 76);
+  --tabbar-bg: rgba(247, 246, 242, 0.94);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 * {
@@ -44,19 +37,18 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--foreground);
-  font-family: var(--font-geist-sans, system-ui, sans-serif);
+  font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif);
   background: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-body::before {
-  display: none;
-}
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 button,
@@ -75,11 +67,11 @@ textarea {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.12);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Bracket animations */
@@ -92,15 +84,7 @@ textarea {
   animation: fade-in 0.4s ease-out;
 }
 
-/* Accent color themes */
-html[data-accent="sky"]     { --accent: #7dd3fc; --accent-2: #38bdf8; }
-html[data-accent="emerald"] { --accent: #6ee7b7; --accent-2: #34d399; }
-html[data-accent="violet"]  { --accent: #c4b5fd; --accent-2: #a78bfa; }
-html[data-accent="rose"]    { --accent: #fda4af; --accent-2: #fb7185; }
-html[data-accent="amber"]   { --accent: #fcd34d; --accent-2: #fbbf24; }
-html[data-accent="orange"]  { --accent: #fdba74; --accent-2: #fb923c; }
-
-/* Print styles for bracket */
+/* Print styles */
 @media print {
   body { background: white !important; color: black !important; }
   aside, nav, .no-print { display: none !important; }

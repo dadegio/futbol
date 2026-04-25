@@ -6,11 +6,11 @@ type CardProps = {
 
 const styles = {
   default:
-    "rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 md:p-6 shadow-sm",
+    "rounded-[14px] bg-[var(--card)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)] p-4 md:p-5",
   inner:
-    "rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4 md:p-5",
+    "rounded-xl bg-[var(--card-2)] p-4 md:p-5",
   flat:
-    "rounded-xl bg-white/[0.03] p-4",
+    "rounded-xl bg-[var(--card-2)] p-4",
 } as const;
 
 export default function Card({ children, className = "", variant = "default" }: CardProps) {
@@ -30,7 +30,6 @@ export function CardHeader({
   tag?: string;
   title: string;
   description?: string;
-  /** Heading level — use 1 only for the true page title, 2 for section headers (default) */
   level?: 1 | 2 | 3;
 }) {
   const Tag = `h${level}` as "h1" | "h2" | "h3";
@@ -45,7 +44,7 @@ export function CardHeader({
         {title}
       </Tag>
       {description && (
-        <p className="mt-1.5 text-sm text-[var(--foreground)]/50">{description}</p>
+        <p className="mt-1.5 text-sm text-[var(--muted)]">{description}</p>
       )}
     </div>
   );

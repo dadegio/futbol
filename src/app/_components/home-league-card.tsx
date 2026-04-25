@@ -26,7 +26,7 @@ export default function HomeLeagueCard({ id, name, onDelete }: LeagueCardProps) 
         {isAdmin && (
           <button
             onClick={onDelete}
-            className="shrink-0 rounded-lg border border-[var(--border)] bg-transparent p-2 text-[var(--foreground)]/40 transition-colors hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-300"
+            className="shrink-0 rounded-lg border border-[var(--border)] bg-transparent p-2 text-[var(--muted)] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             aria-label={`Elimina ${name}`}
           >
             <Trash2 size={15} />
@@ -36,7 +36,7 @@ export default function HomeLeagueCard({ id, name, onDelete }: LeagueCardProps) 
 
       <Link
         href={`/leagues/${id}/calendar`}
-        className="inline-flex w-fit items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-2)]"
+        className="inline-flex w-fit items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-2)]"
       >
         Apri torneo
         <ArrowRight size={15} />

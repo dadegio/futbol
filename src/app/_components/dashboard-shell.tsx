@@ -16,7 +16,7 @@ export default function DashboardShell({
   children: React.ReactNode;
   leagueId?: string;
 }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refresh: refreshAuth } = useAuth();
   const router = useRouter();
   const [popupOpen, setPopupOpen] = useState(false);
 
@@ -33,24 +33,17 @@ export default function DashboardShell({
     setPopupOpen(false);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     clearAuthToken();
+    await refreshAuth();
     router.refresh();
   }
 
-  // Restore saved accent color on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("futbol-accent");
-    if (saved) {
-      document.documentElement.setAttribute("data-accent", saved);
-    }
-  }, []);
-
-  return (
+return (
     <div className="min-h-screen px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 lg:p-7">
       <div className="mx-auto max-w-[1600px]">
         {/* Mobile top bar */}
-        <div className="no-print mb-4 flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-[var(--card)]/95 px-4 py-3 shadow-xl shadow-black/10 lg:hidden">
+        <div className="no-print mb-4 flex items-center justify-between rounded-[18px] bg-[var(--card)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)] lg:hidden">
           <Link href="/" className="text-lg font-extrabold tracking-tight">
             <span className="text-[var(--accent)] italic">FUTBOL</span>
           </Link>
@@ -74,7 +67,7 @@ export default function DashboardShell({
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-[var(--accent-2)]"
+                  className="flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-2)]"
                 >
                   <LogIn size={13} />
                   Accedi
@@ -105,12 +98,12 @@ export default function DashboardShell({
           onClick={dismissPopup}
         >
           <div
-            className="w-full max-w-sm rounded-[28px] border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-[24px] bg-[var(--card)] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <div className="mb-5 flex items-start justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]/15 text-[var(--accent)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]">
                 <Trophy size={20} />
               </div>
               <button
@@ -133,7 +126,7 @@ export default function DashboardShell({
               <Link
                 href="/login"
                 onClick={dismissPopup}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-2)]"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-2)]"
               >
                 <LogIn size={15} />
                 Accedi

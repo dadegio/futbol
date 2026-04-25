@@ -322,7 +322,7 @@ export default function TeamPage() {
                   "flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition",
                   editingTeam
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                    : "border-[var(--border)] bg-white text-[var(--foreground)]",
+                    : "border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)]",
                 ].join(" ")}
               >
                 {editingTeam ? <X size={16} /> : <Pencil size={16} />}
@@ -340,7 +340,7 @@ export default function TeamPage() {
                   "flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition disabled:opacity-40",
                   showAddPlayer
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                    : "border-[var(--border)] bg-white text-[var(--foreground)]",
+                    : "border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)]",
                 ].join(" ")}
               >
                 {showAddPlayer ? <X size={16} /> : <Plus size={16} />}
@@ -393,7 +393,7 @@ export default function TeamPage() {
                     setBadgeFile(file);
                     if (file) setRemoveBadge(false);
                   }}
-                  className="block w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
+                  className="block w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--foreground)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
                 />
 
                 <p className="text-xs text-[var(--muted)]">Max 5 MB.</p>
@@ -504,7 +504,7 @@ export default function TeamPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Cerca giocatore..."
-            className="h-12 w-full rounded-[16px] border border-[var(--border)] bg-white pl-11 pr-4 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+            className="h-11 w-full rounded-[14px] border border-[var(--border)] bg-[var(--card)] pl-11 pr-4 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)]"
           />
         </div>
 

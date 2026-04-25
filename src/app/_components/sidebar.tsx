@@ -13,7 +13,6 @@ import {
   Swords,
   ShieldCheck,
 } from "lucide-react";
-import ThemePicker from "./theme-picker";
 import AuthButton from "./auth-button";
 import { useIsAdmin } from "@/lib/client-auth";
 
@@ -40,7 +39,7 @@ function NavItem({
         "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
         active
           ? "bg-[var(--card-2)] font-medium text-[var(--accent)]"
-          : "font-normal text-[var(--foreground)]/60 hover:bg-white/5 hover:text-[var(--foreground)]/90",
+          : "font-normal text-[var(--muted)] hover:bg-[var(--card-2)] hover:text-[var(--foreground)]",
       ].join(" ")}
     >
       <span className={active ? "opacity-100" : "opacity-60"}>{icon}</span>
@@ -110,7 +109,7 @@ export default function Sidebar({ leagueId }: SidebarProps) {
       {/* Search */}
       <form
         onSubmit={submitSearch}
-        className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white/[0.03] px-3 py-2"
+        className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2"
       >
         <Search size={14} className="shrink-0 text-[var(--foreground)]/40" />
         <input
@@ -122,7 +121,7 @@ export default function Sidebar({ leagueId }: SidebarProps) {
         {leagueId && (
           <button
             type="submit"
-            className="rounded-lg bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-black"
+            className="rounded-lg bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-white"
           >
             Vai
           </button>
@@ -159,14 +158,8 @@ export default function Sidebar({ leagueId }: SidebarProps) {
       )}
 
       {/* Bottom */}
-      <div className="mt-5 border-t border-[var(--border)] pt-4 space-y-4">
+      <div className="mt-5 border-t border-[var(--border)] pt-4">
         <AuthButton />
-        <div>
-          <p className="mb-2 text-[10px] font-medium uppercase tracking-widest text-[var(--foreground)]/30">
-            Tema
-          </p>
-          <ThemePicker />
-        </div>
       </div>
     </aside>
   );

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
@@ -42,6 +42,32 @@ type Match = {
   stats: StatRow[];
   leagueId: string;
 };
+
+function TeamCrest({ name, size = 40 }: { name: string; size?: number }) {
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const hue = (initials.charCodeAt(0) * 47 + initials.charCodeAt(1) * 13) % 360;
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center font-bold"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.28,
+        background: `oklch(0.88 0.07 ${hue})`,
+        color: `oklch(0.38 0.12 ${hue})`,
+        fontSize: size * 0.36,
+        fontFamily: "var(--font-display)",
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
 
 export default function MatchResultForm({ match }: { match: Match }) {
   const { user, loading: authLoading } = useAuth();
@@ -132,64 +158,132 @@ export default function MatchResultForm({ match }: { match: Match }) {
     }
   }
 
+  const played = homeGoals !== "" && awayGoals !== "";
+  const hg = Number(homeGoals);
+  const ag = Number(awayGoals);
+
   return (
     <DashboardShell leagueId={match.leagueId}>
-      <div className="space-y-5">
+      <div className="mx-auto w-full max-w-[560px] space-y-4 pb-8">
 
-        {/* Header */}
-        <Card>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
-                Giornata {match.round}
-              </p>
-              <h1 className="mt-1 text-2xl font-bold text-[var(--foreground)]">
-                {match.homeTeam.name}
-                <span className="mx-3 font-normal text-[var(--foreground)]/30">vs</span>
-                {match.awayTeam.name}
-              </h1>
-            </div>
-            <Link
-              href={`/leagues/${match.leagueId}/calendar`}
-              className="flex w-fit items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs text-[var(--foreground)]/60 hover:text-[var(--foreground)]"
-            >
-              <ArrowLeft size={13} /> Calendario
-            </Link>
-          </div>
-        </Card>
+        {/* Back + round */}
+        <div className="flex items-center gap-2 pt-1">
+          <Link
+            href={`/leagues/${match.leagueId}/calendar`}
+            className="flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          >
+            <ChevronLeft size={16} />
+            Calendario
+          </Link>
+          <span className="text-[var(--border-strong)]">·</span>
+          <span
+            className="text-sm text-[var(--muted)]"
+            style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+          >
+            Giornata {match.round}
+          </span>
+        </div>
 
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
 
-        {!canEdit && !authLoading && (
-          <Card variant="flat">
-            <p className="text-sm text-[var(--foreground)]/50">
-              Sola lettura — accedi come admin o capitano per modificare.
-            </p>
-          </Card>
-        )}
-
-        {/* Score */}
+        {/* Scoreboard */}
         <Card>
-          <h2 className="mb-4 text-sm font-medium text-[var(--foreground)]/50">Risultato</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <ScoreBox
-              label={match.homeTeam.name}
-              value={homeGoals}
-              onChange={(v) => canEdit && setHomeGoals(v.replace(/[^\d]/g, ""))}
-              readOnly={!canEdit}
-            />
-            <ScoreBox
-              label={match.awayTeam.name}
-              value={awayGoals}
-              onChange={(v) => canEdit && setAwayGoals(v.replace(/[^\d]/g, ""))}
-              readOnly={!canEdit}
-            />
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 py-2">
+            {/* Home */}
+            <div className="flex flex-col items-center gap-2 text-center">
+              <TeamCrest name={match.homeTeam.name} size={44} />
+              <span
+                className={[
+                  "text-[13px] font-semibold leading-tight",
+                  played && hg < ag ? "text-[var(--muted)]" : "text-[var(--foreground)]",
+                ].join(" ")}
+              >
+                {match.homeTeam.name}
+              </span>
+            </div>
+
+            {/* Score */}
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className="flex items-center gap-1"
+                style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+              >
+                <input
+                  value={homeGoals}
+                  onChange={(e) => canEdit && setHomeGoals(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="–"
+                  inputMode="numeric"
+                  readOnly={!canEdit}
+                  className={[
+                    "w-14 rounded-[10px] border text-center text-[40px] font-semibold leading-none tabular-nums text-[var(--foreground)] outline-none transition-colors",
+                    "placeholder:text-[var(--border-strong)]",
+                    canEdit
+                      ? "border-[var(--border)] bg-[var(--card-2)] focus:border-[var(--accent)] focus:bg-[var(--card)]"
+                      : "cursor-default border-transparent bg-transparent",
+                  ].join(" ")}
+                  style={{ height: 60, fontFamily: "var(--font-mono, ui-monospace)" }}
+                />
+                <span
+                  className="text-[28px] font-light text-[var(--border-strong)] select-none"
+                  style={{ fontFamily: "var(--font-mono, ui-monospace)", lineHeight: 1 }}
+                >
+                  :
+                </span>
+                <input
+                  value={awayGoals}
+                  onChange={(e) => canEdit && setAwayGoals(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="–"
+                  inputMode="numeric"
+                  readOnly={!canEdit}
+                  className={[
+                    "w-14 rounded-[10px] border text-center text-[40px] font-semibold leading-none tabular-nums text-[var(--foreground)] outline-none transition-colors",
+                    "placeholder:text-[var(--border-strong)]",
+                    canEdit
+                      ? "border-[var(--border)] bg-[var(--card-2)] focus:border-[var(--accent)] focus:bg-[var(--card)]"
+                      : "cursor-default border-transparent bg-transparent",
+                  ].join(" ")}
+                  style={{ height: 60, fontFamily: "var(--font-mono, ui-monospace)" }}
+                />
+              </div>
+
+              {played && (
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                  style={{
+                    background: "var(--card-2)",
+                    color: "var(--muted)",
+                    fontFamily: "var(--font-display)",
+                  }}
+                >
+                  {hg > ag ? match.homeTeam.name.split(" ")[0] + " vince" : hg < ag ? match.awayTeam.name.split(" ")[0] + " vince" : "Pareggio"}
+                </span>
+              )}
+            </div>
+
+            {/* Away */}
+            <div className="flex flex-col items-center gap-2 text-center">
+              <TeamCrest name={match.awayTeam.name} size={44} />
+              <span
+                className={[
+                  "text-[13px] font-semibold leading-tight",
+                  played && ag < hg ? "text-[var(--muted)]" : "text-[var(--foreground)]",
+                ].join(" ")}
+              >
+                {match.awayTeam.name}
+              </span>
+            </div>
           </div>
         </Card>
 
+        {!canEdit && !authLoading && (
+          <p className="px-1 text-sm text-[var(--muted)]">
+            Sola lettura — accedi come admin o capitano per modificare.
+          </p>
+        )}
+
         {/* Player stats */}
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           <TeamStatsCard
             title={match.homeTeam.name}
             players={homePlayers}
@@ -206,51 +300,30 @@ export default function MatchResultForm({ match }: { match: Match }) {
           />
         </div>
 
-        {/* Save — placed AFTER stats so user doesn't need to scroll back up */}
+        {/* Save */}
         {canEdit && (
-          <Card>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex gap-4 text-sm text-[var(--foreground)]/50">
-                <span>Gol: <b className="text-[var(--foreground)]">{totals.goalsSum}</b></span>
-                <span>Assist: <b className="text-[var(--foreground)]">{totals.assistsSum}</b></span>
-              </div>
-              <Button onClick={save} disabled={saving}>
-                {saving ? "Salvataggio…" : "Salva risultato e statistiche"}
-              </Button>
+          <div className="flex items-center justify-between gap-4 rounded-[14px] bg-[var(--card)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)]">
+            <div
+              className="flex gap-4 text-sm text-[var(--muted)]"
+              style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+            >
+              <span>
+                <span className="text-[var(--foreground)] font-semibold">{totals.goalsSum}</span>
+                {" "}gol
+              </span>
+              <span>
+                <span className="text-[var(--foreground)] font-semibold">{totals.assistsSum}</span>
+                {" "}assist
+              </span>
             </div>
-          </Card>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Salvataggio…" : "Salva"}
+            </Button>
+          </div>
         )}
 
       </div>
     </DashboardShell>
-  );
-}
-
-function ScoreBox({
-  label, value, onChange, readOnly,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  readOnly?: boolean;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4">
-      <p className="mb-3 truncate text-xs font-medium uppercase tracking-widest text-[var(--foreground)]/40">
-        {label}
-      </p>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="0"
-        inputMode="numeric"
-        readOnly={readOnly}
-        className={[
-          "h-14 w-full rounded-xl border border-[var(--border)] bg-white/5 text-center text-3xl font-bold text-[var(--foreground)] outline-none placeholder:text-[var(--foreground)]/20",
-          readOnly ? "cursor-default opacity-60" : "transition-colors focus:border-[var(--accent)]/50",
-        ].join(" ")}
-      />
-    </div>
   );
 }
 
@@ -264,61 +337,90 @@ function TeamStatsCard({
   readOnly?: boolean;
 }) {
   return (
-    <Card>
-      <h2 className="mb-4 font-semibold text-[var(--foreground)]">{title}</h2>
+    <Card className="!p-0 overflow-hidden">
+      <div className="border-b border-[var(--border)] px-4 py-3">
+        <h2 className="text-[13px] font-semibold text-[var(--foreground)]">{title}</h2>
+      </div>
 
       {players.length === 0 ? (
-        <p className="text-sm text-[var(--foreground)]/40">Nessun giocatore disponibile.</p>
+        <p className="px-4 py-4 text-sm text-[var(--muted)]">Nessun giocatore.</p>
       ) : (
-        <div className="space-y-2">
-          {players.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2.5"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[var(--foreground)]">
-                  <span className="mr-1.5 text-[var(--foreground)]/35">#{p.number}</span>
-                  {p.firstName} {p.lastName}
-                </p>
-              </div>
+        <div>
+          {players.map((p, i) => {
+            const hasStats =
+              Number(stats[p.id]?.goals || 0) > 0 || Number(stats[p.id]?.assists || 0) > 0;
+            return (
+              <div
+                key={p.id}
+                className={[
+                  "grid items-center gap-3 px-4 py-2.5",
+                  i < players.length - 1 ? "border-b border-[var(--border)]" : "",
+                  hasStats ? "bg-[oklch(0.97_0.01_258)]" : "",
+                ].join(" ")}
+                style={{ gridTemplateColumns: "28px 1fr auto" }}
+              >
+                {/* Jersey number */}
+                <div
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-medium tabular-nums text-[var(--muted)]"
+                  style={{ background: "var(--card-2)", fontFamily: "var(--font-mono, ui-monospace)" }}
+                >
+                  {p.number}
+                </div>
 
-              <div className="flex shrink-0 items-center gap-2.5">
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--foreground)]/50">Gol</span>
-                  <input
-                    aria-label={`Gol di ${p.firstName} ${p.lastName}`}
+                {/* Name */}
+                <span className="min-w-0 truncate text-[13px] font-medium text-[var(--foreground)]">
+                  {p.firstName} {p.lastName}
+                </span>
+
+                {/* Inputs */}
+                <div className="flex items-center gap-1.5">
+                  <StatInput
+                    label="G"
                     value={stats[p.id]?.goals ?? ""}
-                    placeholder="0"
-                    onChange={(e) => !readOnly && setPlayerStat(p.id, "goals", e.target.value)}
-                    inputMode="numeric"
+                    onChange={(v) => setPlayerStat(p.id, "goals", v)}
                     readOnly={readOnly}
-                    className={[
-                      "h-9 w-14 rounded-lg border border-[var(--border)] bg-white/5 text-center text-sm font-bold text-[var(--foreground)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]",
-                      readOnly ? "cursor-default opacity-60" : "focus:border-[var(--accent)]/50",
-                    ].join(" ")}
                   />
-                </div>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--foreground)]/50">Assist</span>
-                  <input
-                    aria-label={`Assist di ${p.firstName} ${p.lastName}`}
+                  <StatInput
+                    label="A"
                     value={stats[p.id]?.assists ?? ""}
-                    placeholder="0"
-                    onChange={(e) => !readOnly && setPlayerStat(p.id, "assists", e.target.value)}
-                    inputMode="numeric"
+                    onChange={(v) => setPlayerStat(p.id, "assists", v)}
                     readOnly={readOnly}
-                    className={[
-                      "h-9 w-14 rounded-lg border border-[var(--border)] bg-white/5 text-center text-sm font-bold text-[var(--foreground)] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]",
-                      readOnly ? "cursor-default opacity-60" : "focus:border-[var(--accent)]/50",
-                    ].join(" ")}
                   />
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </Card>
+  );
+}
+
+function StatInput({
+  label, value, onChange, readOnly,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  readOnly?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-[10px] font-medium text-[var(--muted)] w-3">{label}</span>
+      <input
+        value={value === "0" ? "" : value}
+        placeholder="0"
+        onChange={(e) => !readOnly && onChange(e.target.value)}
+        inputMode="numeric"
+        readOnly={readOnly}
+        className={[
+          "h-8 w-10 rounded-lg border text-center text-[13px] font-semibold tabular-nums text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--border-strong)]",
+          readOnly
+            ? "cursor-default border-transparent bg-transparent"
+            : "border-[var(--border)] bg-[var(--card-2)] focus:border-[var(--accent)] focus:bg-[var(--card)]",
+        ].join(" ")}
+        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+      />
+    </div>
   );
 }

@@ -67,7 +67,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                className="h-10 w-full rounded-xl border border-[var(--border)] bg-white/5 px-3.5 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--foreground)]/30 focus:border-[var(--accent)]/50"
+                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--foreground)]/30 focus:border-[var(--accent)]/50"
               />
             </div>
 
@@ -80,13 +80,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                className="h-10 w-full rounded-xl border border-[var(--border)] bg-white/5 px-3.5 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--foreground)]/30 focus:border-[var(--accent)]/50"
+                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--foreground)]/30 focus:border-[var(--accent)]/50"
               />
             </div>
           </div>
 
           {err && (
-            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {err}
             </div>
           )}
@@ -94,7 +94,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-5 h-10 w-full rounded-xl bg-[var(--accent)] text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-2)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-5 h-10 w-full rounded-xl bg-[var(--accent)] text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-2)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Accesso in corso..." : "Accedi"}
           </button>
