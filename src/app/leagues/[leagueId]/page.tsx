@@ -103,8 +103,8 @@ function isLiveMatch(match: Match) {
 
   const now = new Date();
 
-  // Match lasts 60 min + 2 min half-time break = 62 min live window.
-  const end = new Date(start.getTime() + 62 * 60 * 1000);
+  // 60 min match + 2 min break + 15 min post-match grace = 77 min live window.
+  const end = new Date(start.getTime() + 77 * 60 * 1000);
 
   return now >= start && now <= end;
 }
@@ -119,7 +119,7 @@ function getLiveMinute(match: Match) {
 
   const diffMinutes = Math.floor((now.getTime() - start.getTime()) / 60000);
 
-  if (diffMinutes < 0 || diffMinutes > 62) return null;
+  if (diffMinutes < 0 || diffMinutes > 77) return null;
 
   if (diffMinutes <= 30) return `${diffMinutes}'`;
   if (diffMinutes <= 32) return "30'+";  // half-time break
