@@ -33,8 +33,16 @@ export async function GET(
             date: true,
             homeGoals: true,
             awayGoals: true,
-            homeTeam: { select: { name: true } },
-            awayTeam: { select: { name: true } },
+            homeTeam: {
+              select: {
+                name: true,
+              },
+            },
+            awayTeam: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
