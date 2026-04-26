@@ -5,20 +5,27 @@ import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
+import Link from "next/link";
 
 type Row = {
   playerId: string;
   firstName: string;
   lastName: string;
+  photoUrl?: string | null;
   teamName: string;
+  teamBadgeUrl?: string | null;
   value: number;
 };
+
+type TabKey = "scorers" | "assists" | "appearances";
 
 export default function StatsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
 
   const [scorers, setScorers] = useState<Row[]>([]);
   const [assists, setAssists] = useState<Row[]>([]);
+  const [appearances, setAppearances] = useState<Row[]>([]);
+  const [tab, setTab] = useState<TabKey>("scorers");
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,8 +37,10 @@ export default function StatsPage() {
         const res = await fetch(`/api/leagues/${leagueId}/stats`, { cache: "no-store" });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error ?? "Errore stats");
+
         setScorers(data.scorers ?? []);
         setAssists(data.assists ?? []);
+        setAppearances(data.appearances ?? []);
       } catch (e: any) {
         setErr(e.message);
       }
@@ -39,6 +48,19 @@ export default function StatsPage() {
   }, [leagueId]);
 
   if (!leagueId) return <div>Caricamento…</div>;
+
+  const rows =
+    tab === "scorers" ? scorers : tab === "assists" ? assists : appearances;
+
+  const title =
+    tab === "scorers"
+      ? "Top 5 Marcatori"
+      : tab === "assists"
+      ? "Top 5 Assistman"
+      : "Top 5 Presenze";
+
+  const valueLabel =
+    tab === "scorers" ? "gol" : tab === "assists" ? "assist" : "pres.";
 
   return (
     <DashboardShell leagueId={leagueId}>
@@ -51,27 +73,67 @@ export default function StatsPage() {
 
         {err && <Badge variant="error">{err}</Badge>}
 
-        <section className="grid gap-6 xl:grid-cols-2">
-          <div>
-            <div className="mb-3 text-base font-semibold text-[var(--foreground)]">
-              Top 5 Marcatori
-            </div>
-            <StatList rows={scorers} />
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <TabButton
+            active={tab === "scorers"}
+            onClick={() => setTab("scorers")}
+            label="Marcatori"
+          />
+          <TabButton
+            active={tab === "assists"}
+            onClick={() => setTab("assists")}
+            label="Assist"
+          />
+          <TabButton
+            active={tab === "appearances"}
+            onClick={() => setTab("appearances")}
+            label="Presenze"
+          />
+        </div>
 
-          <div>
-            <div className="mb-3 text-base font-semibold text-[var(--foreground)]">
-              Top 5 Assistman
-            </div>
-            <StatList rows={assists} />
-          </div>
+        <section className="space-y-3">
+          <div className="text-base font-semibold text-[var(--foreground)]">{title}</div>
+          <StatList rows={rows} leagueId={leagueId} valueLabel={valueLabel} />
         </section>
       </div>
     </DashboardShell>
   );
 }
 
-function StatList({ rows }: { rows: Row[] }) {
+function TabButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
+        active
+          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+          : "border-[var(--border)] bg-white/5 text-[var(--foreground)] hover:bg-white/10",
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
+}
+
+function StatList({
+  rows,
+  leagueId,
+  valueLabel,
+}: {
+  rows: Row[];
+  leagueId: string;
+  valueLabel: string;
+}) {
   if (rows.length === 0) {
     return (
       <Card>
@@ -83,10 +145,11 @@ function StatList({ rows }: { rows: Row[] }) {
   return (
     <Card className="overflow-hidden !p-0">
       {rows.map((r, i) => (
-        <div
+        <Link
           key={r.playerId}
-          className="grid items-center gap-3 border-b border-[var(--border)] px-4 py-3 last:border-b-0"
-          style={{ gridTemplateColumns: "20px 1fr auto" }}
+          href={`/leagues/${leagueId}/players/${r.playerId}`}
+          className="grid items-center gap-3 border-b border-[var(--border)] px-4 py-3 transition hover:bg-white/5 last:border-b-0"
+          style={{ gridTemplateColumns: "24px 52px minmax(0,1fr) auto" }}
         >
           <span
             className="text-xs tabular-nums text-[var(--muted)]"
@@ -94,20 +157,104 @@ function StatList({ rows }: { rows: Row[] }) {
           >
             {i + 1}
           </span>
+
+          <PlayerAvatar
+            firstName={r.firstName}
+            lastName={r.lastName}
+            photoUrl={r.photoUrl ?? null}
+          />
+
           <div className="min-w-0">
             <div className="truncate text-[14px] font-semibold text-[var(--foreground)]">
               {r.firstName} {r.lastName}
             </div>
-            <div className="truncate text-xs text-[var(--muted)]">{r.teamName}</div>
+            <div className="mt-1 flex items-center gap-2 truncate text-xs text-[var(--muted)]">
+              <TeamLogo name={r.teamName} badgeUrl={r.teamBadgeUrl ?? null} />
+              <span className="truncate">{r.teamName}</span>
+            </div>
           </div>
-          <div
-            className="text-[22px] font-semibold tabular-nums leading-none text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
-          >
-            {r.value}
+
+          <div className="text-right">
+            <div
+              className="text-[22px] font-semibold tabular-nums leading-none text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
+            >
+              {r.value}
+            </div>
+            <div className="mt-1 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+              {valueLabel}
+            </div>
           </div>
-        </div>
+        </Link>
       ))}
     </Card>
+  );
+}
+
+function PlayerAvatar({
+  firstName,
+  lastName,
+  photoUrl,
+}: {
+  firstName: string;
+  lastName: string;
+  photoUrl: string | null;
+}) {
+  const initials = `${firstName} ${lastName}`
+    .trim()
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt={`${firstName} ${lastName}`}
+        className="h-12 w-12 rounded-2xl border border-[var(--border)] object-cover"
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/5 text-sm font-black text-[var(--foreground)]/60">
+      {initials || "?"}
+    </div>
+  );
+}
+
+function TeamLogo({
+  name,
+  badgeUrl,
+}: {
+  name: string;
+  badgeUrl: string | null;
+}) {
+  if (badgeUrl) {
+    return <img src={badgeUrl} alt={name} className="h-5 w-5 shrink-0 rounded-md object-contain" />;
+  }
+
+  const colors = [
+    "bg-blue-500/15 text-blue-300",
+    "bg-emerald-500/15 text-emerald-300",
+    "bg-amber-500/15 text-amber-300",
+    "bg-fuchsia-500/15 text-fuchsia-300",
+    "bg-cyan-500/15 text-cyan-300",
+    "bg-rose-500/15 text-rose-300",
+  ];
+
+  const index =
+    Math.abs(
+      name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    ) % colors.length;
+
+  return (
+    <div
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-black ${colors[index]}`}
+    >
+      {(name.match(/\b\w/g) || []).slice(0, 2).join("").toUpperCase() || "TM"}
+    </div>
   );
 }

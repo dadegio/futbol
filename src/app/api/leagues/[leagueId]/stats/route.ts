@@ -3,14 +3,25 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type PlayerInfo = {
+type PlayerLookup = {
   id: string;
   firstName: string;
   lastName: string;
+  photoUrl: string | null;
   team: {
     name: string;
     badgeUrl: string | null;
   } | null;
+};
+
+type StatRow = {
+  playerId: string;
+  firstName: string;
+  lastName: string;
+  photoUrl: string | null;
+  teamName: string;
+  teamBadgeUrl: string | null;
+  value: number;
 };
 
 export async function GET(
@@ -22,49 +33,42 @@ export async function GET(
   const scorersAgg = await prisma.matchPlayerStat.groupBy({
     by: ["playerId"],
     _sum: { goals: true },
-    where: {
-      match: { leagueId },
-      goals: { gt: 0 },
-    },
+    where: { match: { leagueId } },
     orderBy: { _sum: { goals: "desc" } },
-    take: 10,
+    take: 5,
   });
 
   const assistsAgg = await prisma.matchPlayerStat.groupBy({
     by: ["playerId"],
     _sum: { assists: true },
-    where: {
-      match: { leagueId },
-      assists: { gt: 0 },
-    },
+    where: { match: { leagueId } },
     orderBy: { _sum: { assists: "desc" } },
-    take: 10,
+    take: 5,
   });
 
   const appearancesAgg = await prisma.matchPlayerStat.groupBy({
     by: ["playerId"],
     _count: { playerId: true },
-    where: {
-      match: { leagueId },
-    },
+    where: { match: { leagueId } },
     orderBy: { _count: { playerId: "desc" } },
-    take: 10,
+    take: 5,
   });
 
-  const scorerIds = scorersAgg.map((item) => item.playerId);
-  const assistIds = assistsAgg.map((item) => item.playerId);
-  const appearanceIds = appearancesAgg.map((item) => item.playerId);
-
   const allIds = Array.from(
-    new Set([...scorerIds, ...assistIds, ...appearanceIds])
+    new Set([
+      ...scorersAgg.map((x) => x.playerId),
+      ...assistsAgg.map((x) => x.playerId),
+      ...appearancesAgg.map((x) => x.playerId),
+    ])
   );
 
-  const players: PlayerInfo[] = await prisma.player.findMany({
+  const rawPlayers = await prisma.player.findMany({
     where: { id: { in: allIds } },
     select: {
       id: true,
       firstName: true,
       lastName: true,
+      photoUrl: true,
       team: {
         select: {
           name: true,
@@ -74,46 +78,62 @@ export async function GET(
     },
   });
 
-  const byId = new Map<string, PlayerInfo>(
-    players.map((player) => [player.id, player])
+  const players: PlayerLookup[] = rawPlayers.map((p) => ({
+    id: p.id,
+    firstName: p.firstName,
+    lastName: p.lastName,
+    photoUrl: p.photoUrl ?? null,
+    team: p.team
+      ? {
+          name: p.team.name,
+          badgeUrl: p.team.badgeUrl ?? null,
+        }
+      : null,
+  }));
+
+  const byId = new Map<string, PlayerLookup>(
+    players.map((p) => [p.id, p])
   );
 
-  const scorers = scorersAgg.map((item) => {
-    const player = byId.get(item.playerId);
+  const scorers: StatRow[] = scorersAgg.map((x) => {
+    const p = byId.get(x.playerId);
 
     return {
-      playerId: item.playerId,
-      firstName: player?.firstName ?? "",
-      lastName: player?.lastName ?? "",
-      teamName: player?.team?.name ?? "",
-      teamBadgeUrl: player?.team?.badgeUrl ?? null,
-      value: item._sum.goals ?? 0,
+      playerId: x.playerId,
+      firstName: p?.firstName ?? "",
+      lastName: p?.lastName ?? "",
+      photoUrl: p?.photoUrl ?? null,
+      teamName: p?.team?.name ?? "",
+      teamBadgeUrl: p?.team?.badgeUrl ?? null,
+      value: x._sum.goals ?? 0,
     };
   });
 
-  const assists = assistsAgg.map((item) => {
-    const player = byId.get(item.playerId);
+  const assists: StatRow[] = assistsAgg.map((x) => {
+    const p = byId.get(x.playerId);
 
     return {
-      playerId: item.playerId,
-      firstName: player?.firstName ?? "",
-      lastName: player?.lastName ?? "",
-      teamName: player?.team?.name ?? "",
-      teamBadgeUrl: player?.team?.badgeUrl ?? null,
-      value: item._sum.assists ?? 0,
+      playerId: x.playerId,
+      firstName: p?.firstName ?? "",
+      lastName: p?.lastName ?? "",
+      photoUrl: p?.photoUrl ?? null,
+      teamName: p?.team?.name ?? "",
+      teamBadgeUrl: p?.team?.badgeUrl ?? null,
+      value: x._sum.assists ?? 0,
     };
   });
 
-  const appearances = appearancesAgg.map((item) => {
-    const player = byId.get(item.playerId);
+  const appearances: StatRow[] = appearancesAgg.map((x) => {
+    const p = byId.get(x.playerId);
 
     return {
-      playerId: item.playerId,
-      firstName: player?.firstName ?? "",
-      lastName: player?.lastName ?? "",
-      teamName: player?.team?.name ?? "",
-      teamBadgeUrl: player?.team?.badgeUrl ?? null,
-      value: item._count.playerId ?? 0,
+      playerId: x.playerId,
+      firstName: p?.firstName ?? "",
+      lastName: p?.lastName ?? "",
+      photoUrl: p?.photoUrl ?? null,
+      teamName: p?.team?.name ?? "",
+      teamBadgeUrl: p?.team?.badgeUrl ?? null,
+      value: x._count.playerId ?? 0,
     };
   });
 
