@@ -69,24 +69,26 @@ export default function PlayoffsPage() {
     if (leagueId) load();
   }, [leagueId]);
 
-  async function handleAdvance(seriesId: string) {
-    setAdvancing(seriesId);
-    setErr(null);
-    try {
-      const res = await authFetch(`/api/leagues/${leagueId}/playoffs/advance`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seriesId }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d?.error ?? "Errore");
-      await load();
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setAdvancing(null);
-    }
+  async function handleAdvance(seriesId: string, manualWinnerId?: string) {
+  setAdvancing(seriesId);
+  setErr(null);
+  try {
+    const res = await authFetch(`/api/leagues/${leagueId}/playoffs/advance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        manualWinnerId ? { seriesId, winnerId: manualWinnerId } : { seriesId }
+      ),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d?.error ?? "Errore");
+    await load();
+  } catch (e: any) {
+    setErr(e.message);
+  } finally {
+    setAdvancing(null);
   }
+}
 
   async function handleDelete() {
     if (!confirm("Eliminare i playoff? Tutte le partite playoff verranno cancellate.")) return;

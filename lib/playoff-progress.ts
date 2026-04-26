@@ -107,3 +107,98 @@ export async function syncPlayoffSeriesWinner(
 
   return winnerId;
 }
+
+export async function forcePlayoffSeriesWinner(
+  tx: Tx,
+  params: {
+    leagueId: string;
+    seriesId: string;
+    winnerId: string;
+    format: "SINGLE_ELIM" | "TWO_LEG";
+  }
+) {
+  const { leagueId, seriesId, winnerId, format } = params;
+
+  const series = await tx.playoffSeries.findUnique({
+    where: { id: seriesId },
+    select: {
+      id: true,
+      leagueId: true,
+      position: true,
+      homeTeamId: true,
+      awayTeamId: true,
+      feedsIntoSeriesId: true,
+    },
+  });
+
+  if (!series || series.leagueId !== leagueId) {
+    throw new Error("Serie playoff non trovata");
+  }
+
+  if (winnerId !== series.homeTeamId && winnerId !== series.awayTeamId) {
+    throw new Error("Il vincitore selezionato non appartiene a questa serie");
+  }
+
+  await tx.playoffSeries.update({
+    where: { id: seriesId },
+    data: { winnerId },
+  });
+
+  if (!series.feedsIntoSeriesId) {
+    return winnerId;
+  }
+
+  const slotField = series.position % 2 === 0 ? "homeTeamId" : "awayTeamId";
+
+  await tx.playoffSeries.update({
+    where: { id: series.feedsIntoSeriesId },
+    data: { [slotField]: winnerId },
+  });
+
+  const nextSeries = await tx.playoffSeries.findUnique({
+    where: { id: series.feedsIntoSeriesId },
+    select: {
+      id: true,
+      homeTeamId: true,
+      awayTeamId: true,
+    },
+  });
+
+  if (!nextSeries?.homeTeamId || !nextSeries?.awayTeamId) {
+    return winnerId;
+  }
+
+  const existingMatches = await tx.match.count({
+    where: { seriesId: nextSeries.id },
+  });
+
+  if (existingMatches > 0) {
+    return winnerId;
+  }
+
+  await tx.match.create({
+    data: {
+      leagueId,
+      round: 0,
+      homeTeamId: nextSeries.homeTeamId,
+      awayTeamId: nextSeries.awayTeamId,
+      seriesId: nextSeries.id,
+      leg: 1,
+    },
+  });
+
+  if (format === "TWO_LEG") {
+    await tx.match.create({
+      data: {
+        leagueId,
+        round: 0,
+        homeTeamId: nextSeries.awayTeamId,
+        awayTeamId: nextSeries.homeTeamId,
+        seriesId: nextSeries.id,
+        leg: 2,
+      },
+    });
+  }
+
+  return winnerId;
+}
