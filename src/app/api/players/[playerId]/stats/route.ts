@@ -18,7 +18,7 @@ export async function GET(
       },
     }),
 
-    prisma.matchPlayer.count({
+    prisma.matchPlayerStat.count({
       where: { playerId },
     }),
 
