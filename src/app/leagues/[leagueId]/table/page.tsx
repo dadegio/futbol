@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardShell from "src/app/_components/dashboard-shell";
-import Badge from "src/app/_components/ui/badge";
 import Card from "src/app/_components/ui/card";
+import Badge from "src/app/_components/ui/badge";
 
 type Row = {
   teamId: string;
@@ -20,27 +21,35 @@ type Row = {
   points: number;
 };
 
+type TableResponse = Row[] | { error?: string };
+
 export default function TablePage() {
   const { leagueId } = useParams<{ leagueId: string }>();
   const [rows, setRows] = useState<Row[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!leagueId) return;
-    setErr(null);
-    const res = await fetch(`/api/leagues/${leagueId}/table`, { cache: "no-store" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) { setErr(data?.error ?? "Errore classifica"); return; }
-    setRows(data);
-  }, [leagueId]);
-
-  useEffect(() => { load(); }, [load]);
-
-  // Re-fetch whenever the tab regains focus (e.g. after entering a result in another tab)
   useEffect(() => {
-    window.addEventListener("focus", load);
-    return () => window.removeEventListener("focus", load);
-  }, [load]);
+    if (!leagueId) return;
+
+    async function load() {
+      setErr(null);
+
+      const res = await fetch(`/api/leagues/${leagueId}/table`, {
+        cache: "no-store",
+      });
+
+      const data: TableResponse = await res.json().catch(() => []);
+
+      if (!res.ok) {
+        setErr((data as { error?: string })?.error ?? "Errore classifica");
+        return;
+      }
+
+      setRows(Array.isArray(data) ? data : []);
+    }
+
+    load();
+  }, [leagueId]);
 
   const currentRound = useMemo(() => {
     const maxPlayed = Math.max(...rows.map((row) => row.played), 0);
@@ -53,12 +62,12 @@ export default function TablePage() {
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-5 pb-8">
         <header className="pt-2">
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between gap-3">
             <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
               Classifica
             </h1>
 
-            <span className="text-sm font-semibold text-[var(--muted)]">
+            <span className="shrink-0 text-sm font-semibold text-[var(--muted)]">
               G{currentRound}
             </span>
           </div>
@@ -73,81 +82,93 @@ export default function TablePage() {
             </div>
           ) : (
             <>
-              {/* Header */}
-              <div
-                className="grid border-b border-[var(--border)] px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]"
-                style={{ gridTemplateColumns: "28px minmax(0,1fr) 32px 64px 64px 42px 40px" }}
-              >
+              <div className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] border-b border-[var(--border)] px-2 py-3 text-xs font-medium text-[var(--muted)] sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_52px_56px] sm:px-3">
                 <div className="text-center">#</div>
                 <div className="pl-1 text-left">Squadra</div>
                 <div className="text-center">G</div>
-                <div className="text-center">V/P/S</div>
-                <div className="text-center">GF:GS</div>
+                <div className="text-center">V</div>
                 <div className="text-center">DR</div>
                 <div className="pr-1 text-right">PT</div>
               </div>
 
               <div>
                 {rows.map((row, index) => {
+                  const isPromotion = index < 2;
+                  const isRelegation = index === rows.length - 1;
+
                   return (
-                    <div
+                    <Link
                       key={row.teamId}
-                      className="grid items-center border-b border-[var(--border)] px-3 py-3 last:border-b-0"
-                      style={{ gridTemplateColumns: "28px minmax(0,1fr) 32px 64px 64px 42px 40px" }}
+                      href={`/leagues/${leagueId}/teams/${row.teamId}`}
+                      className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] items-center border-b border-[var(--border)] px-2 py-3 transition hover:bg-white/5 last:border-b-0 sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_52px_56px] sm:px-3 sm:py-4"
                     >
-                      {/* Position */}
-                      <div className="text-center text-sm text-[var(--muted)]">
+                      <div className="relative text-center text-sm text-[var(--muted)]">
+                        {isPromotion && (
+                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
+                        )}
+
+                        {isRelegation && (
+                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
+                        )}
+
                         {index + 1}
                       </div>
 
-                      {/* Team */}
                       <div className="min-w-0 pl-1">
-                        <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <TeamLogo name={row.teamName} badgeUrl={row.badgeUrl} />
-                          <span className="min-w-0 truncate text-[14px] font-semibold text-[var(--foreground)]">
-                            {row.teamName}
-                          </span>
+
+                          <div className="min-w-0">
+                            <div className="truncate text-[14px] font-semibold leading-tight text-[var(--foreground)] sm:text-[15px]">
+                              {row.teamName}
+                            </div>
+                            <div className="mt-0.5 text-[11px] text-[var(--muted)] sm:hidden">
+                              GF {row.gf} · GS {row.ga}
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* G — played */}
-                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
+                      <div className="text-center text-sm tabular-nums text-[var(--muted)]">
                         {row.played}
                       </div>
 
-                      {/* V — wins / P — draws / S — losses */}
-                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.wins}/{row.draws}/{row.losses}
+                      <div className="text-center text-sm tabular-nums text-[var(--muted)]">
+                        {row.wins}
                       </div>
 
-                      {/* GF — goals for : GS — goals against */}
-                      <div className="text-center text-[13px] tabular-nums text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
-                        {row.gf}:{row.ga}
-                      </div>
-
-                      {/* DR — goal difference */}
                       <div
                         className={[
-                          "text-center text-[13px] font-semibold tabular-nums",
-                          row.gd > 0 ? "text-emerald-700" : row.gd < 0 ? "text-red-600" : "text-[var(--muted)]",
+                          "text-center text-sm font-semibold tabular-nums",
+                          row.gd > 0
+                            ? "text-emerald-600"
+                            : row.gd < 0
+                              ? "text-red-500"
+                              : "text-[var(--muted)]",
                         ].join(" ")}
-                        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
                       >
                         {row.gd > 0 ? `+${row.gd}` : row.gd}
                       </div>
 
-                      {/* PT — points */}
-                      <div
-                        className="pr-1 text-right text-[15px] font-black tabular-nums text-[var(--foreground)]"
-                        style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
-                      >
+                      <div className="pr-1 text-right text-base font-black tabular-nums text-[var(--foreground)]">
                         {row.points}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
 
+              <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+                  Promozione
+                </span>
+
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[var(--danger)]" />
+                  Retrocessione
+                </span>
+              </div>
             </>
           )}
         </Card>
@@ -175,13 +196,13 @@ function TeamLogo({
       <img
         src={badgeUrl}
         alt={`Logo ${name}`}
-        className="h-8 w-8 shrink-0 rounded-lg object-contain"
+        className="h-9 w-9 shrink-0 rounded-xl object-contain sm:h-10 sm:w-10"
       />
     );
   }
 
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef0ec] text-[11px] font-black text-[var(--foreground)]">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef0ec] text-[11px] font-black text-[var(--foreground)] sm:h-10 sm:w-10">
       {initials}
     </span>
   );
