@@ -21,7 +21,12 @@ type Player = {
   team?: {
     id: string;
     name: string;
+    badgeUrl?: string | null;
     leagueId: string;
+    league?: {
+      id: string;
+      name: string;
+    } | null;
   } | null;
 };
 
@@ -225,17 +230,12 @@ export default function PlayerPage() {
         <Card>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              {player.photoUrl ? (
-                <img
-                  src={player.photoUrl}
-                  alt={`${player.firstName} ${player.lastName}`}
-                  className="h-20 w-20 rounded-3xl border border-[var(--border)] object-cover"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/5 text-sm font-bold text-[var(--foreground)]/35">
-                  N/A
-                </div>
-              )}
+              <PlayerAvatar
+                firstName={player.firstName}
+                lastName={player.lastName}
+                number={player.number}
+                photoUrl={player.photoUrl ?? null}
+              />
 
               <div className="min-w-0">
                 <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
@@ -437,5 +437,47 @@ export default function PlayerPage() {
         </Card>
       </div>
     </DashboardShell>
+  );
+}
+
+function PlayerAvatar({
+  firstName,
+  lastName,
+  number,
+  photoUrl,
+}: {
+  firstName: string;
+  lastName: string;
+  number: number;
+  photoUrl?: string | null;
+}) {
+  const fullName = `${firstName} ${lastName}`;
+
+  const initials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+
+  if (photoUrl) {
+    return (
+      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--background)] shadow-sm">
+        <img
+          src={photoUrl}
+          alt={`Foto ${fullName}`}
+          className="h-full w-full object-cover"
+        />
+
+        <span className="absolute bottom-0 right-0 flex h-8 min-w-8 items-center justify-center rounded-tl-2xl bg-[var(--accent)] px-2 text-sm font-black text-white">
+          {number}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-[28px] border border-[var(--border)] bg-[var(--background)] text-2xl font-black text-[var(--accent)] shadow-sm">
+      {initials || "?"}
+
+      <span className="absolute bottom-0 right-0 flex h-8 min-w-8 items-center justify-center rounded-tl-2xl bg-[var(--accent)] px-2 text-sm font-black text-white">
+        {number}
+      </span>
+    </div>
   );
 }
