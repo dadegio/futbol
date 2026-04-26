@@ -26,6 +26,8 @@ type Match = {
   awayGoals: number | null;
   homeTeam: Team;
   awayTeam: Team;
+  isPlayoff?: boolean;
+  stageLabel?: string;
 };
 
 type TableRow = {
@@ -39,6 +41,32 @@ type TableRow = {
   ga: number;
   gd: number;
   points: number;
+};
+
+type PlayoffSeries = {
+  id: string;
+  bracketRound: number;
+  position: number;
+  homeTeam: Team | null;
+  awayTeam: Team | null;
+  matches: Array<{
+    id: string;
+    leg: number;
+    homeGoals: number | null;
+    awayGoals: number | null;
+    homeTeamId: string;
+    awayTeamId: string;
+    date: string | null;
+  }>;
+};
+
+type PlayoffResponse = {
+  configured?: boolean;
+  format?: "SINGLE_ELIM" | "TWO_LEG";
+  teamCount?: number | null;
+  seeded?: boolean;
+  series?: PlayoffSeries[];
+  error?: string;
 };
 
 async function getJSON<T>(url: string): Promise<T> {
@@ -125,12 +153,74 @@ function formatMatchDateTime(date: string | null) {
   return `${weekday} ${day} ${month} · ${time}`;
 }
 
+function playoffStageLabel(bracketRound: number, teamCount?: number | null) {
+  if (bracketRound <= 1) return "Finale";
+  if (bracketRound === 2) return "Semifinale";
+  if (bracketRound === 4) return "Quarti";
+  if (teamCount && bracketRound === teamCount / 2) return "Primo turno";
+  return `Playoff · R${bracketRound}`;
+}
+
+function normalizePlayoffMatches(
+  leagueId: string,
+  playoff: PlayoffResponse | null | undefined
+): Match[] {
+  if (!playoff?.configured || !Array.isArray(playoff.series)) return [];
+
+  const out: Match[] = [];
+
+  for (const series of playoff.series) {
+    for (const match of series.matches ?? []) {
+      let homeTeam: Team | null = null;
+      let awayTeam: Team | null = null;
+
+      if (series.homeTeam && series.awayTeam) {
+        if (match.homeTeamId === series.homeTeam.id) {
+          homeTeam = series.homeTeam;
+        } else if (match.homeTeamId === series.awayTeam.id) {
+          homeTeam = series.awayTeam;
+        }
+
+        if (match.awayTeamId === series.awayTeam.id) {
+          awayTeam = series.awayTeam;
+        } else if (match.awayTeamId === series.homeTeam.id) {
+          awayTeam = series.homeTeam;
+        }
+      }
+
+      if (!homeTeam || !awayTeam) {
+        continue;
+      }
+
+      out.push({
+        id: match.id,
+        leagueId,
+        round: 0,
+        date: match.date,
+        homeGoals: match.homeGoals,
+        awayGoals: match.awayGoals,
+        homeTeam,
+        awayTeam,
+        isPlayoff: true,
+        stageLabel: playoffStageLabel(series.bracketRound, playoff.teamCount),
+      });
+    }
+  }
+
+  return out.sort((a, b) => {
+    const ad = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+    const bd = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
+    return ad - bd;
+  });
+}
+
 export default function LeagueHomePage() {
   const { leagueId } = useParams<{ leagueId: string }>();
 
   const [league, setLeague] = useState<League | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [overviewMatches, setOverviewMatches] = useState<Match[]>([]);
   const [table, setTable] = useState<TableRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
@@ -141,22 +231,35 @@ export default function LeagueHomePage() {
       try {
         setErr(null);
 
-        const [leagueData, teamsData, matchesData, tableData] = await Promise.all([
-          getJSON<League>(`/api/leagues/${leagueId}`),
-          getJSON<any[]>(`/api/leagues/${leagueId}/teams`),
-          getJSON<Match[]>(`/api/leagues/${leagueId}/schedule`),
-          getJSON<TableRow[]>(`/api/leagues/${leagueId}/table`),
-        ]);
+        const [leagueData, teamsData, matchesData, tableData, playoffData] =
+          await Promise.all([
+            getJSON<League>(`/api/leagues/${leagueId}`),
+            getJSON<any[]>(`/api/leagues/${leagueId}/teams`),
+            getJSON<Match[]>(`/api/leagues/${leagueId}/schedule`),
+            getJSON<TableRow[]>(`/api/leagues/${leagueId}/table`),
+            getJSON<PlayoffResponse>(`/api/leagues/${leagueId}/playoffs`).catch(
+              () => ({ configured: false })
+            ),
+          ]);
+
+        const normalizedTeams = teamsData.map((team) => ({
+          id: team.id,
+          name: team.name,
+          badgeUrl: team.badgeUrl ?? null,
+        }));
+
+        const playoffMatches = normalizePlayoffMatches(leagueId, playoffData);
+
+        const mergedOverviewMatches = [...matchesData, ...playoffMatches].sort((a, b) => {
+          const ad = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
+          const bd = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
+          return ad - bd;
+        });
 
         setLeague(leagueData);
-        setTeams(
-          teamsData.map((team) => ({
-            id: team.id,
-            name: team.name,
-            badgeUrl: team.badgeUrl ?? null,
-          }))
-        );
+        setTeams(normalizedTeams);
         setMatches(matchesData);
+        setOverviewMatches(mergedOverviewMatches);
         setTable(tableData);
       } catch (error: any) {
         setErr(error.message);
@@ -202,16 +305,16 @@ export default function LeagueHomePage() {
   );
 
   const liveMatch = useMemo(() => {
-    return matches.find((match) => isLiveMatch(match)) ?? null;
-  }, [matches]);
+    return overviewMatches.find((match) => isLiveMatch(match)) ?? null;
+  }, [overviewMatches]);
 
   const liveMinute = useMemo(() => {
     return liveMatch ? getLiveMinute(liveMatch) : null;
   }, [liveMatch]);
 
   const nextMatches = useMemo(
-    () => matches.filter((match) => !isPlayed(match)).slice(0, 2),
-    [matches]
+    () => overviewMatches.filter((match) => !isPlayed(match)).slice(0, 2),
+    [overviewMatches]
   );
 
   if (!leagueId) return null;
@@ -291,7 +394,7 @@ export default function LeagueHomePage() {
                   {liveMinute ?? "Live"}
                 </span>
                 <span className="font-semibold text-[var(--muted)]">
-                  G{liveMatch.round}
+                  {liveMatch.isPlayoff ? liveMatch.stageLabel ?? "Playoff" : `G${liveMatch.round}`}
                 </span>
               </div>
 
@@ -417,8 +520,16 @@ function SummaryStat({
 function NextMatchCard({ match }: { match: Match }) {
   return (
     <Card className="min-h-[136px]">
-      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-        {formatMatchDateTime(match.date)}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+          {formatMatchDateTime(match.date)}
+        </div>
+
+        {match.isPlayoff && (
+          <span className="shrink-0 rounded-full bg-white/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
+            {match.stageLabel ?? "Playoff"}
+          </span>
+        )}
       </div>
 
       <div className="space-y-3">
