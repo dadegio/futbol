@@ -6,6 +6,12 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Devi effettuare il login" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
@@ -22,7 +28,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ url: blob.url });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Errore upload" }, { status: 500 });
   }
 }

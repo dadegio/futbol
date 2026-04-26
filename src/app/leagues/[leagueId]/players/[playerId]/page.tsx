@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Shield, Goal, Handshake, CalendarDays } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
@@ -25,12 +25,34 @@ type Player = {
   };
 };
 
+type PlayerStatsResponse = {
+  goals?: number;
+  assists?: number;
+  appearances?: number;
+  recentMatches?: Array<{
+    matchId: string;
+    date: string | null;
+    homeTeamName: string;
+    awayTeamName: string;
+    homeGoals: number | null;
+    awayGoals: number | null;
+    goals: number;
+    assists: number;
+  }>;
+};
+
 const POSITIONS = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];
 
 async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any)?.error ?? "Errore upload immagine");
   return data.url as string;
@@ -42,6 +64,19 @@ export default function PlayerPage() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [goals, setGoals] = useState(0);
   const [assists, setAssists] = useState(0);
+  const [appearances, setAppearances] = useState(0);
+  const [recentMatches, setRecentMatches] = useState<
+    Array<{
+      matchId: string;
+      date: string | null;
+      homeTeamName: string;
+      awayTeamName: string;
+      homeGoals: number | null;
+      awayGoals: number | null;
+      goals: number;
+      assists: number;
+    }>
+  >([]);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -60,17 +95,28 @@ export default function PlayerPage() {
   async function load() {
     setErr(null);
     setLoading(true);
-    try {
-      const playerRes = await fetch(`/api/players/${playerId}`, { cache: "no-store" });
-      const playerData = await playerRes.json().catch(() => ({}));
-      if (!playerRes.ok) throw new Error((playerData as any)?.error ?? "Errore caricamento giocatore");
 
-      const statsRes = await fetch(`/api/players/${playerId}/stats`, { cache: "no-store" });
-      const statsData = await statsRes.json().catch(() => ({}));
+    try {
+      const playerRes = await fetch(`/api/players/${playerId}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const playerData = await playerRes.json().catch(() => ({}));
+      if (!playerRes.ok) {
+        throw new Error((playerData as any)?.error ?? "Errore caricamento giocatore");
+      }
+
+      const statsRes = await fetch(`/api/players/${playerId}/stats`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const statsData: PlayerStatsResponse = await statsRes.json().catch(() => ({}));
 
       setPlayer(playerData);
       setGoals(statsRes.ok ? (statsData.goals ?? 0) : 0);
       setAssists(statsRes.ok ? (statsData.assists ?? 0) : 0);
+      setAppearances(statsRes.ok ? (statsData.appearances ?? 0) : 0);
+      setRecentMatches(statsRes.ok ? (statsData.recentMatches ?? []) : []);
       setFirstName(playerData.firstName ?? "");
       setLastName(playerData.lastName ?? "");
       setNumber(String(playerData.number ?? ""));
@@ -99,20 +145,37 @@ export default function PlayerPage() {
   async function savePlayer() {
     setErr(null);
     setMsg(null);
+
     const n = Number(number);
-    if (!firstName.trim() || !lastName.trim()) { setErr("Inserisci nome e cognome"); return; }
-    if (!Number.isInteger(n) || n <= 0 || n > 99) { setErr("Numero maglia non valido"); return; }
+    if (!firstName.trim() || !lastName.trim()) {
+      setErr("Inserisci nome e cognome");
+      return;
+    }
+
+    if (!Number.isInteger(n) || n <= 0 || n > 99) {
+      setErr("Numero maglia non valido");
+      return;
+    }
+
     try {
       setSaving(true);
+
       let finalPhotoUrl: string | null = removePhoto ? null : photoUrl.trim() || null;
+
       if (photoFile) {
-        if (!photoFile.type.startsWith("image/")) throw new Error("Seleziona un'immagine valida");
-        if (photoFile.size > 5 * 1024 * 1024) throw new Error("La foto deve essere massimo 5 MB");
+        if (!photoFile.type.startsWith("image/")) {
+          throw new Error("Seleziona un'immagine valida");
+        }
+        if (photoFile.size > 5 * 1024 * 1024) {
+          throw new Error("La foto deve essere massimo 5 MB");
+        }
         finalPhotoUrl = await uploadImage(photoFile);
       }
+
       const res = await fetch(`/api/players/${playerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
@@ -121,8 +184,12 @@ export default function PlayerPage() {
           photoUrl: finalPhotoUrl,
         }),
       });
+
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.error ?? "Errore aggiornamento giocatore");
+      if (!res.ok) {
+        throw new Error((data as any)?.error ?? "Errore aggiornamento giocatore");
+      }
+
       setMsg("Profilo aggiornato");
       setEditing(false);
       await load();
@@ -152,8 +219,6 @@ export default function PlayerPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-5">
-
-        {/* Header */}
         <Card>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
@@ -161,22 +226,23 @@ export default function PlayerPage() {
                 <img
                   src={player.photoUrl}
                   alt={`${player.firstName} ${player.lastName}`}
-                  className="h-16 w-16 rounded-2xl border border-[var(--border)] object-cover"
+                  className="h-20 w-20 rounded-3xl border border-[var(--border)] object-cover"
                 />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-xs font-bold text-[var(--foreground)]/35">
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/5 text-sm font-bold text-[var(--foreground)]/35">
                   N/A
                 </div>
               )}
+
               <div className="min-w-0">
                 <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
                   {player.team.name}
                 </p>
-                <h1 className="mt-0.5 text-2xl font-bold text-[var(--foreground)]">
-                  <span className="mr-1.5 text-[var(--foreground)]/40">#{player.number}</span>
+                <h1 className="mt-0.5 text-3xl font-black tracking-[-0.05em] text-[var(--foreground)]">
+                  <span className="mr-2 text-[var(--foreground)]/40">#{player.number}</span>
                   {player.firstName} {player.lastName}
                 </h1>
-                <p className="mt-0.5 text-sm text-[var(--foreground)]/50">
+                <p className="mt-1 text-sm text-[var(--foreground)]/50">
                   {player.position || "Ruolo non impostato"}
                 </p>
               </div>
@@ -191,6 +257,7 @@ export default function PlayerPage() {
               >
                 <Pencil size={15} />
               </button>
+
               <Link
                 href={`/leagues/${leagueId}/teams/${player.team.id}`}
                 className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs text-[var(--foreground)]/60 hover:text-[var(--foreground)]"
@@ -204,29 +271,29 @@ export default function PlayerPage() {
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
 
-        {/* Stat cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {[
-            { label: "Squadra", value: player.team.name },
-            { label: "Gol", value: goals },
-            { label: "Assist", value: assists },
+            { label: "Squadra", value: player.team.name, icon: <Shield size={16} /> },
+            { label: "Presenze", value: appearances, icon: <CalendarDays size={16} /> },
+            { label: "Gol", value: goals, icon: <Goal size={16} /> },
+            { label: "Assist", value: assists, icon: <Handshake size={16} /> },
+            { label: "Ruolo", value: player.position || "—", icon: <Pencil size={16} /> },
           ].map((s) => (
             <Card key={s.label} variant="inner">
-              <p className="text-xs font-medium uppercase tracking-widest text-[var(--foreground)]/50">
-                {s.label}
-              </p>
-              <p className="mt-2 text-2xl font-black text-[var(--foreground)]">{s.value}</p>
+              <div className="flex items-center gap-2 text-[var(--foreground)]/50">
+                {s.icon}
+                <p className="text-xs font-medium uppercase tracking-widest">{s.label}</p>
+              </div>
+              <p className="mt-3 text-2xl font-black text-[var(--foreground)]">{s.value}</p>
             </Card>
           ))}
         </div>
 
-        {/* Edit form */}
         {editing && (
           <Card>
             <h2 className="mb-4 text-lg font-black text-[var(--foreground)]">Modifica giocatore</h2>
 
             <div className="grid gap-4">
-              {/* Photo section */}
               <div className="grid gap-4 lg:grid-cols-[96px_minmax(0,1fr)] lg:items-start">
                 <div>
                   {photoPreview ? (
@@ -241,6 +308,7 @@ export default function PlayerPage() {
                     </div>
                   )}
                 </div>
+
                 <div className="space-y-3">
                   <input
                     type="file"
@@ -251,20 +319,25 @@ export default function PlayerPage() {
                       setPhotoFile(file);
                       if (file) setRemovePhoto(false);
                     }}
-                    className="block w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-2.5 text-sm text-[var(--foreground)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+                    className="block w-full rounded-xl border border-[var(--border)] bg-white/5 px-3.5 py-2.5 text-sm text-[var(--foreground)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-black"
                   />
+
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => { setPhotoFile(null); setPhotoUrl(""); setRemovePhoto(true); }}
+                    onClick={() => {
+                      setPhotoFile(null);
+                      setPhotoUrl("");
+                      setRemovePhoto(true);
+                    }}
                   >
                     Rimuovi foto
                   </Button>
+
                   <p className="text-xs text-[var(--foreground)]/50">Max 5 MB.</p>
                 </div>
               </div>
 
-              {/* Fields */}
               <div className="grid gap-3 lg:grid-cols-2">
                 <Input
                   aria-label="Nome"
@@ -272,12 +345,14 @@ export default function PlayerPage() {
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Nome"
                 />
+
                 <Input
                   aria-label="Cognome"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Cognome"
                 />
+
                 <Input
                   aria-label="Numero maglia"
                   value={number}
@@ -285,14 +360,19 @@ export default function PlayerPage() {
                   placeholder="Numero"
                   inputMode="numeric"
                 />
+
                 <Select
                   aria-label="Ruolo"
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
                 >
-                  <option value="" className="text-black">Ruolo</option>
+                  <option value="" className="text-black">
+                    Ruolo
+                  </option>
                   {POSITIONS.map((p) => (
-                    <option key={p} value={p} className="text-black">{p}</option>
+                    <option key={p} value={p} className="text-black">
+                      {p}
+                    </option>
                   ))}
                 </Select>
               </div>
@@ -308,6 +388,48 @@ export default function PlayerPage() {
             </div>
           </Card>
         )}
+
+        <Card>
+          <h2 className="mb-4 text-lg font-black text-[var(--foreground)]">Ultime presenze</h2>
+
+          {recentMatches.length === 0 ? (
+            <p className="text-sm text-[var(--foreground)]/55">
+              Nessuna presenza registrata per questo giocatore.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recentMatches.map((match) => (
+                <Link
+                  key={match.matchId}
+                  href={`/leagues/${leagueId}/matches/${match.matchId}`}
+                  className="block rounded-2xl border border-[var(--border)] bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05]"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-[var(--foreground)]">
+                        {match.homeTeamName} vs {match.awayTeamName}
+                      </div>
+                      <div className="mt-1 text-sm text-[var(--foreground)]/55">
+                        {match.date
+                          ? new Date(match.date).toLocaleDateString("it-IT")
+                          : "Data da definire"}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm font-bold text-[var(--foreground)]">
+                        {match.homeGoals ?? "-"} - {match.awayGoals ?? "-"}
+                      </div>
+                      <div className="text-xs text-[var(--foreground)]/60">
+                        {match.goals} gol · {match.assists} assist
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </DashboardShell>
   );
