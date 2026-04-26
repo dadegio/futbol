@@ -551,7 +551,7 @@ function PlayoffSeriesListCard({
               {isTwoLeg ? ` G${m.leg}` : ""}
             </Link>
           ))}
-          {allPlayed && isAdmin && (!isTied || hasPenalties) && (
+          {allPlayed && canAct && (!isTied || hasPenalties) && (
             <Button
               size="sm"
               onClick={() => onAdvance(series.id)}

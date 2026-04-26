@@ -7,6 +7,10 @@ import { requireAdmin } from "@/lib/server-auth";
 type Ctx = { params: Promise<{ leagueId: string; seriesId: string }> };
 
 export async function PUT(req: Request, ctx: Ctx) {
+
+  const authErr = await requireAdmin();
+  if (authErr) return authErr;
+
   const { leagueId, seriesId } = await ctx.params;
   const body = await req.json().catch(() => ({}));
 

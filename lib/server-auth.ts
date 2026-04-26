@@ -76,3 +76,33 @@ export async function requireAdminOrCaptainOfPlayer(
 
   return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
 }
+
+export async function requireAdminOrCaptainOfPlayoffSeries(
+  seriesId: string
+): Promise<NextResponse | null> {
+  const session = await getServerSession();
+
+  if (!session) {
+    return NextResponse.json({ error: "Devi effettuare il login" }, { status: 401 });
+  }
+
+  if (session.role === "ADMIN") return null;
+
+  const series = await prisma.playoffSeries.findUnique({
+    where: { id: seriesId },
+    select: { homeTeamId: true, awayTeamId: true },
+  });
+
+  if (!series) {
+    return NextResponse.json({ error: "Serie non trovata" }, { status: 404 });
+  }
+
+  if (
+    session.role === "CAPTAIN" &&
+    (session.teamId === series.homeTeamId || session.teamId === series.awayTeamId)
+  ) {
+    return null;
+  }
+
+  return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
+}
