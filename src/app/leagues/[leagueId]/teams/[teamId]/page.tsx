@@ -577,22 +577,29 @@ function PlayerRow({
   onDelete: () => void;
 }) {
   const shortRole = SHORT_ROLE[role] ?? "—";
+  const fullName = `${player.firstName} ${player.lastName}`;
 
   return (
-    <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-4 py-4 last:border-b-0">
-      <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#efede7] font-mono text-sm font-black text-[var(--muted)]">
-        {player.number}
-      </div>
+    <div className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-4 py-4 last:border-b-0">
+      <PlayerPhoto
+        name={fullName}
+        photoUrl={player.photoUrl ?? null}
+        number={player.number}
+      />
 
       <Link
         href={`/leagues/${leagueId}/players/${player.id}`}
         className="min-w-0"
       >
         <div className="truncate text-[16px] font-semibold text-[var(--foreground)]">
-          {player.firstName} {player.lastName}
+          {fullName}
         </div>
 
-        <div className="mt-0.5 text-sm text-[var(--muted)]">{shortRole}</div>
+        <div className="mt-1 flex items-center gap-2 text-sm text-[var(--muted)]">
+          <span>#{player.number}</span>
+          <span>·</span>
+          <span>{shortRole}</span>
+        </div>
       </Link>
 
       <div className="flex items-center gap-3">
@@ -610,7 +617,7 @@ function PlayerRow({
             type="button"
             onClick={onDelete}
             className="grid h-9 w-9 place-items-center rounded-lg text-[var(--muted)] active:bg-red-50 active:text-red-600"
-            aria-label={`Elimina ${player.firstName} ${player.lastName}`}
+            aria-label={`Elimina ${fullName}`}
           >
             <Trash2 size={15} />
           </button>
@@ -648,5 +655,48 @@ function TeamLogo({
     <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[15px] bg-green-200 text-lg font-black text-green-900">
       {initials}
     </span>
+  );
+}
+
+function PlayerPhoto({
+  name,
+  photoUrl,
+  number,
+}: {
+  name: string;
+  photoUrl?: string | null;
+  number: number;
+}) {
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (photoUrl) {
+    return (
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)]">
+        <img
+          src={photoUrl}
+          alt={`Foto ${name}`}
+          className="h-full w-full object-cover"
+        />
+
+        <span className="absolute bottom-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-tl-lg bg-[var(--accent)] px-1 text-[10px] font-black text-white">
+          {number}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--background)] text-sm font-black text-[var(--accent)]">
+      {initials}
+
+      <span className="absolute bottom-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-tl-lg bg-[var(--accent)] px-1 text-[10px] font-black text-white">
+        {number}
+      </span>
+    </div>
   );
 }
