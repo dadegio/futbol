@@ -18,11 +18,11 @@ type Player = {
   number: number;
   position?: string | null;
   photoUrl?: string | null;
-  team: {
+  team?: {
     id: string;
     name: string;
     leagueId: string;
-  };
+  } | null;
 };
 
 type PlayerStatsResponse = {
@@ -102,6 +102,7 @@ export default function PlayerPage() {
         credentials: "include",
       });
       const playerData = await playerRes.json().catch(() => ({}));
+
       if (!playerRes.ok) {
         throw new Error((playerData as any)?.error ?? "Errore caricamento giocatore");
       }
@@ -125,7 +126,7 @@ export default function PlayerPage() {
       setPhotoFile(null);
       setRemovePhoto(false);
     } catch (e: any) {
-      setErr(e.message);
+      setErr(e.message ?? "Errore");
     } finally {
       setLoading(false);
     }
@@ -147,6 +148,7 @@ export default function PlayerPage() {
     setMsg(null);
 
     const n = Number(number);
+
     if (!firstName.trim() || !lastName.trim()) {
       setErr("Inserisci nome e cognome");
       return;
@@ -186,6 +188,7 @@ export default function PlayerPage() {
       });
 
       const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
         throw new Error((data as any)?.error ?? "Errore aggiornamento giocatore");
       }
@@ -236,7 +239,7 @@ export default function PlayerPage() {
 
               <div className="min-w-0">
                 <p className="text-xs font-medium uppercase tracking-widest text-[var(--accent)]/70">
-                  {player.team.name}
+                  {player.team?.name ?? "Squadra non disponibile"}
                 </p>
                 <h1 className="mt-0.5 text-3xl font-black tracking-[-0.05em] text-[var(--foreground)]">
                   <span className="mr-2 text-[var(--foreground)]/40">#{player.number}</span>
@@ -258,12 +261,14 @@ export default function PlayerPage() {
                 <Pencil size={15} />
               </button>
 
-              <Link
-                href={`/leagues/${leagueId}/teams/${player.team.id}`}
-                className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs text-[var(--foreground)]/60 hover:text-[var(--foreground)]"
-              >
-                <ArrowLeft size={13} /> Squadra
-              </Link>
+              {player.team && (
+                <Link
+                  href={`/leagues/${leagueId}/teams/${player.team.id}`}
+                  className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs text-[var(--foreground)]/60 hover:text-[var(--foreground)]"
+                >
+                  <ArrowLeft size={13} /> Squadra
+                </Link>
+              )}
             </div>
           </div>
         </Card>
@@ -273,7 +278,7 @@ export default function PlayerPage() {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {[
-            { label: "Squadra", value: player.team.name, icon: <Shield size={16} /> },
+            { label: "Squadra", value: player.team?.name ?? "—", icon: <Shield size={16} /> },
             { label: "Presenze", value: appearances, icon: <CalendarDays size={16} /> },
             { label: "Gol", value: goals, icon: <Goal size={16} /> },
             { label: "Assist", value: assists, icon: <Handshake size={16} /> },
