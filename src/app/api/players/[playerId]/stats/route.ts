@@ -9,7 +9,22 @@ export async function GET(
 ) {
   const { playerId } = await ctx.params;
 
-  const [agg, appearances, recentStats] = await Promise.all([
+  const player = await prisma.player.findUnique({
+    where: { id: playerId },
+    select: {
+      id: true,
+      teamId: true,
+    },
+  });
+
+  if (!player) {
+    return NextResponse.json(
+      { error: "Giocatore non trovato" },
+      { status: 404 }
+    );
+  }
+
+  const [agg, appearances, recentMatches, recentStats] = await Promise.all([
     prisma.matchPlayerStat.aggregate({
       where: { playerId },
       _sum: {
@@ -18,48 +33,72 @@ export async function GET(
       },
     }),
 
-    prisma.matchPlayerStat.count({
-      where: { playerId },
+    prisma.match.count({
+      where: {
+        homeGoals: { not: null },
+        awayGoals: { not: null },
+        OR: [
+          { homeTeamId: player.teamId },
+          { awayTeamId: player.teamId },
+        ],
+      },
+    }),
+
+    prisma.match.findMany({
+      where: {
+        homeGoals: { not: null },
+        awayGoals: { not: null },
+        OR: [
+          { homeTeamId: player.teamId },
+          { awayTeamId: player.teamId },
+        ],
+      },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      take: 8,
+      select: {
+        id: true,
+        date: true,
+        homeGoals: true,
+        awayGoals: true,
+        homeTeam: { select: { name: true } },
+        awayTeam: { select: { name: true } },
+      },
     }),
 
     prisma.matchPlayerStat.findMany({
       where: { playerId },
-      orderBy: { match: { date: "desc" } },
-      take: 8,
       select: {
+        matchId: true,
         goals: true,
         assists: true,
-        match: {
-          select: {
-            id: true,
-            date: true,
-            homeGoals: true,
-            awayGoals: true,
-            homeTeam: {
-              select: { name: true },
-            },
-            awayTeam: {
-              select: { name: true },
-            },
-          },
-        },
       },
     }),
   ]);
+
+  const statsByMatch = new Map(
+    recentStats.map((row) => [
+      row.matchId,
+      { goals: row.goals, assists: row.assists },
+    ])
+  );
 
   return NextResponse.json({
     goals: agg._sum.goals ?? 0,
     assists: agg._sum.assists ?? 0,
     appearances,
-    recentMatches: recentStats.map((row) => ({
-      matchId: row.match.id,
-      date: row.match.date,
-      homeTeamName: row.match.homeTeam.name,
-      awayTeamName: row.match.awayTeam.name,
-      homeGoals: row.match.homeGoals,
-      awayGoals: row.match.awayGoals,
-      goals: row.goals,
-      assists: row.assists,
-    })),
+    recentMatches: recentMatches.map((match) => {
+      const stat = statsByMatch.get(match.id);
+
+      return {
+        matchId: match.id,
+        date: match.date,
+        homeTeamName: match.homeTeam.name,
+        awayTeamName: match.awayTeam.name,
+        homeGoals: match.homeGoals,
+        awayGoals: match.awayGoals,
+        goals: stat?.goals ?? 0,
+        assists: stat?.assists ?? 0,
+      };
+    }),
   });
 }

@@ -21,6 +21,7 @@ type Player = {
 type Team = {
   id: string;
   name: string;
+  badgeUrl?: string | null;
   players: Player[];
 };
 
@@ -44,14 +45,39 @@ type Match = {
   leagueId: string;
 };
 
-function TeamCrest({ name, size = 40 }: { name: string; size?: number }) {
+function TeamCrest({
+  name,
+  badgeUrl,
+  size = 40,
+}: {
+  name: string;
+  badgeUrl?: string | null;
+  size?: number;
+}) {
   const initials = name
     .split(" ")
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const hue = (initials.charCodeAt(0) * 47 + initials.charCodeAt(1) * 13) % 360;
+
+  if (badgeUrl) {
+    return (
+      <img
+        src={badgeUrl}
+        alt={`Logo ${name}`}
+        className="shrink-0 object-contain"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size * 0.28,
+        }}
+      />
+    );
+  }
+
+  const hue = (initials.charCodeAt(0) * 47 + (initials.charCodeAt(1) || 0) * 13) % 360;
+
   return (
     <div
       className="flex shrink-0 items-center justify-center font-bold"
@@ -266,8 +292,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 py-2">
             {/* Home */}
             <div className="flex flex-col items-center gap-2 text-center">
-              <TeamCrest name={match.homeTeam.name} size={44} />
-              <span
+            <TeamCrest name={match.homeTeam.name} badgeUrl={match.homeTeam.badgeUrl ?? null} size={44} />              <span
                 className={[
                   "text-[13px] font-semibold leading-tight",
                   played && hg < ag ? "text-[var(--muted)]" : "text-[var(--foreground)]",
@@ -337,8 +362,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
             {/* Away */}
             <div className="flex flex-col items-center gap-2 text-center">
-              <TeamCrest name={match.awayTeam.name} size={44} />
-              <span
+            <TeamCrest name={match.awayTeam.name} badgeUrl={match.awayTeam.badgeUrl ?? null} size={44} />              <span
+
                 className={[
                   "text-[13px] font-semibold leading-tight",
                   played && ag < hg ? "text-[var(--muted)]" : "text-[var(--foreground)]",

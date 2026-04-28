@@ -82,11 +82,12 @@ export default function TablePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] border-b border-[var(--border)] px-2 py-3 text-xs font-medium text-[var(--muted)] sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_52px_56px] sm:px-3">
-                <div className="text-center">#</div>
+              <div className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] border-b border-[var(--border)] px-2 py-3 text-xs font-medium text-[var(--muted)] sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_42px_42px_52px_56px] sm:px-3">                <div className="text-center">#</div>
                 <div className="pl-1 text-left">Squadra</div>
                 <div className="text-center">G</div>
                 <div className="text-center">V</div>
+                <div className="hidden text-center sm:block">GF</div>
+                <div className="hidden text-center sm:block">GS</div>
                 <div className="text-center">DR</div>
                 <div className="pr-1 text-right">PT</div>
               </div>
@@ -100,8 +101,7 @@ export default function TablePage() {
                     <Link
                       key={row.teamId}
                       href={`/leagues/${leagueId}/teams/${row.teamId}`}
-                      className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] items-center border-b border-[var(--border)] px-2 py-3 transition hover:bg-white/5 last:border-b-0 sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_52px_56px] sm:px-3 sm:py-4"
-                    >
+                      className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] items-center border-b border-[var(--border)] px-2 py-3 transition hover:bg-white/5 last:border-b-0 sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_42px_42px_52px_56px] sm:px-3 sm:py-4"                    >
                       <div className="relative text-center text-sm text-[var(--muted)]">
                         {isPromotion && (
                           <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
@@ -135,6 +135,14 @@ export default function TablePage() {
 
                       <div className="text-center text-sm tabular-nums text-[var(--muted)]">
                         {row.wins}
+                      </div>
+
+                      <div className="hidden text-center text-sm tabular-nums text-[var(--muted)] sm:block">
+                        {row.gf}
+                      </div>
+
+                      <div className="hidden text-center text-sm tabular-nums text-[var(--muted)] sm:block">
+                        {row.ga}
                       </div>
 
                       <div

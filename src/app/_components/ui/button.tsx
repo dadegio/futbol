@@ -10,7 +10,7 @@ const variants = {
   primary:
     "bg-[var(--accent)] text-white hover:opacity-90 active:opacity-80",
   secondary:
-    "border border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)] hover:bg-[var(--card)] hover:border-[var(--border-strong)]",
+    "border border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)] hover:bg-[var(--card)]",
   destructive:
     "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
 } as const;

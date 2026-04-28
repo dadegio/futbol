@@ -266,14 +266,39 @@ export default function PlayoffsPage() {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function TeamCrest({ name, size = 40 }: { name: string; size?: number }) {
+function TeamCrest({
+  name,
+  badgeUrl,
+  size = 40,
+}: {
+  name: string;
+  badgeUrl?: string | null;
+  size?: number;
+}) {
   const initials = name
     .split(" ")
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  if (badgeUrl) {
+    return (
+      <img
+        src={badgeUrl}
+        alt={`Logo ${name}`}
+        className="shrink-0 object-contain"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size * 0.28,
+        }}
+      />
+    );
+  }
+
   const hue = (initials.charCodeAt(0) * 47 + (initials.charCodeAt(1) || 0) * 13) % 360;
+
   return (
     <div
       className="flex shrink-0 items-center justify-center font-bold"
@@ -287,7 +312,7 @@ function TeamCrest({ name, size = 40 }: { name: string; size?: number }) {
         fontFamily: "var(--font-display)",
       }}
     >
-      {initials}
+      {initials || "?"}
     </div>
   );
 }
@@ -383,7 +408,11 @@ function PlayoffSeriesListCard({
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 py-4">
         {/* Home */}
         <div className={["flex flex-col items-center gap-2 text-center", awayWon ? "opacity-40" : ""].join(" ")}>
-          <TeamCrest name={homeTeam?.name ?? "?"} size={40} />
+          <TeamCrest
+            name={homeTeam?.name ?? "?"}
+            badgeUrl={homeTeam?.badgeUrl ?? null}
+            size={40}
+          />
           <div className="space-y-0.5">
             {series.homeSeed && (
               <p className="text-[10px] font-medium text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>
@@ -488,7 +517,12 @@ function PlayoffSeriesListCard({
 
         {/* Away */}
         <div className={["flex flex-col items-center gap-2 text-center", homeWon ? "opacity-40" : ""].join(" ")}>
-          <TeamCrest name={awayTeam?.name ?? "?"} size={40} />
+        <TeamCrest
+          name={awayTeam?.name ?? "?"}
+          badgeUrl={awayTeam?.badgeUrl ?? null}
+          size={40}
+        />
+
           <div className="space-y-0.5">
             {series.awaySeed && (
               <p className="text-[10px] font-medium text-[var(--muted)]" style={{ fontFamily: "var(--font-mono, ui-monospace)" }}>

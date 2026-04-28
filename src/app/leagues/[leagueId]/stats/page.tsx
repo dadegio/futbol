@@ -53,11 +53,11 @@ export default function StatsPage() {
     tab === "scorers" ? scorers : tab === "assists" ? assists : appearances;
 
   const title =
-    tab === "scorers"
-      ? "Top 5 Marcatori"
-      : tab === "assists"
-      ? "Top 5 Assistman"
-      : "Top 5 Presenze";
+  tab === "scorers"
+    ? "Top 10 Marcatori"
+    : tab === "assists"
+    ? "Top 10 Assistman"
+    : "Top 10 Presenze";
 
   const valueLabel =
     tab === "scorers" ? "gol" : tab === "assists" ? "assist" : "pres.";

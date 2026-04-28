@@ -41,6 +41,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ leagueId: strin
         select: {
           id: true,
           name: true,
+          badgeUrl: true,
         },
       },
     },

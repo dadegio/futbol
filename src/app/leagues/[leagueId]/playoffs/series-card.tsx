@@ -55,6 +55,7 @@ export default function SeriesCard({ series, leagueId, format }: Props) {
       <TeamRow
         seed={series.homeSeed}
         name={homeTeam?.name ?? null}
+        badgeUrl = {homeTeam?.badgeUrl ?? null}
         won={!!homeWon}
         lost={!!awayWon}
         leg1Score={leg1?.homeGoals ?? null}
@@ -67,12 +68,14 @@ export default function SeriesCard({ series, leagueId, format }: Props) {
       <TeamRow
         seed={series.awaySeed}
         name={awayTeam?.name ?? null}
+        badgeUrl = {awayTeam?.badgeUrl ?? null}
         won={!!awayWon}
         lost={!!homeWon}
         leg1Score={leg1?.awayGoals ?? null}
         leg2Score={format === "TWO_LEG" ? (leg2?.homeGoals ?? null) : null}
         isTwoLeg={format === "TWO_LEG"}
       />
+
 
       {/* Action link */}
       {homeTeam && awayTeam && !winnerId && matches.length > 0 && (
@@ -115,6 +118,7 @@ export default function SeriesCard({ series, leagueId, format }: Props) {
 function TeamRow({
   seed,
   name,
+  badgeUrl,
   won,
   lost,
   leg1Score,
@@ -124,6 +128,7 @@ function TeamRow({
 }: {
   seed: number | null;
   name: string | null;
+  badgeUrl: string | null;
   won: boolean;
   lost: boolean;
   leg1Score: number | null;
@@ -145,6 +150,9 @@ function TeamRow({
           {seed}
         </span>
       )}
+
+      <TeamMiniLogo name={name ?? "TBD"} badgeUrl={badgeUrl} />
+
       <span
         className={[
           "flex-1 truncate text-sm font-semibold",
@@ -198,6 +206,37 @@ function ScoreDisplay({
       style={{ fontFamily: "var(--font-mono, ui-monospace)" }}
     >
       {leg1Score ?? "—"}
+    </span>
+  );
+}
+
+function TeamMiniLogo({
+  name,
+  badgeUrl,
+}: {
+  name: string;
+  badgeUrl: string | null;
+}) {
+  const initials = name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (badgeUrl) {
+    return (
+      <img
+        src={badgeUrl}
+        alt={`Logo ${name}`}
+        className="h-6 w-6 shrink-0 rounded-lg object-contain"
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--card-2)] text-[9px] font-black text-[var(--muted)]">
+      {initials || "?"}
     </span>
   );
 }

@@ -16,17 +16,20 @@ export default function HomeLeagueCard({ id, name, onDelete }: LeagueCardProps) 
   return (
     <div className="group flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-5 transition-colors hover:border-[var(--accent)]/25">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <span className="inline-block rounded-md bg-[var(--accent)]/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">
             Torneo
           </span>
-          <h3 className="mt-2.5 text-lg font-semibold text-[var(--foreground)]">{name}</h3>
+
+          <h3 className="mt-2.5 truncate text-lg font-black tracking-[-0.03em] text-[var(--foreground)]">
+            {name}
+          </h3>
         </div>
 
         {isAdmin && (
           <button
             onClick={onDelete}
-            className="shrink-0 rounded-lg border border-[var(--border)] bg-transparent p-2 text-[var(--muted)] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--card)] p-2 text-[var(--muted)] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             aria-label={`Elimina ${name}`}
           >
             <Trash2 size={15} />
