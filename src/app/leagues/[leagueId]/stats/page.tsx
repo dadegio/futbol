@@ -17,14 +17,13 @@ type Row = {
   value: number;
 };
 
-type TabKey = "scorers" | "assists" | "appearances";
+type TabKey = "scorers" | "assists";
 
 export default function StatsPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
 
   const [scorers, setScorers] = useState<Row[]>([]);
   const [assists, setAssists] = useState<Row[]>([]);
-  const [appearances, setAppearances] = useState<Row[]>([]);
   const [tab, setTab] = useState<TabKey>("scorers");
   const [err, setErr] = useState<string | null>(null);
 
@@ -33,14 +32,20 @@ export default function StatsPage() {
 
     (async () => {
       setErr(null);
+
       try {
-        const res = await fetch(`/api/leagues/${leagueId}/stats`, { cache: "no-store" });
+        const res = await fetch(`/api/leagues/${leagueId}/stats`, {
+          cache: "no-store",
+        });
+
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error ?? "Errore stats");
+
+        if (!res.ok) {
+          throw new Error(data?.error ?? "Errore stats");
+        }
 
         setScorers(data.scorers ?? []);
         setAssists(data.assists ?? []);
-        setAppearances(data.appearances ?? []);
       } catch (e: any) {
         setErr(e.message);
       }
@@ -49,18 +54,11 @@ export default function StatsPage() {
 
   if (!leagueId) return <div>Caricamento…</div>;
 
-  const rows =
-    tab === "scorers" ? scorers : tab === "assists" ? assists : appearances;
+  const rows = tab === "scorers" ? scorers : assists;
 
-  const title =
-  tab === "scorers"
-    ? "Top 10 Marcatori"
-    : tab === "assists"
-    ? "Top 10 Assistman"
-    : "Top 10 Presenze";
+  const title = tab === "scorers" ? "Top 10 Marcatori" : "Top 10 Assistman";
 
-  const valueLabel =
-    tab === "scorers" ? "gol" : tab === "assists" ? "assist" : "pres.";
+  const valueLabel = tab === "scorers" ? "gol" : "assist";
 
   return (
     <DashboardShell leagueId={leagueId}>
@@ -79,20 +77,19 @@ export default function StatsPage() {
             onClick={() => setTab("scorers")}
             label="Marcatori"
           />
+
           <TabButton
             active={tab === "assists"}
             onClick={() => setTab("assists")}
             label="Assist"
           />
-          <TabButton
-            active={tab === "appearances"}
-            onClick={() => setTab("appearances")}
-            label="Presenze"
-          />
         </div>
 
         <section className="space-y-3">
-          <div className="text-base font-semibold text-[var(--foreground)]">{title}</div>
+          <div className="text-base font-semibold text-[var(--foreground)]">
+            {title}
+          </div>
+
           <StatList rows={rows} leagueId={leagueId} valueLabel={valueLabel} />
         </section>
       </div>
@@ -117,7 +114,7 @@ function TabButton({
         "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
         active
           ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-          : "border-[var(--border)] bg-white/5 text-[var(--foreground)] hover:bg-white/10",
+          : "border-[var(--border)] bg-[var(--card-2)] text-[var(--foreground)] hover:bg-[var(--card)]",
       ].join(" ")}
     >
       {label}
@@ -148,7 +145,7 @@ function StatList({
         <Link
           key={r.playerId}
           href={`/leagues/${leagueId}/players/${r.playerId}`}
-          className="grid items-center gap-3 border-b border-[var(--border)] px-4 py-3 transition hover:bg-white/5 last:border-b-0"
+          className="grid items-center gap-3 border-b border-[var(--border)] px-4 py-3 transition hover:bg-[var(--card-2)] last:border-b-0"
           style={{ gridTemplateColumns: "24px 52px minmax(0,1fr) auto" }}
         >
           <span
@@ -168,6 +165,7 @@ function StatList({
             <div className="truncate text-[14px] font-semibold text-[var(--foreground)]">
               {r.firstName} {r.lastName}
             </div>
+
             <div className="mt-1 flex items-center gap-2 truncate text-xs text-[var(--muted)]">
               <TeamLogo name={r.teamName} badgeUrl={r.teamBadgeUrl ?? null} />
               <span className="truncate">{r.teamName}</span>
@@ -181,6 +179,7 @@ function StatList({
             >
               {r.value}
             </div>
+
             <div className="mt-1 text-[10px] uppercase tracking-wide text-[var(--muted)]">
               {valueLabel}
             </div>
@@ -219,7 +218,7 @@ function PlayerAvatar({
   }
 
   return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/5 text-sm font-black text-[var(--foreground)]/60">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--card-2)] text-sm font-black text-[var(--accent)]">
       {initials || "?"}
     </div>
   );
@@ -233,27 +232,17 @@ function TeamLogo({
   badgeUrl: string | null;
 }) {
   if (badgeUrl) {
-    return <img src={badgeUrl} alt={name} className="h-5 w-5 shrink-0 rounded-md object-contain" />;
+    return (
+      <img
+        src={badgeUrl}
+        alt={name}
+        className="h-5 w-5 shrink-0 rounded-md object-contain"
+      />
+    );
   }
 
-  const colors = [
-    "bg-blue-500/15 text-blue-300",
-    "bg-emerald-500/15 text-emerald-300",
-    "bg-amber-500/15 text-amber-300",
-    "bg-fuchsia-500/15 text-fuchsia-300",
-    "bg-cyan-500/15 text-cyan-300",
-    "bg-rose-500/15 text-rose-300",
-  ];
-
-  const index =
-    Math.abs(
-      name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    ) % colors.length;
-
   return (
-    <div
-      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-black ${colors[index]}`}
-    >
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[var(--card-2)] text-[9px] font-black text-[var(--muted)]">
       {(name.match(/\b\w/g) || []).slice(0, 2).join("").toUpperCase() || "TM"}
     </div>
   );
