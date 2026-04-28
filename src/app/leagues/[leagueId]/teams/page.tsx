@@ -9,6 +9,7 @@ import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Badge from "src/app/_components/ui/badge";
+import { authFetch } from "@/lib/client-auth";
 
 type TeamRow = {
   id: string;
@@ -71,14 +72,15 @@ export default function TeamsPage() {
     }
 
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/teams`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: teamName,
-          badgeUrl: badgeUrl.trim() ? badgeUrl.trim() : null,
-        }),
-      });
+
+      const res = await authFetch(`/api/leagues/${leagueId}/teams`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: teamName,
+        badgeUrl: badgeUrl.trim() ? badgeUrl.trim() : null,
+      }),
+    });
 
       const data = await res.json().catch(() => ({}));
 
