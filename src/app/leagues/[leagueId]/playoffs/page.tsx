@@ -239,15 +239,17 @@ export default function PlayoffsPage() {
 
                       return (
                         <PlayoffSeriesListCard
-                            key={s.id}
-                            series={s}
-                            leagueId={leagueId}
-                            format={data.format!}
-                            canAct={!!canAct}
-                            allPlayed={allPlayed}
-                            advancing={advancing}
-                            onAdvance={handleAdvance}
-                            onReload={load} isAdmin={false}                        />
+                          key={s.id}
+                          series={s}
+                          leagueId={leagueId}
+                          format={data.format!}
+                          canAct={!!canAct}
+                          allPlayed={allPlayed}
+                          isAdmin={isAdmin}
+                          advancing={advancing}
+                          onAdvance={handleAdvance}
+                          onReload={load}
+                        />
                       );
                     })}
                   </div>

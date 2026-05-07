@@ -103,7 +103,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const { leagueId, seriesId } = await ctx.params;
 
   const authError = await requireAdminOrCaptainOfPlayoffSeries(seriesId);
-  if (authError) return authError;  if (authError) return authError;
+  if (authError) return authError;
 
   const body = await req.json().catch(() => ({}));
 
