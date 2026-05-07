@@ -249,7 +249,7 @@ export default function PlayoffsPage() {
                           advancing={advancing}
                           onAdvance={handleAdvance}
                           onReload={load}
-                        />
+                          />
                       );
                     })}
                   </div>
@@ -343,23 +343,48 @@ function PlayoffSeriesListCard({
   const leg1 = matches.find((m) => m.leg === 1) ?? matches[0];
   const leg2 = matches.find((m) => m.leg === 2);
 
-  const homeAgg = isTwoLeg
-    ? (leg1?.homeGoals ?? 0) + (leg2?.awayGoals ?? 0)
-    : null;
-  const awayAgg = isTwoLeg
-    ? (leg1?.awayGoals ?? 0) + (leg2?.homeGoals ?? 0)
-    : null;
+  const leg1Played =
+    !!leg1 && leg1.homeGoals !== null && leg1.awayGoals !== null;
 
-  const leg1Played = !!leg1 && leg1.homeGoals !== null && leg1.awayGoals !== null;
-  const leg2Played = !!leg2 && leg2.homeGoals !== null && leg2.awayGoals !== null;
+  const leg2Played =
+    !!leg2 && leg2.homeGoals !== null && leg2.awayGoals !== null;
+
   const anyPlayed = leg1Played || leg2Played;
 
-  // Whether the series ends in a tie requiring penalties
-  const isTied = allPlayed && (
-    isTwoLeg
+  function getTeamGoalsInMatch(
+    match: typeof matches[number] | undefined,
+    teamId: string | undefined
+  ) {
+    if (!match || !teamId) return 0;
+    if (match.homeGoals === null || match.awayGoals === null) return 0;
+
+    if (match.homeTeamId === teamId) return match.homeGoals;
+    if (match.awayTeamId === teamId) return match.awayGoals;
+
+    return 0;
+  }
+
+  const homeAgg = isTwoLeg
+    ? matches.reduce(
+        (sum, match) => sum + getTeamGoalsInMatch(match, homeTeam?.id),
+        0
+      )
+    : null;
+
+  const awayAgg = isTwoLeg
+    ? matches.reduce(
+        (sum, match) => sum + getTeamGoalsInMatch(match, awayTeam?.id),
+        0
+      )
+    : null;
+
+  const isTied =
+    allPlayed &&
+    homeTeam &&
+    awayTeam &&
+    (isTwoLeg
       ? homeAgg === awayAgg
-      : (leg1Played && leg1!.homeGoals === leg1!.awayGoals)
-  );
+      : leg1Played && leg1!.homeGoals === leg1!.awayGoals);
 
   const hasPenalties = series.penaltiesHome !== null && series.penaltiesAway !== null;
 
@@ -536,7 +561,7 @@ function PlayoffSeriesListCard({
       </div>
 
       {/* Penalties input — shown when tied, not yet decided, and admin */}
-      {isTied && !winnerId && canAct && (
+      {isTied && !hasPenalties && canAct && (
         <div className="border-t border-[var(--border)] bg-[var(--card-2)] px-4 py-3">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]" style={{ fontFamily: "var(--font-display)" }}>
             Rigori

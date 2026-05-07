@@ -120,12 +120,21 @@ export async function POST(req: Request, ctx: { params: Promise<{ matchId: strin
     }
 
     if (match.seriesId && match.league.playoffFormat) {
-      winnerId = await syncPlayoffSeriesWinner(tx, {
-        leagueId: match.leagueId,
-        seriesId: match.seriesId,
-        format: match.league.playoffFormat,
-      });
-    }
+    await tx.playoffSeries.update({
+      where: { id: match.seriesId },
+      data: {
+        winnerId: null,
+        penaltiesHome: null,
+        penaltiesAway: null,
+      },
+    });
+
+    winnerId = await syncPlayoffSeriesWinner(tx, {
+      leagueId: match.leagueId,
+      seriesId: match.seriesId,
+      format: match.league.playoffFormat,
+    });
+  }
   });
 
   return NextResponse.json({ ok: true, winnerId });
