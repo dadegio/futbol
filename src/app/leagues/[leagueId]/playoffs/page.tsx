@@ -38,7 +38,7 @@ export default function PlayoffsPage() {
   const [teamCount, setTeamCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [view, setView] = useState<ViewMode>("bracket");
+  const [view, setView] = useState<ViewMode>("list");
   const [advancing, setAdvancing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -230,27 +230,24 @@ export default function PlayoffsPage() {
                         (m) => m.homeGoals !== null && m.awayGoals !== null
                       );
                       const canAct =
-                        s.homeTeam &&
-                        s.awayTeam &&
-                        !s.winnerId &&
-                        (isAdmin ||
-                          (user?.role === "CAPTAIN" &&
-                            (user.teamId === s.homeTeam?.id ||
-                              user.teamId === s.awayTeam?.id)));
+                      s.homeTeam &&
+                      s.awayTeam &&
+                      (isAdmin ||
+                        (user?.role === "CAPTAIN" &&
+                          (user.teamId === s.homeTeam?.id ||
+                            user.teamId === s.awayTeam?.id)));
 
                       return (
                         <PlayoffSeriesListCard
-                          key={s.id}
-                          series={s}
-                          leagueId={leagueId}
-                          format={data.format!}
-                          canAct={!!canAct}
-                          allPlayed={allPlayed}
-                          isAdmin={isAdmin}
-                          advancing={advancing}
-                          onAdvance={handleAdvance}
-                          onReload={load}
-                        />
+                            key={s.id}
+                            series={s}
+                            leagueId={leagueId}
+                            format={data.format!}
+                            canAct={!!canAct}
+                            allPlayed={allPlayed}
+                            advancing={advancing}
+                            onAdvance={handleAdvance}
+                            onReload={load} isAdmin={false}                        />
                       );
                     })}
                   </div>
@@ -335,7 +332,7 @@ function PlayoffSeriesListCard({
   allPlayed: boolean;
   isAdmin: boolean;
   advancing: string | null;
-  onAdvance: (id: string) => void;
+  onAdvance: (id: string, manualWinnerId?: string) => void;
   onReload: () => void;
 }) {
   const { homeTeam, awayTeam, winnerId, matches } = series;
@@ -537,7 +534,7 @@ function PlayoffSeriesListCard({
       </div>
 
       {/* Penalties input — shown when tied, not yet decided, and admin */}
-      {isTied && !winnerId && isAdmin && (
+      {isTied && !winnerId && canAct && (
         <div className="border-t border-[var(--border)] bg-[var(--card-2)] px-4 py-3">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]" style={{ fontFamily: "var(--font-display)" }}>
             Rigori

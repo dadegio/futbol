@@ -2,7 +2,10 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/server-auth";
+import {
+  requireAdmin,
+  requireAdminOrCaptainOfPlayoffSeries,
+} from "@/lib/server-auth";
 
 type Ctx = { params: Promise<{ leagueId: string; seriesId: string }> };
 
@@ -99,8 +102,8 @@ export async function PUT(req: Request, ctx: Ctx) {
 export async function PATCH(req: Request, ctx: Ctx) {
   const { leagueId, seriesId } = await ctx.params;
 
-  const authError = await requireAdmin();
-  if (authError) return authError;
+  const authError = await requireAdminOrCaptainOfPlayoffSeries(seriesId);
+  if (authError) return authError;  if (authError) return authError;
 
   const body = await req.json().catch(() => ({}));
 
