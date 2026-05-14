@@ -48,20 +48,41 @@ type PlayerStatsResponse = {
 
 const POSITIONS = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];
 
+function getAuthHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {};
+
+  const token = localStorage.getItem("futbol-token");
+
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
+}
+
 async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
   const res = await fetch("/api/upload", {
     method: "POST",
+    headers: getAuthHeaders(),
     body: formData,
-    credentials: "include",
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any)?.error ?? "Errore upload immagine");
-  return data.url as string;
+
+  if (!res.ok) {
+    throw new Error((data as any)?.error ?? "Errore upload immagine");
+  }
+
+  if (!(data as any)?.url) {
+    throw new Error("Upload completato ma URL immagine mancante");
+  }
+
+  return (data as any).url as string;
 }
+
 
 export default function PlayerPage() {
   const { leagueId, playerId } = useParams<{ leagueId: string; playerId: string }>();
@@ -104,8 +125,9 @@ export default function PlayerPage() {
     try {
       const playerRes = await fetch(`/api/players/${playerId}`, {
         cache: "no-store",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
+
       const playerData = await playerRes.json().catch(() => ({}));
 
       if (!playerRes.ok) {
@@ -114,7 +136,7 @@ export default function PlayerPage() {
 
       const statsRes = await fetch(`/api/players/${playerId}/stats`, {
         cache: "no-store",
-        credentials: "include",
+        headers: getAuthHeaders(),
       });
       const statsData: PlayerStatsResponse = await statsRes.json().catch(() => ({}));
 
@@ -181,8 +203,10 @@ export default function PlayerPage() {
 
       const res = await fetch(`/api/players/${playerId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
