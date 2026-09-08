@@ -246,3 +246,34 @@ Endpoint protetti in V27:
 ### User input
 
 `src/modules/core/security/user-input.ts` centralizza normalizzazione username e policy password. I nuovi account usano username normalizzati in minuscolo e password minime da 8 caratteri.
+
+## V28 — Quality Gate
+
+La V28 aggiunge un livello di controllo pre-deploy senza modificare runtime, database o UI.
+
+Nuovi script:
+
+```txt
+scripts/check-architecture.mjs
+scripts/check-env.mjs
+scripts/quality-gate.mjs
+```
+
+Nuovi comandi npm:
+
+```txt
+npm run doctor
+npm run quality
+npm run predeploy
+npm run predeploy:full
+```
+
+Il quality gate verifica soprattutto i confini introdotti nelle versioni modulari:
+
+- i wrapper legacy in `lib/` devono puntare a target reali in `src/modules`;
+- `@/modules/*` deve essere configurato correttamente;
+- i domain module non devono dipendere da React, Next.js o Prisma;
+- le API route non devono importare componenti dal presentation layer;
+- le migration devono essere complete.
+
+Regola pratica: prima del push usare almeno `npm run quality`; prima di un deploy importante usare `npm run predeploy`.

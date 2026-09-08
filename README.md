@@ -198,3 +198,27 @@ La V27 aggiunge un primo livello di sicurezza applicativa senza migration:
 - normalizzazione username in minuscolo per i nuovi utenti;
 - password minima 8 caratteri per i nuovi utenti e per reset password;
 - messaggi di errore login più sicuri, senza dettagli interni.
+
+## Quality gate pre-deploy
+
+La V28 aggiunge controlli locali per ridurre gli errori scoperti solo su Vercel.
+
+Comandi utili:
+
+```bash
+npm run doctor       # controllo rapido, non blocca se mancano env locali
+npm run quality      # architettura + TypeScript
+npm run predeploy    # env + quality + build
+```
+
+Workflow consigliato prima del push:
+
+```bash
+npm run quality
+npm run build
+git add .
+git commit -m "..."
+git push origin main
+```
+
+Il documento completo è in `docs/QUALITY_GATE.md`.

@@ -1,0 +1,141 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+
+const root = process.cwd();
+const errors = [];
+const warnings = [];
+
+function exists(relativePath) {
+  return fs.existsSync(path.join(root, relativePath));
+}
+
+function read(relativePath) {
+  return fs.readFileSync(path.join(root, relativePath), "utf8");
+}
+
+function walk(dir, predicate = () => true) {
+  const absolute = path.join(root, dir);
+  if (!fs.existsSync(absolute)) return [];
+  const result = [];
+  for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
+    const full = path.join(absolute, entry.name);
+    const relative = path.relative(root, full).replaceAll(path.sep, "/");
+    if (entry.isDirectory()) {
+      if (["node_modules", ".next", ".git", "out", "build"].includes(entry.name)) continue;
+      result.push(...walk(relative, predicate));
+    } else if (predicate(relative)) {
+      result.push(relative);
+    }
+  }
+  return result;
+}
+
+function fail(message) {
+  errors.push(message);
+}
+
+function warn(message) {
+  warnings.push(message);
+}
+
+if (!exists("src/modules")) fail("Manca src/modules: la logica modulare non è presente.");
+if (!exists("src/app")) fail("Manca src/app: routing Next.js non trovato.");
+if (!exists("lib/prisma.ts")) fail("Manca lib/prisma.ts: entrypoint Prisma non trovato.");
+
+if (exists("tsconfig.json")) {
+  const tsconfig = JSON.parse(read("tsconfig.json"));
+  const paths = tsconfig?.compilerOptions?.paths ?? {};
+  const modulesPath = paths["@/modules/*"];
+  if (!Array.isArray(modulesPath) || !modulesPath.some((value) => String(value).includes("src/modules"))) {
+    fail('tsconfig.json deve mappare "@/modules/*" verso "./src/modules/*".');
+  }
+} else {
+  fail("Manca tsconfig.json.");
+}
+
+const compatibilityWrappers = [
+  ["lib/server-auth.ts", "src/modules/permissions/server-guards.ts"],
+  ["lib/booking-window.ts", "src/modules/bookings/domain/booking-window.ts"],
+  ["lib/field-slots.ts", "src/modules/fields/domain/field-slots.ts"],
+  ["lib/referee-availability.ts", "src/modules/referees/domain/referee-availability.ts"],
+  ["lib/automatic-referees.ts", "src/modules/referees/application/rebalance-league-referees.ts"],
+];
+
+for (const [wrapper, target] of compatibilityWrappers) {
+  if (!exists(wrapper)) {
+    fail(`Wrapper di compatibilità mancante: ${wrapper}`);
+    continue;
+  }
+  if (!exists(target)) {
+    fail(`Target modulare mancante per ${wrapper}: ${target}`);
+    continue;
+  }
+  const content = read(wrapper);
+  if (!content.includes("export * from")) {
+    warn(`${wrapper} non sembra più un wrapper export-only: verifica che sia intenzionale.`);
+  }
+}
+
+for (const file of walk("src/modules", (relative) => /\.(ts|tsx)$/.test(relative))) {
+  const content = read(file);
+  if (/from\s+["']@\/app\//.test(content) || /from\s+["']\.\.\/.*app\//.test(content)) {
+    fail(`${file} importa dal routing src/app: i moduli non devono dipendere da Next routes/pages.`);
+  }
+}
+
+for (const file of walk("src/modules", (relative) => /\/domain\/.*\.(ts|tsx)$/.test(relative))) {
+  const content = read(file);
+  const forbidden = [
+    [/@\/lib\/prisma/, "Prisma"],
+    [/from\s+["']next\//, "Next.js"],
+    [/from\s+["']react["']/, "React"],
+    [/NextResponse/, "NextResponse"],
+  ];
+  for (const [pattern, label] of forbidden) {
+    if (pattern.test(content)) fail(`${file} è un domain module ma importa/dipende da ${label}.`);
+  }
+}
+
+for (const file of walk("src/app/api", (relative) => relative.endsWith("route.ts") || relative.endsWith("route.tsx"))) {
+  const content = read(file);
+  if (/from\s+["']@\/modules\/.*\/presentation\//.test(content)) {
+    fail(`${file} importa presentation layer: le API devono usare application/domain, non componenti React.`);
+  }
+}
+
+for (const dir of walk("prisma/migrations", () => false)) {
+  // kept for future recursive migration checks; directories are handled below
+}
+
+const migrationsRoot = path.join(root, "prisma/migrations");
+if (fs.existsSync(migrationsRoot)) {
+  for (const entry of fs.readdirSync(migrationsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const migrationSql = path.join(migrationsRoot, entry.name, "migration.sql");
+    if (!fs.existsSync(migrationSql)) fail(`Migration senza migration.sql: prisma/migrations/${entry.name}`);
+  }
+}
+
+const routeFiles = walk("src/app", (relative) => /\/(page|layout|loading)\.(ts|tsx)$/.test(relative));
+const heavyRouteFiles = routeFiles.filter((file) => {
+  if (file.includes("/api/")) return false;
+  const lines = read(file).split(/\r?\n/).length;
+  return lines > 180;
+});
+if (heavyRouteFiles.length) {
+  warn(`Route UI ancora corpose (${heavyRouteFiles.length}): ${heavyRouteFiles.slice(0, 5).join(", ")}${heavyRouteFiles.length > 5 ? "..." : ""}`);
+}
+
+if (warnings.length) {
+  console.warn("\n[architecture] Avvisi:");
+  for (const item of warnings) console.warn(`- ${item}`);
+}
+
+if (errors.length) {
+  console.error("\n[architecture] Errori:");
+  for (const item of errors) console.error(`- ${item}`);
+  process.exit(1);
+}
+
+console.log("[architecture] Controllo completato.");

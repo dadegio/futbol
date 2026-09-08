@@ -174,8 +174,9 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const { password } = body as { password?: string };
+  const nextPassword = typeof password === "string" ? password : "";
 
-  const passwordError = passwordPolicyError(password ?? "", 8);
+  const passwordError = passwordPolicyError(nextPassword, 8);
   if (passwordError) {
     return NextResponse.json({ error: passwordError }, { status: 400 });
   }
@@ -188,7 +189,7 @@ export async function PATCH(req: NextRequest) {
   const session = await getServerSession();
   await prisma.user.update({
     where: { id },
-    data: { passwordHash: hashPassword(password) },
+    data: { passwordHash: hashPassword(nextPassword) },
   });
 
   await writeAuditLog({

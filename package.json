@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "db:deploy": "prisma migrate deploy",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit --pretty false",
+    "lint": "eslint .",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:env": "node scripts/check-env.mjs",
+    "doctor": "node scripts/check-env.mjs --soft && npm run check:architecture",
+    "quality": "node scripts/quality-gate.mjs",
+    "predeploy": "npm run check:env && npm run quality && npm run build",
+    "predeploy:full": "npm run check:env && node scripts/quality-gate.mjs --with-build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
