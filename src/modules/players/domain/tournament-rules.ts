@@ -8,6 +8,14 @@ export const FUTPOLI_RULES = {
 
 export const AUTHORIZED_PLAYER_STATUS = "AUTHORIZED" as const;
 
+export type PlayerRegistrationStatus =
+  | "Iscrizione OK"
+  | "Squalificato"
+  | "Bloccato"
+  | "Ritirato"
+  | "In verifica"
+  | "Da completare";
+
 export type PlayerEligibilityInput = {
   status?: string | null;
   documentSigned?: boolean | null;
@@ -22,7 +30,7 @@ export function isPlayerEligibleForMatchSheet(player: PlayerEligibilityInput) {
   );
 }
 
-export function getPlayerRegistrationStatus(player: PlayerEligibilityInput) {
+export function getPlayerRegistrationStatus(player: PlayerEligibilityInput): PlayerRegistrationStatus {
   if (isPlayerEligibleForMatchSheet(player)) return "Iscrizione OK";
   if (player.status === "SUSPENDED") return "Squalificato";
   if (player.status === "BLOCKED") return "Bloccato";

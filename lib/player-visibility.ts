@@ -49,7 +49,12 @@ export function canEditAdminPlayerDetails(user: SessionUser | null | undefined, 
   return canSeeAdminPlayerDetails(user, leagueId);
 }
 
-export function publicPlayerStatus(player: PlayerEligibilityInput) {
+export type PublicPlayerStatus = {
+  registrationStatus: ReturnType<typeof getPlayerRegistrationStatus>;
+  isEligibleForMatchSheet: boolean;
+};
+
+export function publicPlayerStatus(player: PlayerEligibilityInput): PublicPlayerStatus {
   return {
     registrationStatus: getPlayerRegistrationStatus(player),
     isEligibleForMatchSheet: isPlayerEligibleForMatchSheet(player),
