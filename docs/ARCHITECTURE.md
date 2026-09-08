@@ -318,6 +318,51 @@ La chiusura del refactor segue quattro regole operative:
 - `media-storage.ts` centralizza upload, validazione, nomi sicuri e fallback locale.
 - In produzione va configurato `BLOB_READ_WRITE_TOKEN`: il fallback locale serve solo per sviluppo.
 
+## V34 — API boundary e sessioni HttpOnly
+
+La V34 chiude il primo ciclo del modular monolith imponendo un confine esplicito tra routing HTTP e accesso dati.
+
+### Regola API
+
+Da questa versione `src/app/api/**/route.ts` **non può importare Prisma direttamente**. Ogni route deve:
+
+1. leggere parametri, query string e body;
+2. applicare le guardie di autorizzazione;
+3. chiamare un application service del modulo proprietario;
+4. tradurre risultato ed errori in `NextResponse`.
+
+Il controllo è automatico in `scripts/check-architecture.mjs`: un nuovo import di `@/lib/prisma` da una API route fa fallire il quality gate.
+
+I principali casi d'uso ora vivono in:
+
+```txt
+src/modules/admin/application/
+src/modules/auth/application/
+src/modules/bookings/application/
+src/modules/fields/application/
+src/modules/matches/application/
+src/modules/media/application/
+src/modules/players/application/
+src/modules/referees/application/
+src/modules/teams/application/
+```
+
+### Sessione browser
+
+La sessione primaria non viene più conservata in `localStorage`. Il login imposta il token firmato in un cookie:
+
+```txt
+HttpOnly
+Secure in produzione
+SameSite=Lax
+Path=/
+TTL 7 giorni
+```
+
+`getServerSession()` legge prima il cookie e mantiene temporaneamente il supporto `Authorization: Bearer` per migrare senza logout forzato le sessioni create dalle versioni precedenti. `/api/auth/me` converte automaticamente un Bearer legacy valido nel cookie HttpOnly e il client elimina poi il vecchio valore da `localStorage`.
+
+Questa scelta permette ai futuri Server Components di conoscere la sessione senza dipendere dal browser e riduce l'esposizione del token a codice JavaScript lato client.
+
 ### Quality gate
 
 - `npm run modernization` esegue i controlli architetturali e i controlli dei service V30-V33.

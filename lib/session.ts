@@ -2,7 +2,8 @@ import crypto from "crypto";
 
 // ── constants ──────────────────────────────────────────────────────────────
 const COOKIE_NAME = "futbol-session";
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const SESSION_TTL_MS = SESSION_TTL_SECONDS * 1000;
 const PBKDF2_ITER = 100_000;
 const PBKDF2_KEYLEN = 64;
 const PBKDF2_DIGEST = "sha256";
@@ -86,4 +87,4 @@ export function parseToken(token: string): SessionUser | null {
   }
 }
 
-export { COOKIE_NAME };
+export { COOKIE_NAME, SESSION_TTL_SECONDS };

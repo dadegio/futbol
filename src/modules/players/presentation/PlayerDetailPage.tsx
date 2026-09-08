@@ -11,7 +11,7 @@ import Badge from "src/app/_components/ui/badge";
 import Input from "src/app/_components/ui/input";
 import Select from "src/app/_components/ui/select";
 import OptimizedPlayerImage from "src/app/_components/optimized-player-image";
-import { useAuth } from "@/lib/client-auth";
+import { authFetch, useAuth } from "@/lib/client-auth";
 
 type Player = {
   id: string;
@@ -76,12 +76,6 @@ function formatEuro(cents: number) {
   return (cents / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 }
 
-function getAuthHeaders(): HeadersInit {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("futbol-token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 function playerStatusLabel(player: Player | null) {
   if (!player) return "Da completare";
   if (player.registrationStatus) return player.registrationStatus;
@@ -93,7 +87,7 @@ async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("/api/upload", { method: "POST", headers: getAuthHeaders(), body: formData });
+  const res = await authFetch("/api/upload", { method: "POST", body: formData });
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) throw new Error((data as any)?.error ?? "Errore upload immagine");
@@ -144,11 +138,11 @@ export default function PlayerPage() {
     setLoading(true);
 
     try {
-      const playerRes = await fetch(`/api/players/${playerId}`, { cache: "no-store", headers: getAuthHeaders() });
+      const playerRes = await authFetch(`/api/players/${playerId}`, { cache: "no-store" });
       const playerData = await playerRes.json().catch(() => ({}));
       if (!playerRes.ok) throw new Error((playerData as any)?.error ?? "Errore caricamento giocatore");
 
-      const statsRes = await fetch(`/api/players/${playerId}/stats`, { cache: "no-store", headers: getAuthHeaders() });
+      const statsRes = await authFetch(`/api/players/${playerId}/stats`, { cache: "no-store" });
       const statsData: PlayerStatsResponse = await statsRes.json().catch(() => ({}));
 
       setPlayer(playerData);
@@ -236,9 +230,9 @@ export default function PlayerPage() {
         });
       }
 
-      const res = await fetch(`/api/players/${playerId}`, {
+      const res = await authFetch(`/api/players/${playerId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 

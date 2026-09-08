@@ -38,6 +38,16 @@ mustExist("src/modules/leagues/application/league-overview-service.ts");
 mustExist("src/app/api/leagues/[leagueId]/overview/route.ts");
 mustExist("src/modules/matches/application/league-schedule-service.ts");
 mustExist("src/modules/media/application/media-storage.ts");
+mustExist("src/modules/auth/application/authenticate-user.ts");
+mustExist("src/modules/auth/application/bootstrap-service.ts");
+mustExist("src/modules/players/application/player-service.ts");
+mustExist("src/modules/teams/application/team-service.ts");
+mustExist("src/modules/fields/application/field-service.ts");
+mustExist("src/modules/referees/application/referee-service.ts");
+mustExist("src/modules/bookings/application/slot-service.ts");
+mustExist("src/modules/admin/application/user-service.ts");
+mustExist("src/modules/media/application/creator-service.ts");
+mustExist("src/modules/matches/application/match-detail-service.ts");
 mustExist("prisma/migrations/20260908172000_performance_indexes/migration.sql");
 
 mustContain("src/app/api/leagues/[leagueId]/overview/route.ts", [
@@ -62,6 +72,18 @@ mustContain("src/modules/media/application/media-storage.ts", [
   "storeUploadFile",
   "local_public",
   "vercel_blob",
+]);
+
+mustContain("src/modules/auth/server-session.ts", [
+  "COOKIE_NAME",
+  "cookies()",
+  "Authorization",
+]);
+
+mustContain("src/app/api/auth/login/route.ts", [
+  "response.cookies.set",
+  "COOKIE_NAME",
+  "authenticateUser",
 ]);
 
 mustContain("prisma/schema.prisma", [

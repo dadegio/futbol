@@ -1,72 +1,31 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireLeagueAdmin } from "@/lib/server-auth";
+import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
+import {
+  createLeagueTeam,
+  listLeagueTeams,
+} from "@/modules/teams/application/team-service";
 
-export async function GET(_: Request, ctx: { params: Promise<{ leagueId: string }> }) {
-  const { leagueId } = await ctx.params;
+type Ctx = { params: Promise<{ leagueId: string }> };
 
-  const teams = await prisma.team.findMany({
-    where: { leagueId, activeInLeague: true },
-    orderBy: { name: "asc" },
-    include: { players: { orderBy: { number: "asc" } } },
-  });
-
-  return NextResponse.json(teams);
+export async function GET(_: Request, ctx: Ctx) {
+  try {
+    const { leagueId } = await ctx.params;
+    return NextResponse.json(await listLeagueTeams(leagueId));
+  } catch (error) {
+    return apiErrorResponse(error, "Errore caricamento squadre");
+  }
 }
 
-export async function POST(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
+export async function POST(req: Request, ctx: Ctx) {
   const { leagueId } = await ctx.params;
   const authErr = await requireLeagueAdmin(leagueId);
   if (authErr) return authErr;
 
-  const body = await req.json().catch(() => ({}));
-  const name = String(body?.name ?? "").trim();
-  const badgeUrl = body?.badgeUrl ? String(body.badgeUrl).trim() : null;
-  const description = body?.description ? String(body.description).trim() : null;
-  const colorHex = body?.colorHex ? String(body.colorHex).trim().toUpperCase() : null;
-  const secondaryColorHex = body?.secondaryColorHex
-    ? String(body.secondaryColorHex).trim().toUpperCase()
-    : null;
-
-  if (!name) {
-    return NextResponse.json({ error: "Nome squadra mancante" }, { status: 400 });
-  }
-
-  if (colorHex && !/^#[0-9A-F]{6}$/.test(colorHex)) {
-    return NextResponse.json({ error: "Primo colore maglia non valido" }, { status: 400 });
-  }
-
-  if (secondaryColorHex && !/^#[0-9A-F]{6}$/.test(secondaryColorHex)) {
-    return NextResponse.json({ error: "Secondo colore maglia non valido" }, { status: 400 });
-  }
-
-  const league = await prisma.league.findUnique({
-    where: { id: leagueId },
-    select: { id: true },
-  });
-
-  if (!league) {
-    return NextResponse.json({ error: "Lega non valida" }, { status: 400 });
-  }
-
   try {
-    const team = await prisma.team.create({
-      data: {
-        name,
-        badgeUrl: badgeUrl || undefined,
-        description: description || undefined,
-        colorHex: colorHex || undefined,
-        secondaryColorHex: secondaryColorHex || undefined,
-        activeInLeague: true,
-        league: { connect: { id: leagueId } },
-      },
-    });
-
-    return NextResponse.json(team);
-  } catch {
-    return NextResponse.json(
-      { error: "Squadra già esistente (stessa lega) o errore dati" },
-      { status: 400 }
-    );
+    const input = await readJsonBody<Record<string, unknown>>(req);
+    return NextResponse.json(await createLeagueTeam({ leagueId, input }));
+  } catch (error) {
+    return apiErrorResponse(error, "Errore creazione squadra");
   }
 }

@@ -11,7 +11,10 @@ import type { Role, SessionUser } from "./session";
 
 export type { Role, SessionUser };
 
-// ── localStorage key ────────────────────────────────────────────────────────
+// ── legacy Bearer migration ────────────────────────────────────────────────
+// New sessions live only in the HttpOnly cookie. These helpers are retained
+// temporarily so clients with a pre-migration localStorage token can exchange
+// it for the cookie without being logged out abruptly.
 const STORAGE_KEY = "futbol-token";
 
 // ── token helpers (browser-only) ─────────────────────────────────────────────
@@ -29,8 +32,8 @@ export function clearAuthToken(): void {
 }
 
 /**
- * Drop-in replacement for fetch() that automatically attaches
- * Authorization: Bearer <token> when a token is in localStorage.
+ * Same-origin fetch wrapper. Cookies are sent automatically; a legacy Bearer
+ * token is attached only while an old session is being migrated.
  */
 export function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = getAuthToken();
@@ -61,18 +64,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const token = getAuthToken();
-      if (!token) {
-        setUser(null);
-        return;
-      }
       const res = await fetch("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
+        ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        cache: "no-store",
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.user) {
-        clearAuthToken(); // token expired / invalid
+        clearAuthToken();
         setUser(null);
       } else {
+        if (token) clearAuthToken();
         setUser(data.user);
       }
     } catch {

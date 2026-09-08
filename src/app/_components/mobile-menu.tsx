@@ -125,6 +125,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
   }
 
   async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     clearAuthToken();
     await refresh();
     onClose();

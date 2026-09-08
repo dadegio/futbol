@@ -97,10 +97,27 @@ for (const file of walk("src/modules", (relative) => /\/domain\/.*\.(ts|tsx)$/.t
   }
 }
 
+for (const file of walk("src/modules", (relative) => /\/application\/.*\.(ts|tsx)$/.test(relative))) {
+  const content = read(file);
+  if (/from\s+["']@\/modules\/.*\/presentation\//.test(content)) {
+    fail(`${file} è un application module ma importa presentation layer.`);
+  }
+}
+
+for (const file of walk("src/modules", (relative) => /\/presentation\/.*\.(ts|tsx)$/.test(relative))) {
+  const content = read(file);
+  if (/from\s+["']@\/lib\/prisma["']/.test(content)) {
+    fail(`${file} è presentation layer ma importa Prisma direttamente.`);
+  }
+}
+
 for (const file of walk("src/app/api", (relative) => relative.endsWith("route.ts") || relative.endsWith("route.tsx"))) {
   const content = read(file);
   if (/from\s+["']@\/modules\/.*\/presentation\//.test(content)) {
     fail(`${file} importa presentation layer: le API devono usare application/domain, non componenti React.`);
+  }
+  if (/from\s+["']@\/lib\/prisma["']/.test(content)) {
+    fail(`${file} importa Prisma direttamente: le API devono delegare accesso dati e casi d'uso all'application layer.`);
   }
 }
 

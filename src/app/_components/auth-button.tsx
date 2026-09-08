@@ -23,6 +23,7 @@ export default function AuthButton() {
   }
 
   async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     clearAuthToken();
     await refresh();
     router.push("/");

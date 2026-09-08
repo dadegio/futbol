@@ -1,15 +1,23 @@
 import "server-only";
 
-import { headers } from "next/headers";
-import { parseToken, type SessionUser } from "@/lib/session";
+import { cookies, headers } from "next/headers";
+import { COOKIE_NAME, parseToken, type SessionUser } from "@/lib/session";
 
 /**
  * Server-side session reader.
  *
- * Keep token parsing isolated here so pages, API routes and permission guards do
- * not have to know where the auth header comes from or how the token is signed.
+ * HttpOnly cookie is the canonical session transport. Bearer remains accepted
+ * temporarily so existing browser sessions and API clients can migrate without
+ * an abrupt logout.
  */
 export async function getServerSession(): Promise<SessionUser | null> {
+  const cookieStore = await cookies();
+  const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
+  if (cookieToken) {
+    const session = parseToken(cookieToken);
+    if (session) return session;
+  }
+
   const headersList = await headers();
   const auth = headersList.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;

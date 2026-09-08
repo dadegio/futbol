@@ -183,10 +183,10 @@ export default function HomePage() {
                 <Layers3 size={14} /> Tournament desk
               </div>
               <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-[-0.07em] sm:text-6xl lg:text-7xl">
-                Scegli il campo operativo.
+                Il tuo modo di gestire tornei di calcio nel modo più semplice possibile
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/62 sm:text-base">
-                Ogni torneo ha la sua identità, i suoi admin e le sue regole. Da qui entri nella competizione giusta senza portarti dietro grafiche o sponsor di un'altra stagione.
+                Ogni torneo ha la sua identità, i suoi admin e le sue regole. Da qui in poi è tutto nelle tue mani
               </p>
               <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/52">
                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">Campi</span>

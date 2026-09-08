@@ -1,6 +1,6 @@
 "use client";
 
-import { setAuthToken, useAuth } from "@/lib/client-auth";
+import { useAuth } from "@/lib/client-auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -28,7 +28,6 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Errore login");
 
-      setAuthToken(data.token);
       await refresh();
       router.push("/");
     } catch (e: any) {
