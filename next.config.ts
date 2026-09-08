@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
+      {
         source: "/api/leagues/:leagueId/overview",
         headers: [
           { key: "Cache-Control", value: "public, max-age=0, s-maxage=30, stale-while-revalidate=90" },
@@ -50,12 +56,6 @@ const nextConfig: NextConfig = {
         source: "/api/leagues/:leagueId/media",
         headers: [
           { key: "Cache-Control", value: "public, max-age=0, s-maxage=60, stale-while-revalidate=180" },
-        ],
-      },
-      {
-        source: "/api/:path*",
-        headers: [
-          { key: "Cache-Control", value: "no-store, max-age=0" },
         ],
       },
       {

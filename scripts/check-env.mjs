@@ -58,6 +58,13 @@ warnEnv("BLOB_READ_WRITE_TOKEN", "necessario solo se usi Vercel Blob per upload 
 warnEnv("NEXT_PUBLIC_APP_URL", "consigliato per link assoluti, SEO e integrazioni esterne");
 warnEnv("YOUTUBE_PLAYLIST_ID", "necessario solo per mostrare una playlist YouTube globale");
 
+if (env("NODE_ENV") === "production") {
+  requireEnv("BLOB_READ_WRITE_TOKEN", "obbligatorio in produzione per upload persistenti");
+  requireEnv("SETUP_SECRET", "protegge l'endpoint di bootstrap /api/setup");
+} else {
+  warnEnv("SETUP_SECRET", "consigliato per proteggere /api/setup anche in sviluppo");
+}
+
 if (warnings.length) {
   console.warn("\n[env] Avvisi:");
   for (const warning of warnings) console.warn(`- ${warning}`);

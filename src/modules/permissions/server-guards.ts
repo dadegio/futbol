@@ -169,10 +169,6 @@ export async function requireMatchEditor(
       leagueId: match.leagueId,
       matchTeamIds: [match.homeTeamId, match.awayTeamId],
       assignedRefereeId: match.refereeId,
-    }) ||
-    canPerform(session, "booking:create", {
-      leagueId: match.leagueId,
-      matchTeamIds: [match.homeTeamId, match.awayTeamId],
     })
   ) {
     return null;

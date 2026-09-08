@@ -23,8 +23,8 @@ type StoredUpload = {
   contentType: string;
 };
 
-const LOCAL_UPLOAD_WARNING =
-  "BLOB_READ_WRITE_TOKEN non configurato: in produzione Vercel il filesystem locale non è persistente.";
+const DURABLE_STORAGE_REQUIRED =
+  "BLOB_READ_WRITE_TOKEN non configurato: in produzione gli upload richiedono uno storage persistente.";
 
 function makeFileName(file: File, extension: string, safeBaseName: string) {
   const timestamp = Date.now();
@@ -89,7 +89,7 @@ export async function storeUploadFile({
   }
 
   if (process.env.NODE_ENV === "production") {
-    console.warn(LOCAL_UPLOAD_WARNING);
+    throw new AppError(503, DURABLE_STORAGE_REQUIRED);
   }
 
   const bytes = await file.arrayBuffer();
