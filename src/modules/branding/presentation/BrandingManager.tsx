@@ -48,10 +48,12 @@ export default function BrandingManager({
   leagueId,
   value,
   onChange,
+  view = "all",
 }: {
   leagueId: string;
   value: BrandingSettings;
   onChange: (next: BrandingSettings) => void;
+  view?: "all" | "identity" | "privacy";
 }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"logo" | "cover" | null>(null);
@@ -153,11 +155,14 @@ export default function BrandingManager({
   }
 
   const previewLogo = resolved.logoUrl;
+  const showIdentity = view !== "privacy";
+  const showPrivacy = view !== "identity";
 
   return (
     <Card>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
+      <div className={showIdentity ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start" : ""}>
         <div className="space-y-7">
+          {showIdentity && (
           <section>
             <div className="flex items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -211,7 +216,7 @@ export default function BrandingManager({
               ))}
             </div>
 
-            {mode === "CUSTOM" && (
+            {showIdentity && mode === "CUSTOM" && (
               <div className="mt-5 grid gap-4 sm:grid-cols-3">
                 <ColorField
                   label="Colore principale"
@@ -250,7 +255,10 @@ export default function BrandingManager({
               />
             </div>
           </section>
+          )}
 
+          {showPrivacy && (
+          <>
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4">
             <div className="flex items-start gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -340,6 +348,8 @@ export default function BrandingManager({
               />
             </div>
           </section>
+          </>
+          )}
 
           {(error || message) && (
             <p className={`text-sm font-semibold ${error ? "text-red-300" : "text-emerald-300"}`}>
@@ -351,7 +361,7 @@ export default function BrandingManager({
             <Button onClick={save} disabled={saving || uploading !== null}>
               {saving ? "Salvataggio…" : "Salva impostazioni torneo"}
             </Button>
-            {mode === "CUSTOM" && (
+            {showIdentity && mode === "CUSTOM" && (
               <button
                 type="button"
                 onClick={() =>
@@ -370,6 +380,7 @@ export default function BrandingManager({
           </div>
         </div>
 
+        {showIdentity && (
         <div
           className="relative min-h-[320px] overflow-hidden rounded-[28px] border border-white/10 p-5"
           style={{
@@ -412,6 +423,7 @@ export default function BrandingManager({
             </div>
           </div>
         </div>
+        )}
       </div>
     </Card>
   );
