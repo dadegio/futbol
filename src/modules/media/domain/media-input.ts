@@ -87,8 +87,8 @@ export function parseMediaCreateInput(
   canAdmin: boolean
 ): { data: MediaCreateData } | MediaInputError {
   const fileUrl = url(body.fileUrl);
-  if (!fileUrl) return { error: "Carica un file o inserisci un link valido" } as const;
   if (fileUrl === undefined) return { error: "Link file non valido" } as const;
+  if (!fileUrl) return { error: "Carica un file o inserisci un link valido" } as const;
 
   const socialUrl = url(body.socialUrl);
   if (socialUrl === undefined) return { error: "Link social non valido" } as const;
@@ -152,7 +152,13 @@ export function parseMediaPatchInput(
   }
 
   if (body.creditName !== undefined) data.creditName = text(body.creditName, 120);
-  if (body.creditInstagram !== undefined) data.creditInstagram = text(body.creditInstagram, 120);
+  if (body.creditInstagram !== undefined) {
+    const creditInstagram = instagram(body.creditInstagram);
+    if (creditInstagram === undefined) {
+      return { error: "Instagram credito non valido" } as const;
+    }
+    data.creditInstagram = creditInstagram;
+  }
 
   if (body.creditEmail !== undefined) {
     const email = text(body.creditEmail, 180);

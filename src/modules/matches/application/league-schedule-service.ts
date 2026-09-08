@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { generateRoundRobin } from "@/lib/scheduler";
+import { generateRoundRobin } from "@/modules/matches/domain/scheduler";
 import { rebalanceLeagueReferees } from "@/lib/automatic-referees";
 import {
   getFirstFullSlotWeek,

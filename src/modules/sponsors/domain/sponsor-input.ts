@@ -96,7 +96,8 @@ export function parseSponsorPatchInput(
 
   for (const key of ["category", "description", "phone", "address", "contactName"] as const) {
     if (body[key] !== undefined) {
-      data[key] = normalizeText(body[key], key === "description" ? 600 : 240);
+      const max = key === "description" ? 600 : key === "category" ? 80 : key === "phone" ? 80 : key === "contactName" ? 120 : 240;
+      data[key] = normalizeText(body[key], max);
     }
   }
 

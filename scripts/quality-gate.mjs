@@ -7,6 +7,7 @@ const withBuild = args.has("--with-build");
 const steps = [
   ["Architettura", "npm", ["run", "check:architecture"]],
   ["Service checks", "npm", ["run", "check:services"]],
+  ["Domain tests", "npm", ["test"]],
   ["TypeScript", "npm", ["run", "typecheck"]],
 ];
 

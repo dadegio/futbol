@@ -48,6 +48,10 @@ mustExist("src/modules/bookings/application/slot-service.ts");
 mustExist("src/modules/admin/application/user-service.ts");
 mustExist("src/modules/media/application/creator-service.ts");
 mustExist("src/modules/matches/application/match-detail-service.ts");
+mustExist("src/modules/matches/domain/scheduler.ts");
+mustExist("src/modules/players/domain/tournament-rules.ts");
+mustExist("src/modules/stats/domain/league-table.ts");
+mustExist("scripts/run-domain-tests.mjs");
 mustExist("prisma/migrations/20260908172000_performance_indexes/migration.sql");
 
 mustContain("src/app/api/leagues/[leagueId]/overview/route.ts", [

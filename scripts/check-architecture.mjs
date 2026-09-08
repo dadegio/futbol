@@ -59,6 +59,8 @@ const compatibilityWrappers = [
   ["lib/booking-window.ts", "src/modules/bookings/domain/booking-window.ts"],
   ["lib/field-slots.ts", "src/modules/fields/domain/field-slots.ts"],
   ["lib/referee-availability.ts", "src/modules/referees/domain/referee-availability.ts"],
+  ["lib/scheduler.ts", "src/modules/matches/domain/scheduler.ts"],
+  ["lib/tournament-rules.ts", "src/modules/players/domain/tournament-rules.ts"],
   ["lib/automatic-referees.ts", "src/modules/referees/application/rebalance-league-referees.ts"],
 ];
 

@@ -16,7 +16,8 @@
     "predeploy": "npm run check:env && npm run quality && npm run build",
     "predeploy:full": "npm run check:env && node scripts/quality-gate.mjs --with-build",
     "check:services": "node scripts/check-services.mjs",
-    "modernization": "npm run check:architecture && npm run check:services"
+    "test": "node scripts/run-domain-tests.mjs",
+    "modernization": "npm run check:architecture && npm run check:services && npm test"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
