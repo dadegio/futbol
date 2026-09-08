@@ -11,10 +11,12 @@
     "lint": "eslint .",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:env": "node scripts/check-env.mjs",
-    "doctor": "node scripts/check-env.mjs --soft && npm run check:architecture",
+    "doctor": "node scripts/check-env.mjs --soft && npm run modernization",
     "quality": "node scripts/quality-gate.mjs",
     "predeploy": "npm run check:env && npm run quality && npm run build",
-    "predeploy:full": "npm run check:env && node scripts/quality-gate.mjs --with-build"
+    "predeploy:full": "npm run check:env && node scripts/quality-gate.mjs --with-build",
+    "check:services": "node scripts/check-services.mjs",
+    "modernization": "npm run check:architecture && npm run check:services"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",

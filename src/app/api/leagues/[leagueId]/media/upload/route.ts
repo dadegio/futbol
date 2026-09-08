@@ -1,11 +1,8 @@
-import { put } from "@vercel/blob";
-import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
 import { getServerSession, isLeagueAdminSession, isCreatorSession } from "@/lib/server-auth";
+import { apiErrorResponse } from "@/modules/core/api";
 import { rateLimit } from "@/modules/core/security/rate-limit";
-import { validateUploadFile } from "@/modules/core/security/upload-validation";
+import { storeUploadFile } from "@/modules/media/application/media-storage";
 
 export const runtime = "nodejs";
 
@@ -37,33 +34,24 @@ export async function POST(req: Request, ctx: { params: Promise<{ leagueId: stri
       return NextResponse.json({ error: "Nessun file" }, { status: 400 });
     }
 
-    const validation = validateUploadFile(file, {
-      allowImages: true,
-      allowVideos: true,
-      imageLimitBytes: IMAGE_LIMIT,
-      videoLimitBytes: VIDEO_LIMIT,
+    const stored = await storeUploadFile({
+      file,
+      target: {
+        scope: "media",
+        leagueId,
+        folder: file.type.startsWith("video/") ? "videos" : "photos",
+      },
+      validation: {
+        allowImages: true,
+        allowVideos: true,
+        imageLimitBytes: IMAGE_LIMIT,
+        videoLimitBytes: VIDEO_LIMIT,
+      },
     });
 
-    if (!validation.ok) {
-      return NextResponse.json({ error: validation.error }, { status: validation.status });
-    }
-
-    const fileName = `${Date.now()}-${randomUUID()}-${validation.safeBaseName}.${validation.extension}`;
-    const folder = validation.kind === "video" ? "videos" : "photos";
-
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      const blob = await put(`media/${leagueId}/${folder}/${fileName}`, file, { access: "public" });
-      return NextResponse.json({ url: blob.url, mediaKind: validation.kind });
-    }
-
-    const bytes = await file.arrayBuffer();
-    const uploadDir = path.join(process.cwd(), "public", "media", leagueId, folder);
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, fileName), Buffer.from(bytes));
-
-    return NextResponse.json({ url: `/media/${leagueId}/${folder}/${fileName}`, mediaKind: validation.kind });
-  } catch (err) {
-    console.error("Errore upload media:", err);
-    return NextResponse.json({ error: "Errore upload media" }, { status: 500 });
+    return NextResponse.json(stored);
+  } catch (error) {
+    console.error("Errore upload media:", error);
+    return apiErrorResponse(error, "Errore upload media");
   }
 }

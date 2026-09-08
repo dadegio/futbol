@@ -277,3 +277,48 @@ Il quality gate verifica soprattutto i confini introdotti nelle versioni modular
 - le migration devono essere complete.
 
 Regola pratica: prima del push usare almeno `npm run quality`; prima di un deploy importante usare `npm run predeploy`.
+
+## V29 — Admin Presentation Split
+
+La V29 completa la pulizia delle ultime route UI corpose segnalate dal quality gate, spostando anche l'amministrazione globale e l'amministrazione torneo nel presentation layer modulare.
+
+Nuovi file principali:
+
+```txt
+src/modules/admin/presentation/AdminUsersPage.tsx
+src/modules/admin/presentation/LeagueAdminPage.tsx
+```
+
+Le route pubbliche restano in `src/app`, ma sono wrapper minimi:
+
+```txt
+src/app/admin/users/page.tsx
+src/app/leagues/[leagueId]/admin/page.tsx
+```
+
+Da questa versione le nuove schermate admin non dovrebbero nascere direttamente dentro `src/app`: la route espone l'URL, mentre stato React, fetch client e composizione UI vanno in `src/modules/admin/presentation` o nel modulo proprietario della feature.
+
+## V30-V33 modernization
+
+La chiusura del refactor segue quattro regole operative:
+
+1. le pagine pubbliche ad alto traffico devono preferire endpoint aggregati, come `/api/leagues/[leagueId]/overview`, invece di comporre molti endpoint nel browser;
+2. le route API devono restare sottili e delegare a service in `src/modules/*/application`;
+3. le query più frequenti devono avere indici Prisma espliciti e migration dedicate;
+4. upload e storage devono passare da adapter applicativi, così Vercel Blob, filesystem locale e futuri provider restano intercambiabili.
+
+### Performance
+
+- `league-overview-service.ts` prepara i dati minimi per la home torneo in una sola chiamata.
+- `league-schedule-service.ts` contiene lettura, creazione manuale e generazione calendario.
+- `publicApiCacheHeaders()` consente cache CDN breve per endpoint pubblici senza toccare le API admin.
+
+### Storage media
+
+- `media-storage.ts` centralizza upload, validazione, nomi sicuri e fallback locale.
+- In produzione va configurato `BLOB_READ_WRITE_TOKEN`: il fallback locale serve solo per sviluppo.
+
+### Quality gate
+
+- `npm run modernization` esegue i controlli architetturali e i controlli dei service V30-V33.
+- `npm run quality` include anche il typecheck TypeScript.

@@ -47,6 +47,7 @@ type Match = {
 type TableRow = {
   teamId: string;
   teamName: string;
+  badgeUrl?: string | null;
   played: number;
   wins: number;
   draws: number;
@@ -81,6 +82,21 @@ type PlayoffResponse = {
   seeded?: boolean;
   series?: PlayoffSeries[];
   error?: string;
+};
+
+type LeagueOverview = {
+  league: League;
+  teams: Team[];
+  matches: Match[];
+  overviewMatches: Match[];
+  table: TableRow[];
+  summary: {
+    currentRound: number;
+    totalRounds: number;
+    teamCount: number;
+    matchCount: number;
+    totalGoals: number;
+  };
 };
 
 async function getJSON<T>(url: string): Promise<T> {
@@ -236,6 +252,7 @@ export default function LeagueHomePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [overviewMatches, setOverviewMatches] = useState<Match[]>([]);
   const [table, setTable] = useState<TableRow[]>([]);
+  const [summary, setSummary] = useState<LeagueOverview["summary"] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -247,36 +264,14 @@ export default function LeagueHomePage() {
         setErr(null);
         setLoading(true);
 
-        const [leagueData, teamsData, matchesData, tableData, playoffData] =
-          await Promise.all([
-            getJSON<League>(`/api/leagues/${leagueId}`),
-            getJSON<any[]>(`/api/leagues/${leagueId}/teams`),
-            getJSON<Match[]>(`/api/leagues/${leagueId}/schedule`),
-            getJSON<TableRow[]>(`/api/leagues/${leagueId}/table`),
-            getJSON<PlayoffResponse>(`/api/leagues/${leagueId}/playoffs`).catch(
-              () => ({ configured: false })
-            ),
-          ]);
+        const overview = await getJSON<LeagueOverview>(`/api/leagues/${leagueId}/overview`);
 
-        const normalizedTeams = teamsData.map((team) => ({
-          id: team.id,
-          name: team.name,
-          badgeUrl: team.badgeUrl ?? null,
-        }));
-
-        const playoffMatches = normalizePlayoffMatches(leagueId, playoffData);
-
-        const mergedOverviewMatches = [...matchesData, ...playoffMatches].sort((a, b) => {
-          const ad = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER;
-          const bd = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER;
-          return ad - bd;
-        });
-
-        setLeague(leagueData);
-        setTeams(normalizedTeams);
-        setMatches(matchesData);
-        setOverviewMatches(mergedOverviewMatches);
-        setTable(tableData);
+        setLeague(overview.league);
+        setTeams(overview.teams);
+        setMatches(overview.matches);
+        setOverviewMatches(overview.overviewMatches);
+        setTable(overview.table);
+        setSummary(overview.summary);
       } catch (error: any) {
         setErr(error.message);
       } finally {
@@ -287,40 +282,11 @@ export default function LeagueHomePage() {
     load();
   }, [leagueId]);
 
-  const rounds = useMemo(
-    () => [...new Set(matches.map((match) => match.round))].sort((a, b) => a - b),
-    [matches]
-  );
-
-  const totalRounds = rounds.length || Math.max(teams.length * 2 - 2, 1);
-
-  const currentRound = useMemo(() => {
-    if (rounds.length === 0) return 1;
-
-    for (const round of rounds) {
-      const roundMatches = matches.filter((match) => match.round === round);
-      const allPlayed =
-        roundMatches.length > 0 && roundMatches.every((match) => isPlayed(match));
-
-      if (!allPlayed) return round;
-    }
-
-    return rounds[rounds.length - 1] ?? 1;
-  }, [matches, rounds]);
-
-  const playedMatches = useMemo(
-    () => matches.filter((match) => isPlayed(match)),
-    [matches]
-  );
-
-  const totalGoals = useMemo(
-    () =>
-      playedMatches.reduce(
-        (sum, match) => sum + (match.homeGoals ?? 0) + (match.awayGoals ?? 0),
-        0
-      ),
-    [playedMatches]
-  );
+  const totalRounds = summary?.totalRounds ?? Math.max(teams.length * 2 - 2, 1);
+  const currentRound = summary?.currentRound ?? 1;
+  const totalGoals = summary?.totalGoals ?? 0;
+  const teamCount = summary?.teamCount ?? teams.length;
+  const matchCount = summary?.matchCount ?? matches.length;
 
   const liveMatch = useMemo(() => {
     return overviewMatches.find((match) => isLiveMatch(match)) ?? null;
@@ -398,8 +364,8 @@ export default function LeagueHomePage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-3">
-            <SummaryStat label="Squadre" value={teams.length} />
-            <SummaryStat label="Partite" value={matches.length} />
+            <SummaryStat label="Squadre" value={teamCount} />
+            <SummaryStat label="Partite" value={matchCount} />
             <SummaryStat label="Goal" value={totalGoals} />
           </div>
         </Card>
@@ -492,7 +458,7 @@ export default function LeagueHomePage() {
 
           <Card className="overflow-hidden !p-0">
             {table.slice(0, 5).map((row, index) => {
-              const team = teams.find((t) => t.id === row.teamId);
+              const teamBadgeUrl = row.badgeUrl ?? teams.find((t) => t.id === row.teamId)?.badgeUrl ?? null;
 
               return (
                 <div
@@ -505,7 +471,7 @@ export default function LeagueHomePage() {
 
                   <TeamBadge
                     name={row.teamName}
-                    badgeUrl={team?.badgeUrl ?? null}
+                    badgeUrl={teamBadgeUrl}
                     size="sm"
                   />
 

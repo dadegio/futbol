@@ -153,6 +153,7 @@ model Sponsor {
 
   @@index([leagueId, active])
   @@index([leagueId, sortOrder])
+  @@index([leagueId, active, sortOrder])
 }
 
 
@@ -226,6 +227,9 @@ model MediaItem {
 
   @@index([leagueId, status])
   @@index([leagueId, featured])
+  @@index([leagueId, status, createdAt])
+  @@index([leagueId, featured, createdAt])
+  @@index([leagueId, type, status])
   @@index([creatorId])
   @@index([matchId])
   @@index([teamId])
@@ -298,6 +302,7 @@ model Player {
 
   @@unique([teamId, number])
   @@index([teamId])
+  @@index([teamId, status])
 }
 
 model Match {
@@ -344,6 +349,8 @@ model Match {
   @@index([leagueId, round])
   @@index([leagueId, date])
   @@index([leagueId, slotWeekStart])
+  @@index([leagueId, seriesId, date])
+  @@index([leagueId, seriesId, round])
   @@index([bookedByUserId])
   @@index([refereeId])
   @@index([seriesId])
