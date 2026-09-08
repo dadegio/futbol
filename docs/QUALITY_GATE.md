@@ -84,3 +84,32 @@ git push origin main
 ```
 
 Se `npm run build` passa in locale, Vercel dovrebbe intercettare molti meno errori TypeScript al push.
+
+## Test di integrazione PostgreSQL
+
+I test veloci di dominio (`npm test`) non richiedono database e restano parte di
+`npm run modernization`. I flussi che coinvolgono Prisma/PostgreSQL si eseguono
+separatamente:
+
+```bash
+cp .env.test.example .env.test.local
+# compila TEST_DATABASE_URL e, se disponibile, TEST_DIRECT_URL
+npm run test:integration
+```
+
+Il runner **non usa mai `DATABASE_URL` come fallback**. Crea uno schema PostgreSQL
+temporaneo `torneo_it_*`, applica l'intera catena `prisma migrate deploy`, esegue i
+test e infine elimina lo schema con `CASCADE`. Questo consente di usare anche un
+database/branch Neon dedicato ai test senza toccare le tabelle applicative.
+
+Per una verifica completa prima di un merge importante:
+
+```bash
+npm run quality:integration
+```
+
+Per conservare temporaneamente lo schema in caso di errore e ispezionarlo:
+
+```bash
+KEEP_TEST_SCHEMA=1 npm run test:integration
+```

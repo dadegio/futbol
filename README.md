@@ -222,3 +222,18 @@ git push origin main
 ```
 
 Il documento completo è in `docs/QUALITY_GATE.md`.
+
+### Test PostgreSQL end-to-end
+
+Per verificare migration, transazioni Prisma, risultati, statistiche, classifica e
+playoff usa un database PostgreSQL dedicato ai test:
+
+```bash
+cp .env.test.example .env.test.local
+# configura TEST_DATABASE_URL e opzionalmente TEST_DIRECT_URL
+npm run test:integration
+```
+
+Ogni esecuzione usa uno schema temporaneo isolato e lo elimina al termine. Il runner
+non ripiega mai su `DATABASE_URL`, così un comando di test non può usare per errore
+il database normale dell'applicazione.

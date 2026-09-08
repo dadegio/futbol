@@ -12,7 +12,20 @@ if (!connectionString) {
   throw new Error("DATABASE_URL o DIRECT_URL non impostata");
 }
 
-const adapter = new PrismaPg({ connectionString });
+const schema = (() => {
+  const explicit = process.env.DATABASE_SCHEMA?.trim();
+  if (explicit) return explicit;
+
+  try {
+    return new URL(connectionString).searchParams.get("schema")?.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+})();
+
+const adapter = schema
+  ? new PrismaPg({ connectionString }, { schema })
+  : new PrismaPg({ connectionString });
 
 export const prisma =
   globalForPrisma.prisma ??
