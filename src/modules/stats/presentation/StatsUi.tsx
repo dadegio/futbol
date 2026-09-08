@@ -1,3 +1,4 @@
+import { BarChart3 } from "lucide-react";
 import Link from "next/link";
 import Card from "src/app/_components/ui/card";
 import OptimizedPlayerImage from "src/app/_components/optimized-player-image";

@@ -113,3 +113,21 @@ Per conservare temporaneamente lo schema in caso di errore e ispezionarlo:
 ```bash
 KEEP_TEST_SCHEMA=1 npm run test:integration
 ```
+
+## CI GitHub
+
+La workflow `.github/workflows/quality.yml` esegue su ogni push a `main` e su ogni pull request:
+
+1. installazione pulita con Node 22;
+2. PostgreSQL 16 isolato;
+3. generazione Prisma e migration;
+4. `npm run modernization`;
+5. `npm run test:integration`;
+6. `npm run typecheck`;
+7. `npm run build`.
+
+Per riprodurre la stessa sequenza in locale, con `TEST_DATABASE_URL` e `TEST_DIRECT_URL` configurati:
+
+```bash
+npm run ci
+```

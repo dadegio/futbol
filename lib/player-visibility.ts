@@ -19,10 +19,9 @@ export type PlayerVisibilityInput = PlayerEligibilityInput & {
   isTeamCaptain?: boolean;
   teamId?: string | null;
   team?: unknown;
-  [key: string]: unknown;
 };
 
-export type SanitizedPlayer<T extends PlayerVisibilityInput = PlayerVisibilityInput> = {
+type SanitizedPlayerBase<TTeam = unknown> = {
   id: string;
   firstName: string;
   lastName: string;
@@ -34,11 +33,15 @@ export type SanitizedPlayer<T extends PlayerVisibilityInput = PlayerVisibilityIn
   photoPositionY: number;
   isTeamCaptain: boolean;
   teamId: string | null;
-  team: T["team"];
+  team: TTeam;
   registrationStatus: ReturnType<typeof getPlayerRegistrationStatus>;
   isEligibleForMatchSheet: boolean;
   adminMissingItems?: string[];
-} & Partial<T>;
+};
+
+export type SanitizedPlayer<T extends PlayerVisibilityInput = PlayerVisibilityInput> =
+  SanitizedPlayerBase<T["team"]> &
+  Omit<Partial<T>, keyof SanitizedPlayerBase<T["team"]>>;
 
 export function canSeeAdminPlayerDetails(user: SessionUser | null | undefined, leagueId?: string | null) {
   return user?.role === "ADMIN" ||
@@ -68,7 +71,7 @@ export function sanitizePlayerForRole<T extends PlayerVisibilityInput>(
 ): SanitizedPlayer<T> {
   const status = publicPlayerStatus(player);
 
-  const base: SanitizedPlayer<T> = {
+  const base = {
     id: player.id,
     firstName: player.firstName,
     lastName: player.lastName,
@@ -82,7 +85,7 @@ export function sanitizePlayerForRole<T extends PlayerVisibilityInput>(
     teamId: player.teamId ?? null,
     team: player.team as T["team"],
     ...status,
-  };
+  } satisfies SanitizedPlayerBase<T["team"]>;
 
   if (canSeeAdminPlayerDetails(user, leagueId)) {
     return {
@@ -92,5 +95,5 @@ export function sanitizePlayerForRole<T extends PlayerVisibilityInput>(
     } as SanitizedPlayer<T>;
   }
 
-  return base;
+  return base as SanitizedPlayer<T>;
 }

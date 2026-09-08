@@ -15,7 +15,7 @@ type PlayoffData = {
   configured: boolean;
   planned?: boolean;
   format?: "SINGLE_ELIM" | "TWO_LEG";
-  teamCount?: number;
+  teamCount?: number | null;
   seeded?: boolean;
   series?: SeriesData[];
 };
