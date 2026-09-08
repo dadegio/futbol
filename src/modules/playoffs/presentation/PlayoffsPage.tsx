@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import React, { useState } from "react";
 import Link from "next/link";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card, { CardHeader } from "src/app/_components/ui/card";
@@ -30,14 +29,21 @@ const ROUND_NAMES: Record<number, string> = {
   8: "Ottavi di finale",
 };
 
-export default function PlayoffsPage() {
-  const { leagueId } = useParams<{ leagueId: string }>();
+export default function PlayoffsPage({
+  leagueId,
+  initialData,
+  initialTeamCount,
+}: {
+  leagueId: string;
+  initialData: PlayoffData;
+  initialTeamCount: number;
+}) {
   const isAdmin = useCanAdminLeague(leagueId);
   const { user } = useAuth();
 
-  const [data, setData] = useState<PlayoffData | null>(null);
-  const [teamCount, setTeamCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<PlayoffData | null>(initialData);
+  const [teamCount, setTeamCount] = useState(initialTeamCount);
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("bracket");
   const [advancing, setAdvancing] = useState<string | null>(null);
@@ -65,10 +71,6 @@ export default function PlayoffsPage() {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    if (leagueId) load();
-  }, [leagueId]);
 
   async function handleAdvance(seriesId: string, manualWinnerId?: string) {
   setAdvancing(seriesId);

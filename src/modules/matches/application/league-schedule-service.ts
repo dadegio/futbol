@@ -81,6 +81,9 @@ export async function getLeagueSchedule({
 
   return matches.map((match) => ({
     ...match,
+    date: match.date?.toISOString() ?? null,
+    slotEnd: match.slotEnd?.toISOString() ?? null,
+    slotWeekStart: match.slotWeekStart?.toISOString() ?? null,
     referee: match.referee
       ? { id: match.referee.id, name: canSeeRefereeName ? match.referee.name : null }
       : null,

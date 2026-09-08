@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
-import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
@@ -33,11 +32,16 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-export default function TeamsPage() {
-  const { leagueId } = useParams<{ leagueId: string }>();
+export default function TeamsPage({
+  leagueId,
+  initialTeams,
+}: {
+  leagueId: string;
+  initialTeams: TeamRow[];
+}) {
   const isAdmin = useCanAdminLeague(leagueId);
 
-  const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [teams, setTeams] = useState<TeamRow[]>(initialTeams);
   const [name, setName] = useState("");
   const [badgeUrl, setBadgeUrl] = useState("");
   const [description, setDescription] = useState("");
@@ -45,11 +49,11 @@ export default function TeamsPage() {
   const [secondaryColorHex, setSecondaryColorHex] = useState("#F97316");
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [removingTeamId, setRemovingTeamId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  async function load() {
     setErr(null);
     setLoading(true);
 
@@ -72,12 +76,7 @@ export default function TeamsPage() {
     } finally {
       setLoading(false);
     }
-  }, [leagueId]);
-
-  useEffect(() => {
-    if (!leagueId) return;
-    load();
-  }, [leagueId, load]);
+  }
 
   async function createTeam() {
     setErr(null);
@@ -157,8 +156,6 @@ export default function TeamsPage() {
       return sum + (team.players?.length ?? team._count?.players ?? 0);
     }, 0);
   }, [teams]);
-
-  if (!leagueId) return <div>Caricamento…</div>;
 
   return (
     <DashboardShell leagueId={leagueId}>

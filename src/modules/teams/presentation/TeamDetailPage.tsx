@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { Pencil, Trash2, Plus, ArrowLeft, X, Search, Crown } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
@@ -95,22 +94,27 @@ async function uploadImage(file: File): Promise<string> {
   return data.url as string;
 }
 
-export default function TeamPage() {
-  const { leagueId, teamId } = useParams<{
-    leagueId: string;
-    teamId: string;
-  }>();
-
+export default function TeamPage({
+  leagueId,
+  teamId,
+  initialTeam,
+}: {
+  leagueId: string;
+  teamId: string;
+  initialTeam: Team;
+}) {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN" || (user?.role === "LEAGUE_ADMIN" && user.leagueId === leagueId);
   const canEdit = useCanEditTeam(teamId, leagueId);
 
-  const [team, setTeam] = useState<Team | null>(null);
-  const [name, setName] = useState("");
-  const [badgeUrl, setBadgeUrl] = useState("");
-  const [description, setDescription] = useState("");
-  const [colorHex, setColorHex] = useState("#F97316");
-  const [secondaryColorHex, setSecondaryColorHex] = useState("#F97316");
+  const [team, setTeam] = useState<Team>(initialTeam);
+  const [name, setName] = useState(initialTeam.name ?? "");
+  const [badgeUrl, setBadgeUrl] = useState(initialTeam.badgeUrl ?? "");
+  const [description, setDescription] = useState(initialTeam.description ?? "");
+  const [colorHex, setColorHex] = useState(initialTeam.colorHex ?? "#F97316");
+  const [secondaryColorHex, setSecondaryColorHex] = useState(
+    initialTeam.secondaryColorHex ?? initialTeam.colorHex ?? "#F97316"
+  );
   const [badgeFile, setBadgeFile] = useState<File | null>(null);
   const [removeBadge, setRemoveBadge] = useState(false);
   const [editingTeam, setEditingTeam] = useState(false);
@@ -148,14 +152,6 @@ export default function TeamPage() {
     setBadgeFile(null);
     setRemoveBadge(false);
   }
-
-  useEffect(() => {
-    if (!teamId) return;
-
-    load().catch((error) => {
-      setErr(error.message);
-    });
-  }, [teamId]);
 
   const badgePreview = useMemo(() => {
     if (removeBadge) return "";
@@ -288,8 +284,6 @@ export default function TeamPage() {
   }
 
   const allPlayers = useMemo(() => {
-    if (!team) return [];
-
     const q = query.trim().toLowerCase();
 
     return [...team.players]
@@ -324,14 +318,6 @@ export default function TeamPage() {
     () => new Set(allPlayers.slice(0, 4).map((player) => player.id)),
     [allPlayers]
   );
-
-  if (!team) {
-    return (
-      <DashboardShell leagueId={leagueId}>
-        <div className="text-sm text-[var(--muted)]">Caricamento…</div>
-      </DashboardShell>
-    );
-  }
 
   return (
     <DashboardShell leagueId={leagueId}>

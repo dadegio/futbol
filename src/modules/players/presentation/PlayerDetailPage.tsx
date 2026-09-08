@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { ArrowLeft, CalendarDays, Crown, Goal, Handshake, Pencil, WalletCards } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
@@ -96,46 +95,67 @@ async function uploadImage(file: File): Promise<string> {
   return (data as any).url as string;
 }
 
-export default function PlayerPage() {
-  const { leagueId, playerId } = useParams<{ leagueId: string; playerId: string }>();
+export default function PlayerPage({
+  leagueId,
+  playerId,
+  initialPlayer,
+  initialStats,
+}: {
+  leagueId: string;
+  playerId: string;
+  initialPlayer: Player;
+  initialStats: PlayerStatsResponse;
+}) {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN" || (user?.role === "LEAGUE_ADMIN" && user.leagueId === leagueId);
 
-  const [player, setPlayer] = useState<Player | null>(null);
-  const [goals, setGoals] = useState(0);
-  const [assists, setAssists] = useState(0);
-  const [appearances, setAppearances] = useState(0);
-  const [feeCents, setFeeCents] = useState<number | null>(null);
-  const [recentMatches, setRecentMatches] = useState<PlayerStatsResponse["recentMatches"]>([]);
+  const [player, setPlayer] = useState<Player>(initialPlayer);
+  const [goals, setGoals] = useState(initialStats.goals ?? 0);
+  const [assists, setAssists] = useState(initialStats.assists ?? 0);
+  const [appearances, setAppearances] = useState(initialStats.appearances ?? 0);
+  const [feeCents, setFeeCents] = useState<number | null>(
+    typeof initialStats.feeCents === "number" ? initialStats.feeCents : null
+  );
+  const [recentMatches, setRecentMatches] = useState<PlayerStatsResponse["recentMatches"]>(
+    initialStats.recentMatches ?? []
+  );
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [number, setNumber] = useState("");
-  const [position, setPosition] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [photoZoom, setPhotoZoom] = useState(1);
-  const [photoPositionX, setPhotoPositionX] = useState(50);
-  const [photoPositionY, setPhotoPositionY] = useState(50);
-  const [isTeamCaptain, setIsTeamCaptain] = useState(false);
+  const [firstName, setFirstName] = useState(initialPlayer.firstName ?? "");
+  const [lastName, setLastName] = useState(initialPlayer.lastName ?? "");
+  const [number, setNumber] = useState(String(initialPlayer.number ?? ""));
+  const [position, setPosition] = useState(initialPlayer.position ?? "");
+  const [photoUrl, setPhotoUrl] = useState(initialPlayer.photoUrl ?? "");
+  const [photoZoom, setPhotoZoom] = useState(
+    typeof initialPlayer.photoZoom === "number" ? initialPlayer.photoZoom : 1
+  );
+  const [photoPositionX, setPhotoPositionX] = useState(
+    typeof initialPlayer.photoPositionX === "number" ? initialPlayer.photoPositionX : 50
+  );
+  const [photoPositionY, setPhotoPositionY] = useState(
+    typeof initialPlayer.photoPositionY === "number" ? initialPlayer.photoPositionY : 50
+  );
+  const [isTeamCaptain, setIsTeamCaptain] = useState(Boolean(initialPlayer.isTeamCaptain));
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
-  const [birthDate, setBirthDate] = useState("");
-  const [documentSigned, setDocumentSigned] = useState(false);
-  const [signedAt, setSignedAt] = useState("");
-  const [mediaConsent, setMediaConsent] = useState(false);
-  const [wildcardUsed, setWildcardUsed] = useState(false);
-  const [status, setStatus] = useState("PENDING");
-  const [statusNote, setStatusNote] = useState("");
+  const [birthDate, setBirthDate] = useState(
+    initialPlayer.birthDate ? String(initialPlayer.birthDate).slice(0, 10) : ""
+  );
+  const [documentSigned, setDocumentSigned] = useState(Boolean(initialPlayer.documentSigned));
+  const [signedAt, setSignedAt] = useState(
+    initialPlayer.signedAt ? String(initialPlayer.signedAt).slice(0, 10) : ""
+  );
+  const [mediaConsent, setMediaConsent] = useState(Boolean(initialPlayer.mediaConsent));
+  const [wildcardUsed, setWildcardUsed] = useState(Boolean(initialPlayer.wildcardUsed));
+  const [status, setStatus] = useState(initialPlayer.status ?? "PENDING");
+  const [statusNote, setStatusNote] = useState(initialPlayer.statusNote ?? "");
 
   const [editing, setEditing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   async function load() {
     setErr(null);
-    setLoading(true);
 
     try {
       const playerRes = await authFetch(`/api/players/${playerId}`, { cache: "no-store" });
@@ -172,15 +192,8 @@ export default function PlayerPage() {
       setStatusNote(playerData.statusNote ?? "");
     } catch (e: any) {
       setErr(e.message ?? "Errore");
-    } finally {
-      setLoading(false);
     }
   }
-
-  useEffect(() => {
-    if (!leagueId || !playerId) return;
-    load();
-  }, [leagueId, playerId]);
 
   const photoPreview = useMemo(() => {
     if (removePhoto) return "";
@@ -247,22 +260,6 @@ export default function PlayerPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  if (loading) {
-    return (
-      <DashboardShell leagueId={leagueId}>
-        <div className="text-[var(--foreground)]/60">Caricamento…</div>
-      </DashboardShell>
-    );
-  }
-
-  if (!player) {
-    return (
-      <DashboardShell leagueId={leagueId}>
-        <Badge variant="error">{err ?? "Giocatore non trovato"}</Badge>
-      </DashboardShell>
-    );
   }
 
   const fullName = `${player.firstName} ${player.lastName}`;

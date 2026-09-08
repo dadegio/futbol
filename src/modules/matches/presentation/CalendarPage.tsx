@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -10,7 +10,6 @@ import {
   UsersRound,
   Wand2,
 } from "lucide-react";
-import { useParams } from "next/navigation";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
@@ -164,14 +163,21 @@ function toDatetimeLocalValue(date: Date) {
   return local.toISOString().slice(0, 16);
 }
 
-export default function CalendarPage() {
-  const { leagueId } = useParams<{ leagueId: string }>();
+export default function CalendarPage({
+  leagueId,
+  initialMatches,
+  initialTeamCount,
+}: {
+  leagueId: string;
+  initialMatches: Match[];
+  initialTeamCount: number;
+}) {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN" || (user?.role === "LEAGUE_ADMIN" && user.leagueId === leagueId);
 
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [teamCount, setTeamCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [matches, setMatches] = useState<Match[]>(initialMatches);
+  const [teamCount, setTeamCount] = useState(initialTeamCount);
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -193,9 +199,7 @@ export default function CalendarPage() {
   });
   const [generating, setGenerating] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!leagueId) return;
-
+  async function load() {
     setErr(null);
     setLoading(true);
 
@@ -211,11 +215,7 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  }, [leagueId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  }
 
   const rounds = useMemo(
     () =>

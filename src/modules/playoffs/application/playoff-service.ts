@@ -53,7 +53,13 @@ export async function getPlayoffs(leagueId: string) {
     format: league.playoffFormat,
     teamCount: league.playoffTeamCount,
     seeded: league.playoffSeeded,
-    series,
+    series: series.map((row) => ({
+      ...row,
+      matches: row.matches.map((match) => ({
+        ...match,
+        date: match.date?.toISOString() ?? null,
+      })),
+    })),
   };
 }
 

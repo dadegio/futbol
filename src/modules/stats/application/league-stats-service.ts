@@ -1,52 +1,10 @@
 import { prisma } from "@/lib/prisma";
-
-type FormResult = "W" | "D" | "L";
-
-type TeamStat = {
-  teamId: string;
-  teamName: string;
-  badgeUrl: string | null;
-  colorHex: string | null;
-  secondaryColorHex: string | null;
-  played: number;
-  wins: number;
-  draws: number;
-  losses: number;
-  gf: number;
-  ga: number;
-  gd: number;
-  points: number;
-  pointsPerGame: number;
-  goalsPerGame: number;
-  goalsAgainstPerGame: number;
-  cleanSheets: number;
-  form: FormResult[];
-  winStreak: number;
-  unbeatenStreak: number;
-};
-
-type PlayerStat = {
-  playerId: string;
-  firstName: string;
-  lastName: string;
-  number: number;
-  position: string | null;
-  photoUrl: string | null;
-  photoZoom: number;
-  photoPositionX: number;
-  photoPositionY: number;
-  isTeamCaptain: boolean;
-  teamId: string;
-  teamName: string;
-  teamBadgeUrl: string | null;
-  appearances: number;
-  goals: number;
-  assists: number;
-  contributions: number;
-  goalsPerAppearance: number;
-  assistsPerAppearance: number;
-  contributionsPerAppearance: number;
-};
+import type {
+  FormResult,
+  LeagueStatsResponse,
+  PlayerStat,
+  TeamStat,
+} from "@/modules/stats/domain/league-stats";
 
 function round(value: number, digits = 2) {
   const factor = 10 ** digits;
@@ -119,7 +77,7 @@ function maxUnbeatenStreak(results: FormResult[]) {
   return max;
 }
 
-export async function getLeagueStats(leagueId: string) {
+export async function getLeagueStats(leagueId: string): Promise<LeagueStatsResponse> {
 
   const [teams, players, matches, playerAgg, appearancesAgg, bestSingleMatchStat] =
     await Promise.all([
@@ -280,7 +238,7 @@ export async function getLeagueStats(leagueId: string) {
   let biggestWin:
     | {
         matchId: string;
-        date: Date | null;
+        date: string | null;
         homeTeamName: string;
         awayTeamName: string;
         homeGoals: number;
@@ -292,7 +250,7 @@ export async function getLeagueStats(leagueId: string) {
   let highestScoringMatch:
     | {
         matchId: string;
-        date: Date | null;
+        date: string | null;
         homeTeamName: string;
         awayTeamName: string;
         homeGoals: number;
@@ -350,7 +308,7 @@ export async function getLeagueStats(leagueId: string) {
     if (margin > 0 && (!biggestWin || margin > biggestWin.margin)) {
       biggestWin = {
         matchId: match.id,
-        date: match.date,
+        date: match.date?.toISOString() ?? null,
         homeTeamName: teamById.get(match.homeTeamId)?.name ?? "",
         awayTeamName: teamById.get(match.awayTeamId)?.name ?? "",
         homeGoals,
@@ -363,7 +321,7 @@ export async function getLeagueStats(leagueId: string) {
     if (!highestScoringMatch || matchGoals > highestScoringMatch.totalGoals) {
       highestScoringMatch = {
         matchId: match.id,
-        date: match.date,
+        date: match.date?.toISOString() ?? null,
         homeTeamName: teamById.get(match.homeTeamId)?.name ?? "",
         awayTeamName: teamById.get(match.awayTeamId)?.name ?? "",
         homeGoals,
@@ -489,7 +447,7 @@ export async function getLeagueStats(leagueId: string) {
         goals: bestSingleMatchStat.goals,
         assists: bestSingleMatchStat.assists,
         matchId: bestSingleMatchStat.match.id,
-        date: bestSingleMatchStat.match.date,
+        date: bestSingleMatchStat.match.date?.toISOString() ?? null,
         homeTeamName: bestSingleMatchStat.match.homeTeam.name,
         awayTeamName: bestSingleMatchStat.match.awayTeam.name,
         homeGoals: bestSingleMatchStat.match.homeGoals ?? 0,

@@ -28,7 +28,17 @@ export async function listLeagueTeams(leagueId: string) {
   return prisma.team.findMany({
     where: { leagueId, activeInLeague: true },
     orderBy: { name: "asc" },
-    include: { players: { orderBy: { number: "asc" } } },
+    select: {
+      id: true,
+      name: true,
+      badgeUrl: true,
+      description: true,
+      colorHex: true,
+      secondaryColorHex: true,
+      activeInLeague: true,
+      leagueId: true,
+      _count: { select: { players: true } },
+    },
   });
 }
 
