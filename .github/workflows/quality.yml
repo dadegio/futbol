@@ -37,13 +37,14 @@ jobs:
       AUTH_SECRET: ci-only-auth-secret-32-characters-minimum
       SETUP_SECRET: ci-only-setup-secret
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      INTEGRATION_USE_EXISTING_SCHEMA: "1"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
