@@ -4,7 +4,7 @@ import {
   getPlayerRegistrationStatus,
   isPlayerEligibleForMatchSheet,
   type PlayerEligibilityInput,
-} from "./tournament-rules";
+} from "@/modules/players/domain/tournament-rules";
 
 export type PlayerVisibilityInput = PlayerEligibilityInput & {
   id: string;

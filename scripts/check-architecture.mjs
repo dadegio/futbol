@@ -31,6 +31,30 @@ function walk(dir, predicate = () => true) {
   return result;
 }
 
+
+function relativeImportTargetExists(importer, specifier) {
+  const importerDir = path.dirname(path.join(root, importer));
+  const base = path.resolve(importerDir, specifier);
+
+  if (fs.existsSync(base) && fs.statSync(base).isFile()) return true;
+
+  const extensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json"];
+  for (const extension of extensions) {
+    if (fs.existsSync(`${base}${extension}`)) return true;
+  }
+
+  for (const extension of extensions) {
+    if (fs.existsSync(path.join(base, `index${extension}`))) return true;
+  }
+
+  // Prisma Client viene generato da `prisma generate` e può non esistere
+  // durante i checker eseguiti su una checkout appena clonata.
+  const normalized = base.replaceAll(path.sep, "/");
+  if (normalized.includes("/src/generated/prisma/")) return true;
+
+  return false;
+}
+
 function fail(message) {
   errors.push(message);
 }
@@ -52,6 +76,25 @@ if (exists("tsconfig.json")) {
   }
 } else {
   fail("Manca tsconfig.json.");
+}
+
+
+const sourceFiles = [
+  ...walk("src", (relative) => /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(relative)),
+  ...walk("lib", (relative) => /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(relative)),
+  ...walk("scripts", (relative) => /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(relative)),
+  ...walk("tests", (relative) => /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(relative)),
+];
+
+const relativeImportPattern = /(?:from\s+|import\s*\(|require\s*\()\s*["'](\.[^"']+)["']/g;
+for (const file of sourceFiles) {
+  const content = read(file);
+  for (const match of content.matchAll(relativeImportPattern)) {
+    const specifier = match[1];
+    if (!relativeImportTargetExists(file, specifier)) {
+      fail(`${file} importa ${specifier}, ma il target non esiste.`);
+    }
+  }
 }
 
 const deprecatedCompatibilityWrappers = [
