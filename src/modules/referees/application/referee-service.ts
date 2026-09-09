@@ -7,7 +7,7 @@ import {
   refereeHasConflict,
 } from "@/lib/referee-availability";
 import { hashPassword } from "@/lib/session";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 
 type AvailabilityInput = { weekday: number; hour: number; minute: number };
 

@@ -104,6 +104,9 @@ for (const file of walk("src/modules", (relative) => /\/application\/.*\.(ts|tsx
   if (/from\s+["']@\/modules\/.*\/presentation\//.test(content)) {
     fail(`${file} è un application module ma importa presentation layer.`);
   }
+  if (/from\s+["']@\/modules\/core\/api["']/.test(content)) {
+    fail(`${file} è un application module ma importa core/api, che dipende da Next.js. Usa moduli core puri (es. core/errors).`);
+  }
 }
 
 for (const file of walk("src/modules", (relative) => /\/presentation\/.*\.(ts|tsx)$/.test(relative))) {

@@ -4,7 +4,7 @@ import {
   verifyPassword,
   type SessionUser,
 } from "@/lib/session";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import {
   isValidUsername,
   normalizeUsername,

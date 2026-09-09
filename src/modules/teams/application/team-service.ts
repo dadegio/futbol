@@ -5,7 +5,7 @@ import {
 } from "@/lib/player-visibility";
 import type { SessionUser } from "@/lib/session";
 import { FUTPOLI_RULES } from "@/lib/tournament-rules";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 
 function normalizedNullableText(value: unknown) {
   if (value === undefined) return undefined;

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import { getServerSession } from "@/modules/auth/server-session";
 import { isCreatorSession, isLeagueAdminSession } from "@/modules/permissions/server-guards";
 import {

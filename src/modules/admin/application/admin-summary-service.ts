@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { FUTPOLI_RULES, isPlayerEligibleForMatchSheet } from "@/lib/tournament-rules";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 
 export async function getLeagueAdminSummary(leagueId: string) {
   const [league, teams, players, sheetCount, matches] = await Promise.all([

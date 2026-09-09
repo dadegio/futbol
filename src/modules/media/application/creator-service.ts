@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { isHexColor } from "@/lib/league-branding";
 import type { SessionUser } from "@/lib/session";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import { isCreator, isLeagueAdmin } from "@/modules/permissions/permissions";
 
 function text(value: unknown, max = 300) {

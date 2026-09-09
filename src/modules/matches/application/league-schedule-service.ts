@@ -12,7 +12,7 @@ import {
   refereeAllowsStart,
   refereeHasConflict,
 } from "@/lib/referee-availability";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 
 type SchedulePhase = "league" | "playoff" | "all";
 

@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 
-export class AppError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-    public readonly code?: string
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
+import { AppError } from "@/modules/core/errors";
+export { AppError } from "@/modules/core/errors";
 
 export function jsonOk<T extends Record<string, unknown>>(payload: T, status = 200) {
   return NextResponse.json(payload, { status });

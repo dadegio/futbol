@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { isHexColor } from "@/lib/league-branding";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import {
   normalizeOptionalUrl,
   PLAYOFF_COUNTS,

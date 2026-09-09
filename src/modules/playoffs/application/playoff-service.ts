@@ -4,7 +4,7 @@ import {
   forcePlayoffSeriesWinner,
   syncPlayoffSeriesWinner,
 } from "@/lib/playoff-progress";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import { getLeagueTable } from "@/modules/stats/application/league-table-service";
 import { PLAYOFF_COUNTS, PLAYOFF_FORMATS } from "@/modules/leagues/domain/league-input";
 

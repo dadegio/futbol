@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword, type SessionUser } from "@/lib/session";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import {
   isValidUsername,
   normalizeUsername,

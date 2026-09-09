@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sanitizePlayerForRole } from "@/lib/player-visibility";
 import type { SessionUser } from "@/lib/session";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import { isLeagueAdmin } from "@/modules/permissions/permissions";
 
 export async function getMatchDetail({

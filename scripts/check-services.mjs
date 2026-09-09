@@ -34,6 +34,7 @@ function mustContain(relativePath, fragments) {
   }
 }
 
+mustExist("src/modules/core/errors.ts");
 mustExist("src/modules/leagues/application/league-overview-service.ts");
 mustExist("src/app/api/leagues/[leagueId]/overview/route.ts");
 mustExist("src/modules/matches/application/league-schedule-service.ts");

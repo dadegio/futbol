@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 import { getCaptainBookingWindowStatus } from "@/modules/bookings/domain/booking-window";
 import {
   findFieldSlot,

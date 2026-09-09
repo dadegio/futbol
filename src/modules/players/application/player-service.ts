@@ -6,7 +6,7 @@ import {
 } from "@/lib/player-visibility";
 import type { SessionUser } from "@/lib/session";
 import { FUTPOLI_RULES } from "@/lib/tournament-rules";
-import { AppError } from "@/modules/core/api";
+import { AppError } from "@/modules/core/errors";
 
 const PLAYER_STATUSES = new Set([
   "PENDING",
