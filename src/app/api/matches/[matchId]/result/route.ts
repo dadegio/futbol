@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
-import { getServerSession, requireMatchEditor } from "@/lib/server-auth";
+import { getServerSession, requireMatchEditor } from "@/modules/permissions/server-guards";
 import { saveMatchResult } from "@/modules/matches/application/save-match-result";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
 

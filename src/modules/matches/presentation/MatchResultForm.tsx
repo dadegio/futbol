@@ -15,7 +15,7 @@ import Button from "src/app/_components/ui/button";
 import Badge from "src/app/_components/ui/badge";
 import SponsorBanner from "src/app/_components/sponsor-banner";
 import { useAuth, authFetch } from "@/lib/client-auth";
-import { FUTPOLI_RULES } from "@/lib/tournament-rules";
+import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 import MatchSlotBooking from "@/modules/bookings/presentation/MatchSlotBooking";
 import {
   ScoreInput,

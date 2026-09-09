@@ -23,15 +23,18 @@ Per gli admin è disponibile la pagina:
 /leagues/[leagueId]/admin
 ```
 
-La pagina riepiloga:
+La pagina è organizzata come centro di controllo a sezioni:
 
-- giocatori totali/autorizzati/bloccati;
-- documentazione mancante;
-- wildcard usate;
-- presenze in distinta;
-- quote giocatori maturate;
-- costo arbitri sulle partite concluse;
-- stato amministrativo per squadra.
+- Panoramica: stato rose, avanzamento campionato, quote e costi;
+- Identità grafica e privacy/annunci;
+- Competizione e playoff;
+- Campi e slot;
+- Arbitri;
+- Sponsor;
+- Media e creator;
+- Registro attività.
+
+Viene montato solo il modulo attivo, evitando di caricare contemporaneamente tutte le aree amministrative.
 
 ## Stato amministrativo giocatore
 
@@ -108,7 +111,7 @@ conservate nel catalogo.
 
 ## Campi, prenotazioni, arbitri e sponsor
 
-Gli slot settimanali sono definiti in `lib/field-slots.ts`. Gli intervalli
+Gli slot settimanali sono definiti in `src/modules/fields/domain/field-slots.ts`. Gli intervalli
 20:00–22:00 sono configurati come due partite da un'ora, con inizio alle 20:00
 e alle 21:00.
 
@@ -166,26 +169,7 @@ npm run dev
 
 Il progetto usa Prisma 7 con client generato in `src/generated/prisma`.
 
-## Note operative
-
-Il ramo consigliato per queste modifiche è:
-
-```txt
-feature/futpoli-admin-rules
-```
-
-Blocchi di commit applicati:
-
-```txt
-feat: generate home and away league schedule
-fix: enforce 14-player roster limit
-feat: add FUTPOLI admin data model
-feat: add player eligibility and match sheet APIs
-feat: manage match sheets and player admin UI
-feat: surface player admin status on team roster
-feat: add tournament admin financial dashboard
-fix: type match sheet stat lookups
-```
+Per il bootstrap iniziale degli account vedere `docs/BOOTSTRAP.md`.
 
 ## V27 — Hardening leggero
 
@@ -206,15 +190,16 @@ La V28 aggiunge controlli locali per ridurre gli errori scoperti solo su Vercel.
 Comandi utili:
 
 ```bash
-npm run doctor       # controllo rapido, non blocca se mancano env locali
-npm run quality      # architettura + TypeScript
-npm run predeploy    # env + quality + build
+npm run doctor         # controllo rapido, non blocca se mancano env locali
+npm run modernization  # architettura + service checks + test dominio + TypeScript
+npm run build          # build production Next.js
+npm run predeploy      # env + quality gate + build
 ```
 
 Workflow consigliato prima del push:
 
 ```bash
-npm run quality
+npm run modernization
 npm run build
 git add .
 git commit -m "..."

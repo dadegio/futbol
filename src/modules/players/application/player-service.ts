@@ -5,7 +5,7 @@ import {
   sanitizePlayerForRole,
 } from "@/lib/player-visibility";
 import type { SessionUser } from "@/lib/session";
-import { FUTPOLI_RULES } from "@/lib/tournament-rules";
+import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 import { AppError } from "@/modules/core/errors";
 
 const PLAYER_STATUSES = new Set([

@@ -1,7 +1,0 @@
-loaded_h_0(function(_){var window=this;
-_.sNh=_.y("G7J1If",[_.x4a]);
-_.v("G7J1If");
-_.tNh=class extends _.mNh{static Ta(){return{}}};_.ns(_.sNh,_.tNh);
-_.x();
-});
-// Google Inc.

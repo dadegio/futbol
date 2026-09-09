@@ -5,7 +5,7 @@ import {
   getServerSession,
   requireAdminOrCaptainOfPlayoffSeries,
   requireLeagueAdmin,
-} from "@/lib/server-auth";
+} from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   assignPlayoffSeriesTeams,

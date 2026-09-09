@@ -5,7 +5,7 @@ import {
   listLeagueMedia,
 } from "@/modules/media/application/media-service";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 
 export async function GET(req: Request, ctx: { params: Promise<{ leagueId: string }> }) {
   const { leagueId } = await ctx.params;

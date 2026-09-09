@@ -12,7 +12,7 @@ src/
   modules/          # domini applicativi
   shared/           # futuri helper cross-domain
   generated/        # Prisma client generato
-lib/                # compatibilità temporanea con il codice esistente
+lib/                # helper infrastrutturali condivisi non ancora assegnati a un dominio
 ```
 
 ## Moduli introdotti
@@ -26,9 +26,9 @@ src/modules/referees/      # disponibilità, conflitti, ribilanciamento
 src/modules/core/          # helper API/errori comuni
 ```
 
-## Compatibilità
+## Stato della compatibilità legacy
 
-I file in `lib/` non vengono rimossi: diventano wrapper che riesportano i nuovi moduli. Questo permette di refactorare una parte alla volta senza rompere tutte le importazioni esistenti.
+I wrapper temporanei in `lib/` usati durante la migrazione sono stati rimossi. Il codice deve importare direttamente dal modulo proprietario (`src/modules/<dominio>/...`). `lib/` resta solo per helper infrastrutturali o cross-domain che non hanno ancora un proprietario naturale.
 
 ## Direzione per le prossime versioni
 
@@ -270,13 +270,13 @@ npm run predeploy:full
 
 Il quality gate verifica soprattutto i confini introdotti nelle versioni modulari:
 
-- i wrapper legacy in `lib/` devono puntare a target reali in `src/modules`;
+- i wrapper legacy rimossi non devono essere reintrodotti;
 - `@/modules/*` deve essere configurato correttamente;
 - i domain module non devono dipendere da React, Next.js o Prisma;
 - le API route non devono importare componenti dal presentation layer;
 - le migration devono essere complete.
 
-Regola pratica: prima del push usare almeno `npm run quality`; prima di un deploy importante usare `npm run predeploy`.
+Regola pratica: prima del push usare `npm run modernization` e `npm run build`; prima di un deploy importante usare `npm run predeploy`.
 
 ## V29 — Admin Presentation Split
 

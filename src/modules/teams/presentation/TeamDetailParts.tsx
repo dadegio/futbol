@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Crown, Trash2 } from "lucide-react";
 import OptimizedPlayerImage from "src/app/_components/optimized-player-image";
-import { FUTPOLI_RULES } from "@/lib/tournament-rules";
+import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 
 export type Player = {
   id: string;

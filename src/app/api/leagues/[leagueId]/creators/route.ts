@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession, isLeagueAdminSession } from "@/lib/server-auth";
+import { getServerSession, isLeagueAdminSession } from "@/modules/permissions/server-guards";
 import { apiErrorResponse } from "@/modules/core/api";
 import { listCreators } from "@/modules/media/application/creator-service";
 

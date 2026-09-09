@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession, requireAdmin } from "@/lib/server-auth";
+import { getServerSession, requireAdmin } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import { createLeague, listLeaguesForSession } from "@/modules/leagues/application/league-service";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";

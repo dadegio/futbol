@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/server-auth";
+import { requireAdmin } from "@/modules/permissions/server-guards";
 import { apiErrorResponse } from "@/modules/core/api";
 import { listAllTeams } from "@/modules/teams/application/team-service";
 

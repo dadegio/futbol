@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 import { getPlayerPageData } from "@/modules/players/application/get-player-page-data";
 import PlayerDetailPage from "@/modules/players/presentation/PlayerDetailPage";
 

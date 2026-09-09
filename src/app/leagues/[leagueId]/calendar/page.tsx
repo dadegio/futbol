@@ -1,4 +1,4 @@
-import { getServerSession, isLeagueAdminSession } from "@/lib/server-auth";
+import { getServerSession, isLeagueAdminSession } from "@/modules/permissions/server-guards";
 import { getLeagueSchedule } from "@/modules/matches/application/league-schedule-service";
 import { listLeagueTeams } from "@/modules/teams/application/team-service";
 import CalendarPage from "@/modules/matches/presentation/CalendarPage";

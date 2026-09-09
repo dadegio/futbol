@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 import { apiErrorResponse } from "@/modules/core/api";
 import { rateLimit } from "@/modules/core/security/rate-limit";
 import { storeUploadFile } from "@/modules/media/application/media-storage";

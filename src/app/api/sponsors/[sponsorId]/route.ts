@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
-import { getServerSession, requireLeagueAdmin } from "@/lib/server-auth";
+import { getServerSession, requireLeagueAdmin } from "@/modules/permissions/server-guards";
 import {
   deleteSponsor,
   getSponsorLeagueId,

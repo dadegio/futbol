@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   getCreatorWorkspace,

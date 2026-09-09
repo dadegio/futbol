@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { requireLeagueAdmin } from "@/lib/server-auth";
+import { requireLeagueAdmin } from "@/modules/permissions/server-guards";
 import { getLeagueAdminSummary } from "@/modules/admin/application/admin-summary-service";
 import { apiErrorResponse } from "@/modules/core/api";
 

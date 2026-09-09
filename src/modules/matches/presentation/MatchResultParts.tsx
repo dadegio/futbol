@@ -2,7 +2,7 @@
 
 import { CircleDot, ShieldCheck, ZoomIn } from "lucide-react";
 import Card from "src/app/_components/ui/card";
-import { FUTPOLI_RULES } from "@/lib/tournament-rules";
+import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 
 export type Player = {
   id: string;

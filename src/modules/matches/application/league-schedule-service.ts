@@ -1,17 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { generateRoundRobin } from "@/modules/matches/domain/scheduler";
-import { rebalanceLeagueReferees } from "@/lib/automatic-referees";
+import { rebalanceLeagueReferees } from "@/modules/referees/application/rebalance-league-referees";
 import {
   getFirstFullSlotWeek,
   getFieldSlotOccurrences,
   getRoundSlotWeek,
   getSlotWeekWindow,
-} from "@/lib/field-slots";
+} from "@/modules/fields/domain/field-slots";
 import {
   effectiveMatchEnd,
   refereeAllowsStart,
   refereeHasConflict,
-} from "@/lib/referee-availability";
+} from "@/modules/referees/domain/referee-availability";
 import { AppError } from "@/modules/core/errors";
 
 type SchedulePhase = "league" | "playoff" | "all";

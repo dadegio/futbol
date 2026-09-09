@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import {
   getServerSession,
   requireAdminOrCaptainOfPlayer,
-} from "@/lib/server-auth";
+} from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   deletePlayer,

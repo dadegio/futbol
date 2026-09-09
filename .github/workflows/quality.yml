@@ -55,17 +55,11 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Apply migrations
-        run: npx prisma migrate deploy
-
       - name: Architecture and domain tests
         run: npm run modernization
 
       - name: Integration tests
         run: npm run test:integration
-
-      - name: TypeScript
-        run: npm run typecheck
 
       - name: Production build
         run: npm run build

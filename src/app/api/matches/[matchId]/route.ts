@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 import { apiErrorResponse } from "@/modules/core/api";
 import { getMatchDetail } from "@/modules/matches/application/match-detail-service";
 

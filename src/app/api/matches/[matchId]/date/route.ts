@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
-import { getServerSession, requireLeagueAdminForMatch } from "@/lib/server-auth";
+import { getServerSession, requireLeagueAdminForMatch } from "@/modules/permissions/server-guards";
 import { updateMatchDate } from "@/modules/matches/application/match-scheduling";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
 

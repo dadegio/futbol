@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { getServerSession, requireAdminOrCaptainOfPlayoffSeries } from "@/lib/server-auth";
+import { getServerSession, requireAdminOrCaptainOfPlayoffSeries } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody, AppError } from "@/modules/core/api";
 import { advancePlayoffSeries } from "@/modules/playoffs/application/playoff-service";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";

@@ -54,28 +54,28 @@ if (exists("tsconfig.json")) {
   fail("Manca tsconfig.json.");
 }
 
-const compatibilityWrappers = [
-  ["lib/server-auth.ts", "src/modules/permissions/server-guards.ts"],
-  ["lib/booking-window.ts", "src/modules/bookings/domain/booking-window.ts"],
-  ["lib/field-slots.ts", "src/modules/fields/domain/field-slots.ts"],
-  ["lib/referee-availability.ts", "src/modules/referees/domain/referee-availability.ts"],
-  ["lib/scheduler.ts", "src/modules/matches/domain/scheduler.ts"],
-  ["lib/tournament-rules.ts", "src/modules/players/domain/tournament-rules.ts"],
-  ["lib/automatic-referees.ts", "src/modules/referees/application/rebalance-league-referees.ts"],
+const deprecatedCompatibilityWrappers = [
+  "lib/server-auth.ts",
+  "lib/booking-window.ts",
+  "lib/field-slots.ts",
+  "lib/referee-availability.ts",
+  "lib/scheduler.ts",
+  "lib/tournament-rules.ts",
+  "lib/automatic-referees.ts",
 ];
 
-for (const [wrapper, target] of compatibilityWrappers) {
-  if (!exists(wrapper)) {
-    fail(`Wrapper di compatibilità mancante: ${wrapper}`);
-    continue;
+for (const wrapper of deprecatedCompatibilityWrappers) {
+  if (exists(wrapper)) {
+    fail(`${wrapper} è un wrapper legacy ormai deprecato: importa direttamente dal modulo proprietario.`);
   }
-  if (!exists(target)) {
-    fail(`Target modulare mancante per ${wrapper}: ${target}`);
-    continue;
-  }
-  const content = read(wrapper);
-  if (!content.includes("export * from")) {
-    warn(`${wrapper} non sembra più un wrapper export-only: verifica che sia intenzionale.`);
+}
+
+for (const file of walk("src", (relative) => /\.(js|jsx)$/.test(relative))) {
+  const typedSibling = file.replace(/\.(js|jsx)$/, (extension) =>
+    extension === ".jsx" ? ".tsx" : ".ts"
+  );
+  if (exists(typedSibling)) {
+    fail(`${file} duplica ${typedSibling}: rimuovi l'artefatto JavaScript generato.`);
   }
 }
 

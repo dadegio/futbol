@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireLeagueAdmin } from "@/lib/server-auth";
+import { requireLeagueAdmin } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   createLeagueTeam,

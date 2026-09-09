@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession, isLeagueAdminSession, requireLeagueAdmin } from "@/lib/server-auth";
+import { getServerSession, isLeagueAdminSession, requireLeagueAdmin } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import { NO_STORE_HEADERS, publicApiCacheHeaders } from "@/modules/core/http-cache";
 import {

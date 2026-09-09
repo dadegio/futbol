@@ -4,7 +4,7 @@ import { syncPlayoffSeriesWinner } from "@/lib/playoff-progress";
 import {
   FUTPOLI_RULES,
   isPlayerEligibleForMatchSheet,
-} from "@/lib/tournament-rules";
+} from "@/modules/players/domain/tournament-rules";
 
 type SaveMatchResultBody = {
   homeGoals?: number;

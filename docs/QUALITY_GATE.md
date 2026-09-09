@@ -35,7 +35,8 @@ Lo script `scripts/check-architecture.mjs` verifica che:
 
 - `src/modules` sia presente;
 - `@/modules/*` punti a `./src/modules/*` in `tsconfig.json`;
-- i wrapper storici in `lib/` puntino a moduli esistenti;
+- i wrapper legacy rimossi non vengano reintrodotti;
+- non esistano artefatti `.js/.jsx` duplicati accanto ai sorgenti TypeScript;
 - i moduli non importino dal routing `src/app`;
 - i domain module restino privi di dipendenze da Prisma, React, Next.js e `NextResponse`;
 - le API route non importino componenti dal presentation layer;
@@ -70,7 +71,7 @@ Prima di ogni patch o push:
 
 ```bash
 git status
-npm run quality
+npm run modernization
 npm run build
 ```
 
@@ -120,11 +121,10 @@ La workflow `.github/workflows/quality.yml` esegue su ogni push a `main` e su og
 
 1. installazione pulita con Node 22;
 2. PostgreSQL 16 isolato;
-3. generazione Prisma e migration;
-4. `npm run modernization`;
-5. `npm run test:integration`;
-6. `npm run typecheck`;
-7. `npm run build`.
+3. generazione Prisma;
+4. `npm run modernization` (include TypeScript);
+5. `npm run test:integration` (applica le migration sul DB CI);
+6. `npm run build`.
 
 Per riprodurre la stessa sequenza in locale, con `TEST_DATABASE_URL` e `TEST_DIRECT_URL` configurati:
 

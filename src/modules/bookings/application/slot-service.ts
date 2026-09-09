@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { getCaptainBookingWindowStatus } from "@/lib/booking-window";
-import { getFieldSlotOccurrences, getSlotWeekWindow } from "@/lib/field-slots";
+import { getCaptainBookingWindowStatus } from "@/modules/bookings/domain/booking-window";
+import { getFieldSlotOccurrences, getSlotWeekWindow } from "@/modules/fields/domain/field-slots";
 import { AppError } from "@/modules/core/errors";
 
 export async function getLeagueMatchSlots({

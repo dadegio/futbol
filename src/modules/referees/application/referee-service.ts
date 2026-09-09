@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { rebalanceLeagueReferees } from "@/lib/automatic-referees";
+import { rebalanceLeagueReferees } from "@/modules/referees/application/rebalance-league-referees";
 import { generateTemporaryPassword, slugifyUsername } from "@/lib/credentials";
 import {
   effectiveMatchEnd,
   refereeAllowsStart,
   refereeHasConflict,
-} from "@/lib/referee-availability";
+} from "@/modules/referees/domain/referee-availability";
 import { hashPassword } from "@/lib/session";
 import { AppError } from "@/modules/core/errors";
 

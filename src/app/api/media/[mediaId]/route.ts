@@ -5,7 +5,7 @@ import {
   updateMediaItem,
 } from "@/modules/media/application/media-service";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ mediaId: string }> }) {
   const { mediaId } = await ctx.params;

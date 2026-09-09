@@ -3,7 +3,7 @@ import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   getServerSession,
   requireAdminOrCaptainOfMatch,
-} from "@/lib/server-auth";
+} from "@/modules/permissions/server-guards";
 import {
   bookMatchSlot,
   clearMatchBooking,

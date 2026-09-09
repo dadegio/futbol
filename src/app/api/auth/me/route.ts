@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { COOKIE_NAME, SESSION_TTL_SECONDS, parseToken } from "@/lib/session";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 
 export async function GET() {
   const user = await getServerSession();

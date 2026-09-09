@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getServerSession } from "@/lib/server-auth";
+import { getServerSession } from "@/modules/permissions/server-guards";
 import { getTeamDetail } from "@/modules/teams/application/team-service";
 import TeamDetailPage from "@/modules/teams/presentation/TeamDetailPage";
 

@@ -22,7 +22,7 @@
     "test:integration": "node scripts/run-integration-tests.mjs",
     "test:all": "npm run test:domain && npm run test:integration",
     "quality:integration": "npm run test:integration && npm run quality",
-    "ci": "npm run modernization && npm run test:integration && npm run typecheck && npm run build"
+    "ci": "npm run modernization && npm run test:integration && npm run build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",

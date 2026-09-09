@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { requireAdminOrCaptainOfTeam } from "@/lib/server-auth";
+import { requireAdminOrCaptainOfTeam } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import { swapTeamPlayerNumbers } from "@/modules/players/application/player-service";
 

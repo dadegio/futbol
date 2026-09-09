@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession, requireAdmin } from "@/lib/server-auth";
+import { getServerSession, requireAdmin } from "@/modules/permissions/server-guards";
 import {
   createUser,
   deleteUser,

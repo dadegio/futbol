@@ -3,7 +3,7 @@ import {
   getServerSession,
   isLeagueAdminSession,
   requireLeagueAdmin,
-} from "@/lib/server-auth";
+} from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   createField,

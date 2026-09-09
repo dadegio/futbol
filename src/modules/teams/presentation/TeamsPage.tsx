@@ -9,7 +9,7 @@ import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Badge from "src/app/_components/ui/badge";
 import { authFetch, useCanAdminLeague } from "@/lib/client-auth";
-import { FUTPOLI_RULES } from "@/lib/tournament-rules";
+import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 
 type TeamRow = {
   id: string;

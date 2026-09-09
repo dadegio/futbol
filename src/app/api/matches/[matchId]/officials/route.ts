@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
-import { getServerSession, requireLeagueAdminForMatch } from "@/lib/server-auth";
+import { getServerSession, requireLeagueAdminForMatch } from "@/modules/permissions/server-guards";
 import {
   getAdminRefereeState,
   updateMatchOfficials,
