@@ -30,6 +30,13 @@ function resolveExistingFile(basePath) {
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (specifier === "server-only") {
+      return {
+        url: pathToFileURL(path.join(root, "scripts", "server-only-test-stub.mjs")).href,
+        shortCircuit: true,
+      };
+    }
+
     let candidateBase = null;
 
     if (specifier.startsWith("@/modules/")) {
