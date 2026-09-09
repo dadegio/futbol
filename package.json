@@ -23,7 +23,8 @@
     "test:all": "npm run test:domain && npm run test:integration",
     "quality:integration": "npm run test:integration && npm run quality",
     "ci": "npm run modernization && npm run test:integration && npm run build",
-    "check:hygiene": "node scripts/check-repo-hygiene.mjs"
+    "check:hygiene": "node scripts/check-repo-hygiene.mjs",
+    "cleanup:repo-index": "node scripts/cleanup-repo-index.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",

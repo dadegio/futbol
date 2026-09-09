@@ -1,6 +1,4 @@
-type CardProps = {
-  children: React.ReactNode;
-  className?: string;
+type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   variant?: "default" | "inner" | "flat";
 };
 
@@ -13,8 +11,8 @@ const styles = {
     "rounded-[20px] bg-[var(--card-2)] p-4",
 } as const;
 
-export default function Card({ children, className = "", variant = "default" }: CardProps) {
-  return <div className={`${styles[variant]} ${className}`}>{children}</div>;
+export default function Card({ className = "", variant = "default", ...props }: CardProps) {
+  return <div {...props} className={`${styles[variant]} ${className}`} />;
 }
 
 export function CardHeader({
