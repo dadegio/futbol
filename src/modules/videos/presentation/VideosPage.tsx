@@ -8,7 +8,7 @@ import {
   getYouTubePlaylistId,
   getYouTubeVideoEmbedUrl,
   youtubePlaylistConfig,
-} from "@/lib/youtube";
+} from "@/modules/videos/application/youtube";
 
 type VideosPageProps = {
   params: Promise<{ leagueId: string }>;

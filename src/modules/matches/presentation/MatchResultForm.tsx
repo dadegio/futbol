@@ -5,9 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   CalendarDays,
+  CheckCircle2,
   ChevronLeft,
+  ClipboardCheck,
+  Goal,
   MapPin,
+  Save,
   UsersRound,
+  type LucideIcon,
 } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
@@ -16,6 +21,7 @@ import Badge from "src/app/_components/ui/badge";
 import SponsorBanner from "src/app/_components/sponsor-banner";
 import { useAuth, authFetch } from "@/lib/client-auth";
 import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
+import { readApiError } from "@/modules/core/client-error";
 import MatchSlotBooking from "@/modules/bookings/presentation/MatchSlotBooking";
 import {
   ScoreInput,
@@ -41,7 +47,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
     user.refereeId === match.referee?.id;
   const canEditResult =
     !authLoading &&
-    (isAdmin || isCaptainOfMatch || isAssignedReferee);
+    (isAdmin || isAssignedReferee);
   const canBook =
     !authLoading && (isAdmin || isCaptainOfMatch);
 
@@ -101,22 +107,28 @@ export default function MatchResultForm({ match }: { match: Match }) {
   const totals = useMemo(() => {
     let goalsSum = 0;
     let assistsSum = 0;
+    let homeGoalsSum = 0;
+    let awayGoalsSum = 0;
     let homeSheetCount = 0;
     let awaySheetCount = 0;
 
     for (const p of homePlayers) {
-      goalsSum += Number(stats[p.id]?.goals || 0);
+      const goals = Number(stats[p.id]?.goals || 0);
+      goalsSum += goals;
+      homeGoalsSum += goals;
       assistsSum += Number(stats[p.id]?.assists || 0);
       if (sheet[p.id]) homeSheetCount += 1;
     }
 
     for (const p of awayPlayers) {
-      goalsSum += Number(stats[p.id]?.goals || 0);
+      const goals = Number(stats[p.id]?.goals || 0);
+      goalsSum += goals;
+      awayGoalsSum += goals;
       assistsSum += Number(stats[p.id]?.assists || 0);
       if (sheet[p.id]) awaySheetCount += 1;
     }
 
-    return { goalsSum, assistsSum, homeSheetCount, awaySheetCount };
+    return { goalsSum, assistsSum, homeGoalsSum, awayGoalsSum, homeSheetCount, awaySheetCount };
   }, [stats, sheet, homePlayers, awayPlayers]);
 
   const missingHome = Math.max(0, FUTPOLI_RULES.minPlayersInMatchSheet - totals.homeSheetCount);
@@ -131,6 +143,20 @@ export default function MatchResultForm({ match }: { match: Match }) {
     setSheet((prev) => ({ ...prev, [playerId]: checked }));
   }
 
+  function setEligibleTeamSheet(players: Player[], checked: boolean) {
+    setSheet((prev) => {
+      const next = { ...prev };
+      for (const player of players) {
+        if (player.isEligibleForMatchSheet === true) next[player.id] = checked;
+      }
+      return next;
+    });
+  }
+
+  function scrollToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function loadAdminReferees() {
     if (!isAdmin) return;
     setLoadingReferees(true);
@@ -138,7 +164,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
     try {
       const res = await authFetch(`/api/matches/${match.id}/officials`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.error ?? "Errore caricamento arbitri");
+      if (!res.ok) throw new Error(readApiError(data, "Errore caricamento arbitri"));
       const state = data as AdminRefereeState;
       setAdminRefereeState(state);
       setRefereeChoice(
@@ -187,7 +213,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.error ?? "Errore salvataggio arbitro");
+      if (!res.ok) throw new Error(readApiError(data, "Errore salvataggio arbitro"));
       const state = data as AdminRefereeState;
       setAdminRefereeState(state);
       setRefereeChoice(
@@ -217,12 +243,12 @@ export default function MatchResultForm({ match }: { match: Match }) {
         body: JSON.stringify({ date: clear ? null : dateValue ? new Date(dateValue).toISOString() : null }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.error ?? "Errore salvataggio data");
+      if (!res.ok) throw new Error(readApiError(data, "Errore salvataggio data"));
       if (clear) setDateValue("");
       setDateMsg(clear ? "Data rimossa" : "Data salvata");
       router.refresh();
-    } catch (e: any) {
-      setDateErr(e.message);
+    } catch (error) {
+      setDateErr(error instanceof Error ? error.message : "Errore salvataggio data");
     } finally {
       setSavingDate(false);
     }
@@ -253,6 +279,15 @@ export default function MatchResultForm({ match }: { match: Match }) {
       return;
     }
 
+    if (hg !== null && totals.homeGoalsSum !== hg) {
+      setErr(`I marcatori di ${match.homeTeam.name} totalizzano ${totals.homeGoalsSum} gol, ma il risultato indica ${hg}.`);
+      return;
+    }
+    if (ag !== null && totals.awayGoalsSum !== ag) {
+      setErr(`I marcatori di ${match.awayTeam.name} totalizzano ${totals.awayGoalsSum} gol, ma il risultato indica ${ag}.`);
+      return;
+    }
+
     const sheetPlayerIds = [...homePlayers, ...awayPlayers].filter((p) => sheet[p.id]).map((p) => p.id);
     const playerStats = [...homePlayers, ...awayPlayers]
       .map((p) => ({ playerId: p.id, goals: Number(stats[p.id]?.goals || 0), assists: Number(stats[p.id]?.assists || 0) }))
@@ -266,11 +301,11 @@ export default function MatchResultForm({ match }: { match: Match }) {
         body: JSON.stringify({ homeGoals: hg === null ? undefined : hg, awayGoals: ag === null ? undefined : ag, playerStats, sheetPlayerIds }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.error ?? "Errore salvataggio");
+      if (!res.ok) throw new Error(readApiError(data, "Errore salvataggio"));
       setMsg("Salvato");
       router.refresh();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Errore salvataggio");
     } finally {
       setSaving(false);
     }
@@ -303,7 +338,16 @@ export default function MatchResultForm({ match }: { match: Match }) {
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
 
-        <Card className="overflow-hidden !p-0">
+        {canEditResult && (
+          <div className="sticky top-2 z-30 grid grid-cols-4 gap-1 rounded-2xl border border-[var(--border)] bg-[var(--tabbar-bg)] p-1.5 shadow-lg backdrop-blur-xl lg:hidden">
+            <WorkflowButton icon={ClipboardCheck} label="Distinte" done={missingHome === 0 && missingAway === 0} onClick={() => scrollToSection("match-sheets")} />
+            <WorkflowButton icon={Goal} label="Risultato" done={played} onClick={() => scrollToSection("match-score")} />
+            <WorkflowButton icon={UsersRound} label="Marcatori" done={played && totals.homeGoalsSum === hg && totals.awayGoalsSum === ag} onClick={() => scrollToSection("match-sheets")} />
+            <WorkflowButton icon={Save} label="Conferma" done={Boolean(msg)} onClick={() => scrollToSection("match-save")} />
+          </div>
+        )}
+
+        <Card id="match-score" className="scroll-mt-20 overflow-hidden !p-0">
           <div className="matchroom-hero p-5 sm:p-7">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
@@ -378,6 +422,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
         <SponsorBanner compact />
 
+        <div id="match-booking" className="scroll-mt-20">
         <MatchSlotBooking
           leagueId={match.leagueId}
           matchId={match.id}
@@ -394,6 +439,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
               : null
           }
         />
+        </div>
 
         <RefereeAssignmentPanel
           isAdmin={isAdmin}
@@ -422,18 +468,23 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
         {!canEditResult && !authLoading && <p className="px-1 text-sm text-[var(--muted)]">Sola lettura — possono modificare distinta e risultato l&apos;admin, i capitani coinvolti e l&apos;arbitro assegnato.</p>}
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} />
-          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} />
+        <div id="match-sheets" className="scroll-mt-20 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
+          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
         </div>
 
         {canEditResult && (
-          <div className="sticky bottom-20 z-20 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--tabbar-bg)] px-4 py-3 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl lg:bottom-4 lg:flex-row lg:items-center lg:justify-between">
+          <div id="match-save" className="sticky bottom-20 z-20 scroll-mt-20 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--tabbar-bg)] px-4 py-3 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl lg:bottom-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
             <div className="flex flex-wrap gap-3 text-sm text-[var(--muted)]">
               <span><b className="text-[var(--foreground)]">{totals.goalsSum}</b> gol</span>
               <span><b className="text-[var(--foreground)]">{totals.assistsSum}</b> assist</span>
               <SheetCounter team={match.homeTeam.name} count={totals.homeSheetCount} missing={missingHome} />
               <SheetCounter team={match.awayTeam.name} count={totals.awaySheetCount} missing={missingAway} />
+            </div>
+            {played && (totals.homeGoalsSum !== hg || totals.awayGoalsSum !== ag) && (
+              <p className="mt-1 text-xs font-bold text-amber-300">Marcatori da completare: {match.homeTeam.name} {totals.homeGoalsSum}/{hg} · {match.awayTeam.name} {totals.awayGoalsSum}/{ag}</p>
+            )}
             </div>
             <Button onClick={save} disabled={saving}>{saving ? "Salvataggio…" : "Salva risultato"}</Button>
           </div>
@@ -445,5 +496,15 @@ export default function MatchResultForm({ match }: { match: Match }) {
         onClose={() => setPhotoPreview(null)}
       />
     </DashboardShell>
+  );
+}
+
+
+function WorkflowButton({ icon: Icon, label, done, onClick }: { icon: LucideIcon; label: string; done: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-black text-[var(--muted)] transition hover:bg-[var(--card-2)]">
+      <span className={done ? "text-emerald-400" : "text-[var(--accent)]"}>{done ? <CheckCircle2 size={16} /> : <Icon size={16} />}</span>
+      <span className="truncate">{label}</span>
+    </button>
   );
 }

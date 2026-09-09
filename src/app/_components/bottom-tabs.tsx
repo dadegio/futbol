@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { Home, Table2, CalendarDays, Users, Trophy, BarChart3, Camera } from "lucide-react";
-import type { LeagueBranding } from "@/lib/league-branding";
+import type { LeagueBranding } from "@/modules/branding/domain/league-branding";
 
 type BottomTabsProps = {
   leagueId: string;

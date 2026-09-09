@@ -91,6 +91,19 @@ export default function FieldManager({ leagueId }: { leagueId: string }) {
     [fields]
   );
 
+  const weeklyCoverage = useMemo(() =>
+    WEEKDAYS.map((day) => {
+      const activeFields = fields
+        .filter((field) => field.active && field.slots.some((slot) => slot.weekday === day.value))
+        .map((field) => ({
+          id: field.id,
+          name: field.name,
+          slots: field.slots.filter((slot) => slot.weekday === day.value).length,
+        }));
+      return { ...day, fields: activeFields, slots: activeFields.reduce((sum, field) => sum + field.slots, 0) };
+    }).filter((day) => day.slots > 0),
+  [fields]);
+
   async function addField() {
     if (!newName.trim() || !newAddress.trim()) return;
     setSaving(true);
@@ -270,6 +283,23 @@ export default function FieldManager({ leagueId }: { leagueId: string }) {
           Slot attivi complessivi: {totalSlots}
         </p>
       </div>
+
+      {weeklyCoverage.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">Copertura settimanale</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {weeklyCoverage.map((day) => (
+              <div key={day.value} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-black text-[var(--foreground)]">{day.label}</span>
+                  <span className="text-[10px] font-black text-[var(--accent)]">{day.slots} slot</span>
+                </div>
+                <p className="mt-1 truncate text-[10px] text-[var(--muted)]">{day.fields.map((field) => field.name).join(" · ")}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
         <Input

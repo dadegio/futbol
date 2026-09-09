@@ -1,4 +1,4 @@
-import type { SessionUser } from "./session";
+import type { SessionUser } from "@/lib/session";
 import {
   getPlayerAdminMissingItems,
   getPlayerRegistrationStatus,

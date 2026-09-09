@@ -3,7 +3,7 @@ import {
   canEditAdminPlayerDetails,
   canSeeAdminPlayerDetails,
   sanitizePlayerForRole,
-} from "@/lib/player-visibility";
+} from "@/modules/players/application/player-visibility";
 import type { SessionUser } from "@/lib/session";
 import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 import { AppError } from "@/modules/core/errors";

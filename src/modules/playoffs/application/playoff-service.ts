@@ -1,9 +1,9 @@
-import { generateBracket } from "@/lib/bracket";
+import { generateBracket } from "@/modules/playoffs/domain/bracket";
 import { prisma } from "@/lib/prisma";
 import {
   forcePlayoffSeriesWinner,
   syncPlayoffSeriesWinner,
-} from "@/lib/playoff-progress";
+} from "@/modules/playoffs/application/playoff-progress";
 import { AppError } from "@/modules/core/errors";
 import { getLeagueTable } from "@/modules/stats/application/league-table-service";
 import { PLAYOFF_COUNTS, PLAYOFF_FORMATS } from "@/modules/leagues/domain/league-input";

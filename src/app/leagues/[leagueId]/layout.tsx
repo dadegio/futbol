@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { resolveLeagueBranding } from "@/lib/league-branding";
+import { resolveLeagueBranding } from "@/modules/branding/domain/league-branding";
 
 export const runtime = "nodejs";
 

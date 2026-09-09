@@ -98,6 +98,11 @@ for (const file of sourceFiles) {
 }
 
 const deprecatedCompatibilityWrappers = [
+  "lib/player-visibility.ts",
+  "lib/playoff-progress.ts",
+  "lib/bracket.ts",
+  "lib/youtube.ts",
+  "lib/league-branding.ts",
   "lib/server-auth.ts",
   "lib/booking-window.ts",
   "lib/field-slots.ts",

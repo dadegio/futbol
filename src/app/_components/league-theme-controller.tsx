@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { hexToRgba, resolveLeagueBranding, type LeagueBranding } from "@/lib/league-branding";
+import { hexToRgba, resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
 
 const managedProperties = [
   "--background",

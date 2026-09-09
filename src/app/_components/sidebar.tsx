@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import AuthButton from "./auth-button";
 import { useAuth, useCanAdminLeague, useCanCreateMedia, useIsSuperAdmin } from "@/lib/client-auth";
-import { resolveLeagueBranding, type LeagueBranding } from "@/lib/league-branding";
+import { resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
 
 type SidebarProps = {
   leagueId?: string;

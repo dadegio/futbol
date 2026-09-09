@@ -7,6 +7,7 @@ import {
   requireLeagueAdminForTeam,
 } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
+import { writeAuditLog } from "@/modules/audit/application/audit-service";
 import {
   getTeamDetail,
   removeTeamFromLeague,
@@ -32,7 +33,13 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
   try {
     const input = await readJsonBody<Record<string, unknown>>(req);
-    return NextResponse.json(await updateTeam({ teamId, input }));
+    const actor = await getServerSession();
+    const team = await updateTeam({ teamId, input });
+    await writeAuditLog({
+      leagueId: team.league.id, actor, action: "team.updated", entityType: "team", entityId: team.id,
+      summary: `Squadra ${team.name} aggiornata`,
+    });
+    return NextResponse.json(team);
   } catch (error) {
     return apiErrorResponse(error, "Errore aggiornamento squadra");
   }
@@ -45,9 +52,13 @@ export async function DELETE(req: Request, ctx: Ctx) {
 
   try {
     const requestedLeagueId = new URL(req.url).searchParams.get("leagueId");
-    return NextResponse.json(
-      await removeTeamFromLeague({ teamId, requestedLeagueId })
-    );
+    const actor = await getServerSession();
+    const result = await removeTeamFromLeague({ teamId, requestedLeagueId });
+    await writeAuditLog({
+      leagueId: result.leagueId, actor, action: "team.removed", entityType: "team", entityId: teamId,
+      summary: `Squadra ${result.teamName} rimossa dal torneo`, metadata: { mode: result.mode },
+    });
+    return NextResponse.json(result);
   } catch (error) {
     return apiErrorResponse(error, "Errore rimozione squadra");
   }

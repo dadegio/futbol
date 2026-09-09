@@ -16,8 +16,11 @@ npm run quality
 
 Controllo pre-commit consigliato. Esegue:
 
-1. `check:architecture`
-2. `typecheck`
+1. `check:hygiene`
+2. `check:architecture`
+3. `check:services`
+4. test di dominio
+5. `typecheck`
 
 ```bash
 npm run predeploy
@@ -131,3 +134,12 @@ Per riprodurre la stessa sequenza in locale, con `TEST_DATABASE_URL` e `TEST_DIR
 ```bash
 npm run ci
 ```
+
+## Repository hygiene
+
+`npm run check:hygiene` blocca file ambiente, chiavi private, database locali,
+configurazioni IDE/Vercel e Prisma Client generato se finiscono per errore sotto
+versionamento. Gli upload già presenti in `public/uploads` producono soltanto un
+warning: prima di rimuoverli va verificato che nessun record del database li
+referenzi ancora. I nuovi upload locali sono ignorati da `.gitignore` e in
+produzione devono essere salvati su Vercel Blob.

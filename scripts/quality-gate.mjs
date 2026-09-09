@@ -5,6 +5,7 @@ const args = new Set(process.argv.slice(2));
 const withBuild = args.has("--with-build");
 
 const steps = [
+  ["Repository hygiene", "npm", ["run", "check:hygiene"]],
   ["Architettura", "npm", ["run", "check:architecture"]],
   ["Service checks", "npm", ["run", "check:services"]],
   ["Domain tests", "npm", ["test"]],

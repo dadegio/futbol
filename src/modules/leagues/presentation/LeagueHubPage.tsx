@@ -9,7 +9,7 @@ import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Badge from "src/app/_components/ui/badge";
 import { useIsSuperAdmin, authFetch } from "@/lib/client-auth";
-import { resolveLeagueBranding } from "@/lib/league-branding";
+import { resolveLeagueBranding } from "@/modules/branding/domain/league-branding";
 
 type League = {
   id: string;

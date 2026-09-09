@@ -13,7 +13,7 @@ import {
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
 import { authFetch } from "@/lib/client-auth";
-import { GENERIC_BRAND, resolveLeagueBranding } from "@/lib/league-branding";
+import { GENERIC_BRAND, resolveLeagueBranding } from "@/modules/branding/domain/league-branding";
 import { clearJsonCache } from "@/modules/core/client-cache";
 
 export type BrandingSettings = {

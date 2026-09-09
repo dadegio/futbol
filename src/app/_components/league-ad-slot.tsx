@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { useEffect, useMemo, useState } from "react";
-import type { LeagueBranding } from "@/lib/league-branding";
+import type { LeagueBranding } from "@/modules/branding/domain/league-branding";
 
 type Props = {
   league?: LeagueBranding | null;

@@ -136,6 +136,7 @@ test("un errore dentro la transazione non lascia risultato, distinta o statistic
         playerStats: [
           { playerId: home.playerIds[0], goals: 4, assists: 0 },
           { playerId: home.playerIds[0], goals: 5, assists: 0 },
+          { playerId: away.playerIds[0], goals: 9, assists: 0 },
         ],
       },
     })
@@ -149,4 +150,38 @@ test("un errore dentro la transazione non lascia risultato, distinta o statistic
   assert.equal(storedStats.length, 1);
   assert.equal(storedStats[0].playerId, home.playerIds[0]);
   assert.equal(storedStats[0].goals, 1);
+});
+
+test("il totale marcatori deve coincidere con il risultato prima di scrivere sul DB", async () => {
+  const league = await createLeague("scorer-total");
+  const home = await createTeamWithEligiblePlayers(league.id, "ScorerHome");
+  const away = await createTeamWithEligiblePlayers(league.id, "ScorerAway");
+  const match = await prisma.match.create({
+    data: {
+      leagueId: league.id,
+      round: 1,
+      homeTeamId: home.id,
+      awayTeamId: away.id,
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      saveMatchResult({
+        matchId: match.id,
+        input: {
+          homeGoals: 2,
+          awayGoals: 0,
+          sheetPlayerIds: [...home.playerIds, ...away.playerIds],
+          playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }],
+        },
+      }),
+    /marcatori.*casa.*2 gol/i
+  );
+
+  const stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.homeGoals, null);
+  assert.equal(stored.awayGoals, null);
+  assert.equal(await prisma.matchSheetPlayer.count({ where: { matchId: match.id } }), 0);
+  assert.equal(await prisma.matchPlayerStat.count({ where: { matchId: match.id } }), 0);
 });

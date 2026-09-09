@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clock, RefreshCcw, ShieldCheck } from "lucide-react";
+import { Clock, RefreshCcw, Search, ShieldCheck } from "lucide-react";
 import { authFetch } from "@/lib/client-auth";
 import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
@@ -46,6 +46,16 @@ const ACTION_LABELS: Record<string, string> = {
   "user.created": "Utente creato",
   "user.password_updated": "Password aggiornata",
   "user.deleted": "Utente eliminato",
+  "field.created": "Campo creato",
+  "field.updated": "Campo aggiornato",
+  "field.deleted": "Campo eliminato",
+  "referee.created": "Arbitro creato",
+  "referee.updated": "Arbitro aggiornato",
+  "referee.deleted": "Arbitro eliminato",
+  "team.updated": "Squadra aggiornata",
+  "team.removed": "Squadra rimossa",
+  "player.updated": "Giocatore aggiornato",
+  "player.deleted": "Giocatore eliminato",
 };
 
 function formatDate(value: string) {
@@ -74,6 +84,8 @@ export default function AuditLogPanel({ leagueId }: { leagueId: string }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [openDetails, setOpenDetails] = useState<string | null>(null);
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
 
   async function load() {
     setLoading(true);
@@ -96,7 +108,16 @@ export default function AuditLogPanel({ leagueId }: { leagueId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId]);
 
-  const grouped = useMemo(() => logs, [logs]);
+  const grouped = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return logs.filter((log) => {
+      if (filter !== "all" && log.entityType !== filter && !log.action.startsWith(`${filter}.`)) return false;
+      if (!q) return true;
+      return [log.summary, log.actorUsername, log.action, log.entityType, log.entityId]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q));
+    });
+  }, [logs, filter, query]);
 
   return (
     <Card>
@@ -115,13 +136,36 @@ export default function AuditLogPanel({ leagueId }: { leagueId: string }) {
         </Button>
       </div>
 
+      <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3">
+          <Search size={14} className="text-[var(--accent)]" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cerca azione, utente o oggetto…" className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]" />
+        </div>
+        <div className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {[
+            ["all", "Tutto"],
+            ["match", "Partite"],
+            ["player", "Giocatori"],
+            ["team", "Squadre"],
+            ["field", "Campi"],
+            ["referee", "Arbitri"],
+            ["sponsor", "Sponsor"],
+            ["media", "Media"],
+            ["playoffs", "Playoff"],
+            ["user", "Utenti"],
+          ].map(([value, label]) => (
+            <button key={value} type="button" onClick={() => setFilter(value)} className={["shrink-0 rounded-xl border px-3 py-2 text-xs font-black transition", filter === value ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--card)] text-[var(--muted)]"].join(" ")}>{label}</button>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-5 space-y-3">
         {err && <Badge variant="error">{err}</Badge>}
         {loading && <p className="text-sm text-[var(--muted)]">Caricamento storico…</p>}
         {!loading && grouped.length === 0 && (
           <Card variant="inner">
-            <p className="text-sm font-semibold text-[var(--foreground)]">Nessuna modifica tracciata ancora.</p>
-            <p className="mt-1 text-xs text-[var(--muted)]">Le nuove operazioni verranno registrate da ora in avanti.</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">Nessuna attività corrisponde ai filtri.</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">Prova a cambiare categoria o ricerca.</p>
           </Card>
         )}
 

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
-import { sanitizePlayerForRole } from "@/lib/player-visibility";
+import { sanitizePlayerForRole } from "@/modules/players/application/player-visibility";
 
 export async function getMatchPageData(leagueId: string, matchId: string) {
   const match = await prisma.match.findUnique({

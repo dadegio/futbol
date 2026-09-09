@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
 import Badge from "src/app/_components/ui/badge";
-import Select from "src/app/_components/ui/select";
 import { authFetch } from "@/lib/client-auth";
+import { readApiError } from "@/modules/core/client-error";
 
 type Slot = {
   key: string;
@@ -52,6 +52,18 @@ function formatSlotDate(date: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function slotDayLabel(date: string) {
+  return new Date(date).toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function slotTime(date: string) {
+  return new Date(date).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 }
 
 function slotValue(slot: Pick<Slot, "venueKey" | "startsAt">) {
@@ -111,7 +123,7 @@ export default function MatchSlotBooking({
         { cache: "no-store" }
       );
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "Errore caricamento slot");
+      if (!res.ok) throw new Error(readApiError(data, "Errore caricamento slot"));
 
       const response = data as SlotsResponse;
       setSlots(response.slots);
@@ -141,6 +153,17 @@ export default function MatchSlotBooking({
     [slots]
   );
 
+  const slotsByDay = useMemo(() => {
+    const groups = new Map<string, Slot[]>();
+    for (const slot of availableSlots) {
+      const key = new Date(slot.startsAt).toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
+      const current = groups.get(key) ?? [];
+      current.push(slot);
+      groups.set(key, current);
+    }
+    return [...groups.entries()];
+  }, [availableSlots]);
+
   async function book() {
     const slot = availableSlots.find(
       (candidate) => slotValue(candidate) === selected
@@ -161,7 +184,7 @@ export default function MatchSlotBooking({
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "Errore prenotazione");
+      if (!res.ok) throw new Error(readApiError(data, "Errore prenotazione"));
 
       setMsg("Campo prenotato");
       await loadSlots();
@@ -183,7 +206,7 @@ export default function MatchSlotBooking({
         method: "DELETE",
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "Errore liberazione slot");
+      if (!res.ok) throw new Error(readApiError(data, "Errore liberazione slot"));
 
       setCurrentBooking(null);
       setSelected("");
@@ -235,43 +258,65 @@ export default function MatchSlotBooking({
         </div>
 
         {canBook && (
-          <div className="flex w-full flex-col gap-2 lg:max-w-[620px] lg:flex-row">
-            <Select
-              value={selected}
-              onChange={(event) => setSelected(event.target.value)}
-              disabled={loading || saving || !bookingAllowed}
-              className="min-w-0 flex-1"
-            >
-              <option value="" className="text-black">
-                {loading ? "Caricamento slot…" : "Scegli campo e orario"}
-              </option>
-              {availableSlots.map((slot) => (
-                <option
-                  key={slotValue(slot)}
-                  value={slotValue(slot)}
-                  className="text-black"
-                >
-                  {formatSlotDate(slot.startsAt)} · {slot.venueName}
-                  {slot.address ? ` · ${slot.address}` : ""}
-                </option>
-              ))}
-            </Select>
-            <Button onClick={book} disabled={!selected || loading || saving || !bookingAllowed}>
-              {saving ? "…" : currentBooking ? "Cambia slot" : "Prenota"}
-            </Button>
-            {currentBooking && (
-              <Button
-                variant="secondary"
-                onClick={release}
-                disabled={saving || !bookingAllowed}
-              >
-                Libera
+          <div className="w-full lg:max-w-[680px]">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button onClick={book} disabled={!selected || loading || saving || !bookingAllowed}>
+                {saving ? "…" : currentBooking ? "Conferma nuovo slot" : "Conferma slot"}
               </Button>
-            )}
+              {currentBooking && (
+                <Button variant="secondary" onClick={release} disabled={saving || !bookingAllowed}>
+                  Libera
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>
 
+      {canBook && bookingAllowed && (
+        <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">Scegli uno slot disponibile</p>
+            {selected && <button type="button" onClick={() => setSelected("")} className="text-xs font-bold text-[var(--accent)]">Azzera scelta</button>}
+          </div>
+          {loading ? (
+            <p className="text-sm text-[var(--muted)]">Caricamento slot…</p>
+          ) : slotsByDay.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">Nessuno slot libero nella settimana assegnata.</p>
+          ) : (
+            <div className="space-y-4">
+              {slotsByDay.map(([day, daySlots]) => (
+                <div key={day}>
+                  <p className="mb-2 text-xs font-black capitalize text-[var(--foreground)]">{slotDayLabel(daySlots[0].startsAt)}</p>
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    {daySlots.map((slot) => {
+                      const value = slotValue(slot);
+                      const active = selected === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setSelected(value)}
+                          className={[
+                            "rounded-2xl border p-3 text-left transition",
+                            active
+                              ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                              : "border-[var(--border)] bg-[var(--card-2)] hover:border-[var(--accent)]/60",
+                          ].join(" ")}
+                        >
+                          <span className="block text-base font-black text-[var(--foreground)]">{slotTime(slot.startsAt)}</span>
+                          <span className="mt-1 block truncate text-xs font-bold text-[var(--accent)]">{slot.venueName}</span>
+                          {slot.address && <span className="mt-0.5 block truncate text-[10px] text-[var(--muted)]">{slot.address}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {canBook && bookingWindow && !bookingWindow.isOpen && (
         <div className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-50/70 px-4 py-3 text-xs font-semibold text-amber-900">
@@ -285,11 +330,6 @@ export default function MatchSlotBooking({
         <p className="mt-3 text-xs font-semibold text-[var(--accent)]">Override admin attivo: puoi modificare la prenotazione in qualsiasi momento.</p>
       )}
 
-      {canBook && bookingAllowed && !loading && availableSlots.length === 0 && (
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          Nessuno slot libero nella settimana assegnata a questa giornata.
-        </p>
-      )}
       {msg && <Badge variant="success" className="mt-3">{msg}</Badge>}
       {err && <Badge variant="error" className="mt-3">{err}</Badge>}
     </Card>

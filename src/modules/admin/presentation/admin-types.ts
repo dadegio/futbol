@@ -1,5 +1,7 @@
 export type AdminSection =
   | "overview"
+  | "operations"
+  | "finance"
   | "branding"
   | "privacy"
   | "competition"
@@ -43,6 +45,7 @@ export type AdminSummary = {
     playerFeesCents: number;
     matches: number;
     playedMatches: number;
+    operationalAttention: number;
     refereeFeesCents: number;
   };
   byTeam: Array<{
@@ -52,5 +55,9 @@ export type AdminSummary = {
     authorized: number;
     blocked: number;
     wildcards: number;
+    appearances: number;
+    playerFeesCents: number;
+    refereeFeesCents: number;
+    totalFeesCents: number;
   }>;
 };

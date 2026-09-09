@@ -22,7 +22,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { clearAuthToken, useAuth, useCanAdminLeague, useCanCreateMedia, useIsSuperAdmin } from "@/lib/client-auth";
-import { resolveLeagueBranding, type LeagueBranding } from "@/lib/league-branding";
+import { resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
 
 type MobileMenuProps = {
   leagueId?: string;

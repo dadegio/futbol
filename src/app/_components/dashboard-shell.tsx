@@ -9,7 +9,7 @@ import MobileMenu from "./mobile-menu";
 import Breadcrumbs from "./breadcrumbs";
 import { useAuth } from "@/lib/client-auth";
 import LeagueThemeController from "./league-theme-controller";
-import { resolveLeagueBranding, type LeagueBranding } from "@/lib/league-branding";
+import { resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
 import { cachedJson } from "@/modules/core/client-cache";
 
 export default function DashboardShell({

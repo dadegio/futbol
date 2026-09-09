@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   WalletCards,
+  CalendarCheck2,
   ChevronRight,
   CheckCircle2,
   MapPin,
@@ -78,6 +79,21 @@ export default function AdminOverview({
             </div>
           </div>
         </Card>
+      )}
+
+      {totals.operationalAttention > 0 && (
+        <button
+          type="button"
+          onClick={() => onNavigate("operations")}
+          className="flex w-full items-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-4 text-left transition hover:border-amber-400/60"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/15 text-amber-400"><CalendarCheck2 size={20} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-black text-[var(--foreground)]">{totals.operationalAttention} partit{totals.operationalAttention === 1 ? "a richiede" : "e richiedono"} attenzione</span>
+            <span className="mt-1 block text-sm text-[var(--muted)]">Slot, campo, arbitro o risultato da completare.</span>
+          </span>
+          <ChevronRight size={17} className="shrink-0 text-amber-400" />
+        </button>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -162,6 +178,8 @@ export default function AdminOverview({
           <Card>
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">Azioni rapide</p>
             <div className="mt-3 space-y-2">
+              <QuickAction icon={CalendarCheck2} label="Apri centro partite" detail="Criticità, slot e risultati" onClick={() => onNavigate("operations")} />
+              <QuickAction icon={WalletCards} label="Apri economia" detail="Costi per squadra ed export CSV" onClick={() => onNavigate("finance")} />
               <QuickAction icon={Palette} label="Aggiorna identità" detail="Logo, colori e privacy" onClick={() => onNavigate("branding")} />
               <QuickAction icon={MapPin} label="Gestisci campi" detail="Impianti e slot" onClick={() => onNavigate("fields")} />
               <QuickAction icon={ShieldCheck} label="Gestisci arbitri" detail="Disponibilità e account" onClick={() => onNavigate("referees")} />

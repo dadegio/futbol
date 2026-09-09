@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { isHexColor } from "@/lib/league-branding";
+import { isHexColor } from "@/modules/branding/domain/league-branding";
 import { AppError } from "@/modules/core/errors";
 import {
   normalizeOptionalUrl,

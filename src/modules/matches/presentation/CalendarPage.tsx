@@ -18,6 +18,7 @@ import Input from "src/app/_components/ui/input";
 import Select from "src/app/_components/ui/select";
 import SponsorBanner from "src/app/_components/sponsor-banner";
 import { authFetch, useAuth } from "@/lib/client-auth";
+import { readApiError } from "@/modules/core/client-error";
 
 type Team = {
   id: string;
@@ -58,7 +59,7 @@ async function getJSON<T>(url: string): Promise<T> {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error((data as any)?.error ?? "Errore");
+    throw new Error(readApiError(data, "Errore"));
   }
 
   return data as T;
@@ -210,8 +211,8 @@ export default function CalendarPage({
       ]);
       setMatches(matchData);
       setTeamCount(teamData.length);
-    } catch (error: any) {
-      setErr(error.message ?? "Errore caricamento calendario");
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Errore caricamento calendario");
     } finally {
       setLoading(false);
     }
@@ -324,7 +325,7 @@ export default function CalendarPage({
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error((data as any)?.error ?? "Errore generazione calendario");
+        throw new Error(readApiError(data, "Errore generazione calendario"));
       }
 
       const result = data as GeneratorResult;
@@ -337,8 +338,8 @@ export default function CalendarPage({
       );
       setSelectedRound(null);
       await load();
-    } catch (error: any) {
-      setErr(error.message ?? "Errore generazione calendario");
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Errore generazione calendario");
     } finally {
       setGenerating(false);
     }

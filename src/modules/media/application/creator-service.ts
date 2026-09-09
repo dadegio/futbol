@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { isHexColor } from "@/lib/league-branding";
+import { isHexColor } from "@/modules/branding/domain/league-branding";
 import type { SessionUser } from "@/lib/session";
 import { AppError } from "@/modules/core/errors";
 import { isCreator, isLeagueAdmin } from "@/modules/permissions/permissions";

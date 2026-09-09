@@ -197,6 +197,7 @@ export function TeamStatsCard({
   readOnly,
   isAdmin,
   onPreviewPhoto,
+  onSelectEligible,
 }: {
   title: string;
   colorHex?: string | null;
@@ -209,6 +210,7 @@ export function TeamStatsCard({
   readOnly?: boolean;
   isAdmin?: boolean;
   onPreviewPhoto: (player: Player) => void;
+  onSelectEligible?: (checked: boolean) => void;
 }) {
   const eligibleCount = players.filter(isPlayerEligible).length;
   const teamColor = safeTeamColor(colorHex);
@@ -228,7 +230,15 @@ export function TeamStatsCard({
           <h2 className="text-base font-black text-[var(--foreground)]">{title}</h2>
           <p className="mt-1 text-xs text-[var(--muted)]">{eligibleCount} giocatori selezionabili</p>
         </div>
-        <span className="rounded-full bg-[var(--card-2)] px-3 py-1 text-xs font-black text-[var(--muted)]">Distinta</span>
+        <div className="flex items-center gap-2">
+          {!readOnly && onSelectEligible && (
+            <>
+              <button type="button" onClick={() => onSelectEligible(true)} className="rounded-full bg-[var(--card-2)] px-2.5 py-1 text-[10px] font-black text-[var(--accent)]">Idonei</button>
+              <button type="button" onClick={() => onSelectEligible(false)} className="rounded-full bg-[var(--card-2)] px-2.5 py-1 text-[10px] font-black text-[var(--muted)]">Azzera</button>
+            </>
+          )}
+          <span className="rounded-full bg-[var(--card-2)] px-3 py-1 text-xs font-black text-[var(--muted)]">Distinta</span>
+        </div>
       </div>
 
       {players.length === 0 ? (

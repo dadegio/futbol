@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
 import Button from "src/app/_components/ui/button";
@@ -62,6 +62,13 @@ export default function RefereeManager({ leagueId }: { leagueId: string }) {
     finally { setLoading(false); }
   }, [leagueId]);
   useEffect(() => { load(); }, [load]);
+
+  const refereeSummary = useMemo(() => ({
+    total: referees.length,
+    active: referees.filter((referee) => referee.active).length,
+    withAccount: referees.filter((referee) => Boolean(referee.account)).length,
+    constrained: referees.filter((referee) => referee.availabilities.length > 0).length,
+  }), [referees]);
 
   async function patchReferee(payload: Record<string, unknown>) {
     const r = await authFetch(`/api/leagues/${leagueId}/referees`, {
@@ -169,6 +176,22 @@ export default function RefereeManager({ leagueId }: { leagueId: string }) {
       <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">Associa l&apos;eventuale squadra in cui gioca l&apos;arbitro e, se vuoi, limita i suoi giorni/orari. Il sistema evita la sua squadra, le doppie assegnazioni e le gare contemporanee a quelle in cui deve giocare.</p>
       <p className="mt-2 text-xs font-bold text-[var(--muted)]">Nessun orario configurato = nessun vincolo orario.</p>
     </div>
+
+    {!loading && referees.length > 0 && (
+      <div className="mt-4 grid grid-cols-2 gap-2 xl:grid-cols-4">
+        {[
+          ["Totali", refereeSummary.total],
+          ["Attivi", refereeSummary.active],
+          ["Con account", refereeSummary.withAccount],
+          ["Con vincoli orari", refereeSummary.constrained],
+        ].map(([label, value]) => (
+          <div key={String(label)} className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-3">
+            <p className="text-xl font-black text-[var(--foreground)]">{value}</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">{label}</p>
+          </div>
+        ))}
+      </div>
+    )}
 
     <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
       <Input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} placeholder="Nome" />

@@ -56,7 +56,10 @@ async function saveSimpleResult(
       homeGoals,
       awayGoals,
       sheetPlayerIds: [...home.playerIds, ...away.playerIds],
-      playerStats: [],
+      playerStats: [
+        ...(homeGoals > 0 ? [{ playerId: home.playerIds[0], goals: homeGoals, assists: 0 }] : []),
+        ...(awayGoals > 0 ? [{ playerId: away.playerIds[0], goals: awayGoals, assists: 0 }] : []),
+      ],
     },
   });
 }

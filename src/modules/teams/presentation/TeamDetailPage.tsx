@@ -151,8 +151,8 @@ export default function TeamPage({
       setMsg("Squadra aggiornata");
       setEditingTeam(false);
       await load();
-    } catch (error: any) {
-      setErr(error.message ?? "Errore");
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Errore");
     } finally {
       setSavingTeam(false);
     }

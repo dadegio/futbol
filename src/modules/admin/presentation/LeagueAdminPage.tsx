@@ -9,6 +9,8 @@ import Badge from "src/app/_components/ui/badge";
 import Card from "src/app/_components/ui/card";
 import { authFetch, useAuth } from "@/lib/client-auth";
 import AdminOverview from "./AdminOverview";
+import AdminFinancePanel from "./AdminFinancePanel";
+import AdminQuickSearch from "./AdminQuickSearch";
 import AdminSectionNav, { ADMIN_SECTIONS, getAdminSection } from "./AdminSectionNav";
 import PlayoffSettingsPanel from "./PlayoffSettingsPanel";
 import type { AdminSection, AdminSummary, LeagueSettings } from "./admin-types";
@@ -23,6 +25,11 @@ function AdminModuleFallback({ title = "Modulo admin" }: { title?: string }) {
     </Card>
   );
 }
+
+const AdminOperationsPanel = dynamic(() => import("./AdminOperationsPanel"), {
+  ssr: false,
+  loading: () => <AdminModuleFallback title="Centro operativo partite" />,
+});
 
 const BrandingManager = dynamic(() => import("@/modules/branding/presentation/BrandingManager"), {
   ssr: false,
@@ -128,6 +135,13 @@ export default function LeagueAdminPage() {
       return <AdminOverview leagueId={leagueId} summary={summary} onNavigate={selectSection} />;
     }
 
+    if (activeSection === "operations") return <AdminOperationsPanel leagueId={leagueId} />;
+
+    if (activeSection === "finance") {
+      if (!summary) return <AdminModuleFallback title="Economia" />;
+      return <AdminFinancePanel summary={summary} />;
+    }
+
     if (activeSection === "branding") {
       if (!settings) return <AdminModuleFallback title="Identità torneo" />;
       return <BrandingManager leagueId={leagueId} value={settings} onChange={setSettings} view="identity" />;
@@ -168,12 +182,15 @@ export default function LeagueAdminPage() {
                 Configura il torneo per area, controlla le criticità e apri solo gli strumenti che ti servono.
               </p>
             </div>
-            {summary?.league.name && (
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-2.5 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Torneo</p>
-                <p className="mt-0.5 max-w-[260px] truncate text-sm font-black text-[var(--foreground)]">{summary.league.name}</p>
-              </div>
-            )}
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+              <AdminQuickSearch leagueId={leagueId} />
+              {summary?.league.name && (
+                <div className="hidden rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-2 text-right sm:block">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Torneo</p>
+                  <p className="mt-0.5 max-w-[260px] truncate text-sm font-black text-[var(--foreground)]">{summary.league.name}</p>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

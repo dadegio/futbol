@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/modules/core/errors";
-import { syncPlayoffSeriesWinner } from "@/lib/playoff-progress";
+import { syncPlayoffSeriesWinner } from "@/modules/playoffs/application/playoff-progress";
 import {
   FUTPOLI_RULES,
   isPlayerEligibleForMatchSheet,
@@ -149,6 +149,26 @@ export async function saveMatchResult({
       400,
       `Ogni squadra deve avere almeno ${FUTPOLI_RULES.minPlayersInMatchSheet} giocatori autorizzati in distinta`,
       "MATCH_SHEET_TOO_SHORT"
+    );
+  }
+
+  const homeScorerGoals = rows.reduce((sum, row) =>
+    playerById.get(row.playerId)?.teamId === match.homeTeamId ? sum + Math.floor(row.goals) : sum, 0);
+  const awayScorerGoals = rows.reduce((sum, row) =>
+    playerById.get(row.playerId)?.teamId === match.awayTeamId ? sum + Math.floor(row.goals) : sum, 0);
+
+  if (homeGoals !== undefined && homeScorerGoals !== homeGoals) {
+    throw new AppError(
+      400,
+      `I marcatori della squadra di casa totalizzano ${homeScorerGoals} gol, ma il risultato indica ${homeGoals}`,
+      "HOME_SCORER_TOTAL_MISMATCH"
+    );
+  }
+  if (awayGoals !== undefined && awayScorerGoals !== awayGoals) {
+    throw new AppError(
+      400,
+      `I marcatori della squadra ospite totalizzano ${awayScorerGoals} gol, ma il risultato indica ${awayGoals}`,
+      "AWAY_SCORER_TOTAL_MISMATCH"
     );
   }
 

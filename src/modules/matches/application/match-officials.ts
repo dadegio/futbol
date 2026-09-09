@@ -96,7 +96,11 @@ export async function getAdminRefereeState(matchId: string) {
       warnings,
       compatible: warnings.length === 0,
     };
-  });
+  }).sort((left, right) =>
+    Number(right.compatible) - Number(left.compatible) ||
+    Number(right.active) - Number(left.active) ||
+    left.name.localeCompare(right.name, "it")
+  );
 
   return {
     leagueId: match.leagueId,

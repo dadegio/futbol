@@ -47,6 +47,24 @@ export function RefereeAssignmentPanel({
 
         {isAdmin ? (
           <div className="space-y-3 rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4">
+            {(adminRefereeState?.referees ?? []).some((referee) => referee.compatible) && (
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Compatibili ora</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(adminRefereeState?.referees ?? []).filter((referee) => referee.compatible).slice(0, 4).map((referee) => (
+                    <button
+                      key={referee.id}
+                      type="button"
+                      onClick={() => setRefereeChoice(`manual:${referee.id}`)}
+                      className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-black text-emerald-300 transition hover:border-emerald-400"
+                    >
+                      {referee.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-2 md:flex-row md:items-end">
               <label className="min-w-0 flex-1">
                 <span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Modalità assegnazione</span>

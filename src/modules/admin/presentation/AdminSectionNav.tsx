@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Activity,
+  CalendarCheck2,
   Camera,
   Home,
   MapPin,
@@ -12,6 +13,7 @@ import {
   Store,
   Trophy,
   UsersRound,
+  WalletCards,
   type LucideIcon,
 } from "lucide-react";
 import Card from "src/app/_components/ui/card";
@@ -34,6 +36,22 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     description: "Stato del torneo, rose e costi",
     icon: Home,
     group: "Torneo",
+  },
+  {
+    id: "operations",
+    label: "Partite",
+    shortLabel: "Partite",
+    description: "Criticità, slot, arbitri e risultati",
+    icon: CalendarCheck2,
+    group: "Operatività",
+  },
+  {
+    id: "finance",
+    label: "Economia",
+    shortLabel: "Costi",
+    description: "Presenze, arbitri e costi per squadra",
+    icon: WalletCards,
+    group: "Controllo",
   },
   {
     id: "branding",
@@ -139,9 +157,10 @@ export default function AdminSectionNav({
               >
                 <Icon size={15} />
                 {section.shortLabel}
-                {section.id === "overview" && (summary?.totals.blocked ?? 0) > 0 && (
+                {((section.id === "overview" && (summary?.totals.blocked ?? 0) > 0) ||
+                  (section.id === "operations" && (summary?.totals.operationalAttention ?? 0) > 0)) && (
                   <span className="grid h-5 min-w-5 place-items-center rounded-full bg-amber-500/15 px-1 text-[10px] text-amber-500">
-                    {summary?.totals.blocked}
+                    {section.id === "operations" ? summary?.totals.operationalAttention : summary?.totals.blocked}
                   </span>
                 )}
               </button>
@@ -170,7 +189,12 @@ export default function AdminSectionNav({
                 {ADMIN_SECTIONS.filter((section) => section.group === group).map((section) => {
                   const Icon = section.icon;
                   const selected = active === section.id;
-                  const warningCount = section.id === "overview" ? summary?.totals.blocked ?? 0 : 0;
+                  const warningCount =
+                    section.id === "overview"
+                      ? summary?.totals.blocked ?? 0
+                      : section.id === "operations"
+                        ? summary?.totals.operationalAttention ?? 0
+                        : 0;
                   return (
                     <button
                       key={section.id}

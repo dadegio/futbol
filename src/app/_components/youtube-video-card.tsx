@@ -5,7 +5,7 @@ import {
   getYouTubeThumbnailUrl,
   youtubeFeaturedConfig,
   youtubePresentationConfig,
-} from "@/lib/youtube";
+} from "@/modules/videos/application/youtube";
 
 type YouTubeVideoCardProps = {
   leagueId?: string;

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { determineSeriesWinner } from "@/lib/bracket";
+import { determineSeriesWinner } from "@/modules/playoffs/domain/bracket";
 
 type Tx = any;
 

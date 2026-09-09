@@ -10,6 +10,7 @@ import Badge from "src/app/_components/ui/badge";
 import Input from "src/app/_components/ui/input";
 import Select from "src/app/_components/ui/select";
 import { useIsSuperAdmin, authFetch } from "@/lib/client-auth";
+import { readApiError } from "@/modules/core/client-error";
 
 type UserRow = {
   id: string;
@@ -34,6 +35,9 @@ type UserRow = {
 
 type Team = { id: string; name: string };
 type Referee = { id: string; name: string };
+type LeagueApiRow = { id: string; name: string };
+type TeamApiRow = { id: string; name: string };
+type RefereeApiRow = { id: string; name: string };
 
 export default function AdminUsersPage() {
   const isAdmin = useIsSuperAdmin();
@@ -73,22 +77,22 @@ export default function AdminUsersPage() {
         authFetch("/api/leagues"),
       ]);
 
-      const usersData = await usersRes.json();
-      const leaguesData = await leaguesRes.json();
-      if (!usersRes.ok) throw new Error(usersData?.error ?? "Errore caricamento utenti");
-      if (!leaguesRes.ok) throw new Error(leaguesData?.error ?? "Errore caricamento tornei");
+      const usersData: unknown = await usersRes.json();
+      const leaguesData: unknown = await leaguesRes.json();
+      if (!usersRes.ok) throw new Error(readApiError(usersData, "Errore caricamento utenti"));
+      if (!leaguesRes.ok) throw new Error(readApiError(leaguesData, "Errore caricamento tornei"));
 
-      const leagues = Array.isArray(leaguesData) ? leaguesData : [];
-      setLeagues(leagues.map((league: any) => ({ id: league.id, name: league.name })));
+      const leagueRows = (Array.isArray(leaguesData) ? leaguesData : []) as LeagueApiRow[];
+      setLeagues(leagueRows.map((league) => ({ id: league.id, name: league.name })));
       const [teamGroups, refereeGroups] = await Promise.all([
         Promise.all(
-          leagues.map(async (league: any) => {
+          leagueRows.map(async (league) => {
             const response = await fetch(`/api/leagues/${league.id}/teams`, {
               cache: "no-store",
             });
             const data = await response.json();
             return Array.isArray(data)
-              ? data.map((team: any) => ({
+              ? (data as TeamApiRow[]).map((team) => ({
                   id: team.id,
                   name: `${team.name} (${league.name})`,
                 }))
@@ -96,14 +100,14 @@ export default function AdminUsersPage() {
           })
         ),
         Promise.all(
-          leagues.map(async (league: any) => {
+          leagueRows.map(async (league) => {
             const response = await authFetch(
               `/api/leagues/${league.id}/referees`,
               { cache: "no-store" }
             );
             const data = await response.json();
             return Array.isArray(data)
-              ? data.map((referee: any) => ({
+              ? (data as RefereeApiRow[]).map((referee) => ({
                   id: referee.id,
                   name: `${referee.name} (${league.name})`,
                 }))
@@ -112,11 +116,11 @@ export default function AdminUsersPage() {
         ),
       ]);
 
-      setUsers(usersData);
+      setUsers((Array.isArray(usersData) ? usersData : []) as UserRow[]);
       setTeams(teamGroups.flat());
       setReferees(refereeGroups.flat());
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Errore caricamento utenti");
     } finally {
       setLoading(false);
     }
@@ -139,11 +143,11 @@ export default function AdminUsersPage() {
     setErr(null);
     try {
       const res = await authFetch(`/api/users?id=${user.id}`, { method: "DELETE" });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d?.error ?? "Errore eliminazione");
+      const d: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(d, "Errore eliminazione"));
       await load();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Errore eliminazione");
     } finally {
       setDeletingId(null);
     }
@@ -167,13 +171,13 @@ export default function AdminUsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: newPwd }),
       });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d?.error ?? "Errore");
+      const d: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(d, "Errore"));
       setPwdMsg("Password aggiornata");
       setNewPwd("");
       setTimeout(() => { setChangingPwdId(null); setPwdMsg(null); }, 1500);
-    } catch (e: any) {
-      setPwdErr(e.message);
+    } catch (e: unknown) {
+      setPwdErr(e instanceof Error ? e.message : "Errore aggiornamento password");
     } finally {
       setPwdSaving(false);
     }
@@ -201,8 +205,8 @@ export default function AdminUsersPage() {
           refereeId: newRole === "REFEREE" ? newRefereeId : null,
         }),
       });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d?.error ?? "Errore creazione");
+      const d: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(d, "Errore creazione"));
       setNewUsername("");
       setNewPassword("");
       setNewRole("CAPTAIN");
@@ -211,8 +215,8 @@ export default function AdminUsersPage() {
       setNewRefereeId("");
       setShowForm(false);
       await load();
-    } catch (e: any) {
-      setFormErr(e.message);
+    } catch (e: unknown) {
+      setFormErr(e instanceof Error ? e.message : "Errore creazione utente");
     } finally {
       setCreating(false);
     }
