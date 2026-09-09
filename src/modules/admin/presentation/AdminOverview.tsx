@@ -38,7 +38,6 @@ export default function AdminOverview({
   const { totals } = summary;
   const registrationProgress = totals.players > 0 ? clampPercentage((totals.authorized / totals.players) * 100) : 100;
   const seasonProgress = totals.matches > 0 ? clampPercentage((totals.playedMatches / totals.matches) * 100) : 0;
-  const estimatedCosts = totals.playerFeesCents + totals.refereeFeesCents;
   const teamsWithIssues = summary.byTeam.filter((team) => team.blocked > 0);
 
   return (
@@ -118,10 +117,10 @@ export default function AdminOverview({
           note={`${totals.sheetAppearances} presenze in distinta`}
         />
         <OverviewStat
-          icon={ShieldCheck}
-          label="Costi arbitri"
-          value={formatEuro(totals.refereeFeesCents)}
-          note={`${totals.playedMatches} gare conteggiate`}
+          icon={CalendarCheck2}
+          label="Partite da sistemare"
+          value={totals.operationalAttention}
+          note={totals.operationalAttention > 0 ? "richiedono attenzione operativa" : "nessuna criticità aperta"}
         />
       </div>
 
@@ -179,7 +178,7 @@ export default function AdminOverview({
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">Azioni rapide</p>
             <div className="mt-3 space-y-2">
               <QuickAction icon={CalendarCheck2} label="Apri centro partite" detail="Criticità, slot e risultati" onClick={() => onNavigate("operations")} />
-              <QuickAction icon={WalletCards} label="Apri economia" detail="Costi per squadra ed export CSV" onClick={() => onNavigate("finance")} />
+              <QuickAction icon={WalletCards} label="Apri economia" detail="Quote presenze ed export CSV" onClick={() => onNavigate("finance")} />
               <QuickAction icon={Palette} label="Aggiorna identità" detail="Logo, colori e privacy" onClick={() => onNavigate("branding")} />
               <QuickAction icon={MapPin} label="Gestisci campi" detail="Impianti e slot" onClick={() => onNavigate("fields")} />
               <QuickAction icon={ShieldCheck} label="Gestisci arbitri" detail="Disponibilità e account" onClick={() => onNavigate("referees")} />
@@ -188,10 +187,10 @@ export default function AdminOverview({
           </Card>
 
           <Card variant="inner">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">Riepilogo economico</p>
-            <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[var(--foreground)]">{formatEuro(estimatedCosts)}</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">Quote presenze</p>
+            <p className="mt-3 text-3xl font-black tracking-[-0.05em] text-[var(--foreground)]">{formatEuro(totals.playerFeesCents)}</p>
             <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
-              Somma delle quote maturate per presenze in distinta e dei costi arbitrali conteggiati finora.
+              Conteggio delle sole quote giocatore maturate dalle presenze in distinta. I costi arbitro restano fuori dal bilancio del torneo.
             </p>
           </Card>
         </div>

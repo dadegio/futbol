@@ -3,6 +3,7 @@ import { sanitizePlayerForRole } from "@/modules/players/application/player-visi
 import type { SessionUser } from "@/lib/session";
 import { AppError } from "@/modules/core/errors";
 import { isLeagueAdmin } from "@/modules/permissions/permissions";
+import { getRefereeMatchFeeCents } from "@/modules/referees/domain/referee-cost";
 
 export async function getMatchDetail({
   matchId,
@@ -85,8 +86,14 @@ export async function getMatchDetail({
 
   if (!match) throw new AppError(404, "Partita non trovata");
 
+  const { refereeCostCents: _legacyRefereeCostCents, ...visibleMatch } = match;
+
   return {
-    ...match,
+    ...visibleMatch,
+    refereeFeeCents:
+      match.venueKey && match.referee
+        ? getRefereeMatchFeeCents(match.referee.name)
+        : null,
     referee: match.referee
       ? {
           id: match.referee.id,

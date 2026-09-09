@@ -56,6 +56,7 @@ export type Match = {
   refereeId: string | null;
   refereeManualOverride: boolean;
   referee: Referee | null;
+  refereeFeeCents?: number | null;
   homeGoals: number | null;
   awayGoals: number | null;
   homeTeam: Team;

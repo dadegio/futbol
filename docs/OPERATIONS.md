@@ -76,3 +76,22 @@ Se una modifica rompe la produzione:
 4. correggere su branch locale;
 5. eseguire `npm run modernization` e `npm run build`;
 6. lasciare passare il Quality Gate prima del nuovo deploy.
+
+## Reset dati partita
+
+Gli amministratori del torneo possono riportare una partita allo stato precedente all'inserimento di distinta e risultato dalla pagina della gara. Il reset:
+
+- elimina distinta, risultato, marcatori e assist;
+- lascia invariati data, slot, campo e arbitro della gara corrente;
+- aggiorna automaticamente classifica e statistiche perché i dati derivati vengono ricalcolati dal database;
+- viene registrato nell'audit log;
+- nei playoff viene bloccato se il turno successivo contiene già dati, per evitare di invalidare una gara già iniziata.
+
+## Costo arbitro
+
+Il costo arbitro è un'informazione operativa della singola gara e **non entra nei conteggi economici del torneo**. Dopo la prenotazione del campo e l'assegnazione dell'arbitro viene mostrato nella pagina partita/distinta:
+
+- €15 per gli arbitri standard;
+- €20 per Scoccimarro.
+
+La gestione del pagamento resta direttamente a carico delle squadre coinvolte.

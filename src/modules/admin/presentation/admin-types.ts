@@ -46,7 +46,6 @@ export type AdminSummary = {
     matches: number;
     playedMatches: number;
     operationalAttention: number;
-    refereeFeesCents: number;
   };
   byTeam: Array<{
     teamId: string;
@@ -57,7 +56,5 @@ export type AdminSummary = {
     wildcards: number;
     appearances: number;
     playerFeesCents: number;
-    refereeFeesCents: number;
-    totalFeesCents: number;
   }>;
 };

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { after, test } from "node:test";
 import { prisma } from "../../lib/prisma.ts";
 import { saveMatchResult } from "../../src/modules/matches/application/save-match-result.ts";
+import { resetMatchResult } from "../../src/modules/matches/application/reset-match-result.ts";
 import { getLeagueTable } from "../../src/modules/stats/application/league-table-service.ts";
 import { getLeagueStats } from "../../src/modules/stats/application/league-stats-service.ts";
 
@@ -79,7 +80,6 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
   const stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
   assert.equal(stored.homeGoals, 3);
   assert.equal(stored.awayGoals, 1);
-  assert.equal(stored.refereeCostCents, 2000);
   assert.equal(await prisma.matchSheetPlayer.count({ where: { matchId: match.id } }), 16);
   assert.equal(await prisma.matchPlayerStat.count({ where: { matchId: match.id } }), 3);
 
@@ -176,7 +176,11 @@ test("il totale marcatori deve coincidere con il risultato prima di scrivere sul
           playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }],
         },
       }),
-    /marcatori.*casa.*2 gol/i
+    (error: unknown) => {
+      if (typeof error !== "object" || error === null) return false;
+      const appError = error as { status?: unknown; code?: unknown };
+      return appError.status === 400 && appError.code === "HOME_SCORER_TOTAL_MISMATCH";
+    }
   );
 
   const stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
@@ -184,4 +188,58 @@ test("il totale marcatori deve coincidere con il risultato prima di scrivere sul
   assert.equal(stored.awayGoals, null);
   assert.equal(await prisma.matchSheetPlayer.count({ where: { matchId: match.id } }), 0);
   assert.equal(await prisma.matchPlayerStat.count({ where: { matchId: match.id } }), 0);
+});
+
+
+test("reset partita elimina distinta e risultato ma conserva prenotazione e arbitro", async () => {
+  const league = await createLeague("reset-match");
+  const home = await createTeamWithEligiblePlayers(league.id, "ResetHome");
+  const away = await createTeamWithEligiblePlayers(league.id, "ResetAway");
+  const referee = await prisma.referee.create({
+    data: { leagueId: league.id, name: `Referee-${randomUUID()}` },
+  });
+  const date = new Date("2026-10-14T18:00:00.000Z");
+  const match = await prisma.match.create({
+    data: {
+      leagueId: league.id,
+      round: 2,
+      homeTeamId: home.id,
+      awayTeamId: away.id,
+      date,
+      slotEnd: new Date("2026-10-14T19:00:00.000Z"),
+      venueKey: "field-reset",
+      venueName: "Campo Test",
+      venueAddress: "Via Test 1",
+      refereeId: referee.id,
+    },
+  });
+
+  await saveMatchResult({
+    matchId: match.id,
+    input: {
+      homeGoals: 1,
+      awayGoals: 0,
+      sheetPlayerIds: [...home.playerIds, ...away.playerIds],
+      playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }],
+    },
+  });
+
+  const result = await resetMatchResult(match.id);
+  assert.equal(result.hadRecordedData, true);
+  assert.equal(result.clearedSheetPlayers, 16);
+  assert.equal(result.clearedStats, 1);
+
+  const stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.homeGoals, null);
+  assert.equal(stored.awayGoals, null);
+  assert.equal(stored.date?.toISOString(), date.toISOString());
+  assert.equal(stored.venueKey, "field-reset");
+  assert.equal(stored.venueName, "Campo Test");
+  assert.equal(stored.refereeId, referee.id);
+  assert.equal(await prisma.matchSheetPlayer.count({ where: { matchId: match.id } }), 0);
+  assert.equal(await prisma.matchPlayerStat.count({ where: { matchId: match.id } }), 0);
+
+  const table = await getLeagueTable(league.id);
+  assert.equal(table.find((row) => row.teamId === home.id)?.played, 0);
+  assert.equal(table.find((row) => row.teamId === away.id)?.played, 0);
 });

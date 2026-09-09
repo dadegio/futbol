@@ -189,7 +189,6 @@ export async function saveMatchResult({
     await tx.match.update({
       where: { id: matchId },
       data: {
-        refereeCostCents: FUTPOLI_RULES.refereeCostCentsPerMatch,
         ...(homeGoals !== undefined ? { homeGoals } : {}),
         ...(awayGoals !== undefined ? { awayGoals } : {}),
       },

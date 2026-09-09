@@ -10,7 +10,10 @@ import {
   ClipboardCheck,
   Goal,
   MapPin,
+  ReceiptText,
+  RotateCcw,
   Save,
+  TriangleAlert,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -21,6 +24,7 @@ import Badge from "src/app/_components/ui/badge";
 import SponsorBanner from "src/app/_components/sponsor-banner";
 import { useAuth, authFetch } from "@/lib/client-auth";
 import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
+import { getRefereeMatchFeeCents } from "@/modules/referees/domain/referee-cost";
 import { readApiError } from "@/modules/core/client-error";
 import MatchSlotBooking from "@/modules/bookings/presentation/MatchSlotBooking";
 import {
@@ -56,6 +60,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
   const [homeGoals, setHomeGoals] = useState<string>(match.homeGoals === null ? "" : String(match.homeGoals));
   const [awayGoals, setAwayGoals] = useState<string>(match.awayGoals === null ? "" : String(match.awayGoals));
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<Player | null>(null);
@@ -311,6 +316,45 @@ export default function MatchResultForm({ match }: { match: Match }) {
     }
   }
 
+
+  async function resetRecordedData() {
+    if (!isAdmin) return;
+    const confirmed = window.confirm(
+      "Resettare distinta, risultato, marcatori e assist di questa partita? Data, campo, slot e arbitro resteranno invariati."
+    );
+    if (!confirmed) return;
+
+    setResetting(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await authFetch(`/api/matches/${match.id}/result`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(data, "Errore reset partita"));
+
+      setHomeGoals("");
+      setAwayGoals("");
+      setStats(() => {
+        const next: Record<string, { goals: string; assists: string }> = {};
+        for (const player of [...homePlayers, ...awayPlayers]) {
+          next[player.id] = { goals: "", assists: "" };
+        }
+        return next;
+      });
+      setSheet(() => {
+        const next: Record<string, boolean> = {};
+        for (const player of [...homePlayers, ...awayPlayers]) next[player.id] = false;
+        return next;
+      });
+      setMsg("Dati partita resettati");
+      router.refresh();
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Errore reset partita");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   const played = homeGoals !== "" && awayGoals !== "";
   const hg = Number(homeGoals);
   const ag = Number(awayGoals);
@@ -322,6 +366,16 @@ export default function MatchResultForm({ match }: { match: Match }) {
       : match.date
         ? "Arbitro da assegnare"
         : "In attesa dello slot";
+  const refereeFeeCents = match.venueKey
+    ? adminRefereeName
+      ? getRefereeMatchFeeCents(adminRefereeName)
+      : match.refereeFeeCents ?? null
+    : null;
+  const hasRecordedData =
+    homeGoals !== "" ||
+    awayGoals !== "" ||
+    Object.values(sheet).some(Boolean) ||
+    Object.values(stats).some((row) => Number(row.goals || 0) > 0 || Number(row.assists || 0) > 0);
 
 
   return (
@@ -466,7 +520,34 @@ export default function MatchResultForm({ match }: { match: Match }) {
           dateErr={dateErr}
         />
 
-        {!canEditResult && !authLoading && <p className="px-1 text-sm text-[var(--muted)]">Sola lettura — possono modificare distinta e risultato l&apos;admin, i capitani coinvolti e l&apos;arbitro assegnato.</p>}
+        {!canEditResult && !authLoading && <p className="px-1 text-sm text-[var(--muted)]">Sola lettura — possono modificare distinta e risultato l&apos;admin e l&apos;arbitro assegnato. I capitani possono prenotare lo slot.</p>}
+
+        {match.venueKey && (
+          <Card variant="inner" className="border-[var(--accent)]/20">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <ReceiptText size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-black text-[var(--foreground)]">Costo arbitro della gara</p>
+                {refereeFeeCents !== null ? (
+                  <>
+                    <p className="mt-1 text-xl font-black text-[var(--accent)]">
+                      {(refereeFeeCents / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+                      Informazione per le squadre: il costo viene gestito direttamente tra loro e non entra nei conteggi economici del torneo.
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+                    Il costo verrà indicato qui appena sarà assegnato l&apos;arbitro. Tariffa standard €15; Scoccimarro €20.
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
 
         <div id="match-sheets" className="scroll-mt-20 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
@@ -488,6 +569,27 @@ export default function MatchResultForm({ match }: { match: Match }) {
             </div>
             <Button onClick={save} disabled={saving}>{saving ? "Salvataggio…" : "Salva risultato"}</Button>
           </div>
+        )}
+
+        {isAdmin && hasRecordedData && (
+          <Card className="border-red-500/25 bg-red-500/[0.05]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500/10 text-red-300">
+                  <TriangleAlert size={18} />
+                </span>
+                <div>
+                  <p className="font-black text-[var(--foreground)]">Reset dati partita</p>
+                  <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+                    Elimina distinta, risultato, marcatori e assist. Data, campo, slot e arbitro restano invariati. L&apos;operazione è registrata nell&apos;audit log.
+                  </p>
+                </div>
+              </div>
+              <Button variant="destructive" onClick={resetRecordedData} disabled={resetting || saving}>
+                <RotateCcw size={15} /> {resetting ? "Reset…" : "Resetta partita"}
+              </Button>
+            </div>
+          </Card>
         )}
       </div>
 

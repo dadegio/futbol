@@ -33,12 +33,9 @@ export async function getLeagueAdminSummary(leagueId: string) {
         id: true,
         homeGoals: true,
         awayGoals: true,
-        refereeCostCents: true,
         date: true,
         venueKey: true,
         refereeId: true,
-        homeTeamId: true,
-        awayTeamId: true,
       },
     }),
   ]);
@@ -64,13 +61,6 @@ export async function getLeagueAdminSummary(leagueId: string) {
     sheetAppearancesByTeam.set(entry.teamId, (sheetAppearancesByTeam.get(entry.teamId) ?? 0) + 1);
   }
 
-  const refereeFeesByTeam = new Map<string, number>();
-  for (const match of played) {
-    const split = Math.floor(match.refereeCostCents / 2);
-    refereeFeesByTeam.set(match.homeTeamId, (refereeFeesByTeam.get(match.homeTeamId) ?? 0) + split);
-    refereeFeesByTeam.set(match.awayTeamId, (refereeFeesByTeam.get(match.awayTeamId) ?? 0) + (match.refereeCostCents - split));
-  }
-
   const byTeam = teams.map((team) => {
     const teamPlayers = players.filter((player) => player.teamId === team.id);
     const teamAuthorized = teamPlayers.filter((player) =>
@@ -78,7 +68,6 @@ export async function getLeagueAdminSummary(leagueId: string) {
     ).length;
     const appearances = sheetAppearancesByTeam.get(team.id) ?? 0;
     const playerFeesCents = appearances * FUTPOLI_RULES.playerFeeCentsPerAppearance;
-    const refereeFeesCents = refereeFeesByTeam.get(team.id) ?? 0;
     return {
       teamId: team.id,
       teamName: team.name,
@@ -88,8 +77,6 @@ export async function getLeagueAdminSummary(leagueId: string) {
       wildcards: teamPlayers.filter((player) => player.wildcardUsed).length,
       appearances,
       playerFeesCents,
-      refereeFeesCents,
-      totalFeesCents: playerFeesCents + refereeFeesCents,
     };
   });
 
@@ -107,7 +94,6 @@ export async function getLeagueAdminSummary(leagueId: string) {
       matches: matches.length,
       playedMatches,
       operationalAttention,
-      refereeFeesCents: played.reduce((sum, match) => sum + match.refereeCostCents, 0),
     },
     byTeam,
   };

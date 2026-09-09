@@ -1,3 +1,4 @@
+import { getRefereeMatchFeeCents } from "../src/modules/referees/domain/referee-cost.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -13,10 +14,7 @@ test("regole economiche e di rosa restano quelle del torneo", () => {
     maxPlayersPerTeam: 14,
     minPlayersInMatchSheet: 8,
     playerFeeCentsPerAppearance: 50,
-    refereeCostCentsPerMatch: 2000,
-    refereeCostCentsPerTeam: 1000,
   });
-  assert.equal(centsToEuro(FUTPOLI_RULES.refereeCostCentsPerMatch), 20);
 });
 
 test("giocatore in distinta richiede autorizzazione, modulo e liberatoria media", () => {
@@ -41,4 +39,11 @@ test("stato amministrativo e motivi mancanti sono coerenti", () => {
     getPlayerAdminMissingItems({ status: "IN_REVIEW", documentSigned: false, mediaConsent: false }),
     ["stato non autorizzato", "modulo firmato", "liberatoria video/foto"]
   );
+});
+
+test("costo arbitro è informativo: 15 euro standard, 20 per Scoccimarro", () => {
+  assert.equal(centsToEuro(getRefereeMatchFeeCents("Sebastiano Marcato")), 15);
+  assert.equal(centsToEuro(getRefereeMatchFeeCents("Yuri Caridi")), 15);
+  assert.equal(centsToEuro(getRefereeMatchFeeCents("Luca Scoccimarro")), 20);
+  assert.equal(centsToEuro(getRefereeMatchFeeCents("SCOCCIMARRO")), 20);
 });

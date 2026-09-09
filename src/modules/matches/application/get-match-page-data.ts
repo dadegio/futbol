@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { sanitizePlayerForRole } from "@/modules/players/application/player-visibility";
+import { getRefereeMatchFeeCents } from "@/modules/referees/domain/referee-cost";
 
 export async function getMatchPageData(leagueId: string, matchId: string) {
   const match = await prisma.match.findUnique({
@@ -10,6 +11,7 @@ export async function getMatchPageData(leagueId: string, matchId: string) {
       referee: {
         select: {
           id: true,
+          name: true,
         },
       },
       homeTeam: { include: { players: { orderBy: { number: "asc" } } } },
@@ -21,8 +23,15 @@ export async function getMatchPageData(leagueId: string, matchId: string) {
 
   if (!match || match.leagueId !== leagueId) return null;
 
+  const { refereeCostCents: _legacyRefereeCostCents, ...visibleMatch } = match;
+
   return {
-    ...match,
+    ...visibleMatch,
+    referee: match.referee ? { id: match.referee.id } : null,
+    refereeFeeCents:
+      match.venueKey && match.referee
+        ? getRefereeMatchFeeCents(match.referee.name)
+        : null,
     homeTeam: {
       ...match.homeTeam,
       players: match.homeTeam.players.map((player) => sanitizePlayerForRole(player, null)),
