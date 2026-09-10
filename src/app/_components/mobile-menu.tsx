@@ -20,7 +20,6 @@ import {
   Youtube,
   Camera,
   UploadCloud,
-  Whistle,
 } from "lucide-react";
 import { clearAuthToken, useAuth, useCanAdminLeague, useCanCreateMedia, useIsSuperAdmin } from "@/lib/client-auth";
 import { resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
@@ -209,7 +208,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
               <MenuLink
                 href={`/leagues/${leagueId}/my-match`}
                 label="La mia partita"
-                icon={<Whistle size={18} />}
+                icon={<ShieldCheck size={18} />}
                 active={pathname === `/leagues/${leagueId}/my-match`}
                 onClick={onClose}
               />

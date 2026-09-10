@@ -355,7 +355,10 @@ export async function getTeamDetail({
     competitionSummary: {
       ...competition,
       gd: competition.gf - competition.ga,
-      form: finalMatches.slice(0, 5).map((match) => resultForTeam(team.id, match)).filter(Boolean),
+      form: finalMatches
+        .slice(0, 5)
+        .map((match) => resultForTeam(team.id, match))
+        .filter((result): result is "W" | "D" | "L" => result !== null),
       nextMatch: next,
     },
   };

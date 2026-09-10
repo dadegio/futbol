@@ -17,7 +17,6 @@ import {
   Youtube,
   Camera,
   UploadCloud,
-  Whistle,
 } from "lucide-react";
 import AuthButton from "./auth-button";
 import { useAuth, useCanAdminLeague, useCanCreateMedia, useIsSuperAdmin } from "@/lib/client-auth";
@@ -181,7 +180,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
           <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-widest text-[var(--foreground)]/30">Arbitro</p>
           <NavItem
             href={`/leagues/${leagueId}/my-match`}
-            icon={<Whistle size={17} />}
+            icon={<ShieldCheck size={17} />}
             label="La mia partita"
             active={pathname === `/leagues/${leagueId}/my-match`}
           />
