@@ -56,6 +56,7 @@ export type PlayerStat = {
   goalsPerAppearance: number;
   assistsPerAppearance: number;
   contributionsPerAppearance: number;
+  mvpAwards: number;
 };
 
 export type MatchRecord = {
@@ -76,6 +77,7 @@ export type LeagueStatsResponse = {
     topAssister: PlayerStat | null;
     topContributor: PlayerStat | null;
     mostAppearances: PlayerStat | null;
+    topMvp: PlayerStat | null;
   };
   records: {
     bestAttack: TeamStat | null;

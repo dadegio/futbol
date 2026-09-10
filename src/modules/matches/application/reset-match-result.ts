@@ -3,7 +3,7 @@ import { AppError } from "@/modules/core/errors";
 
 type Tx = any;
 
-async function rollbackPlayoffProgress(tx: Tx, seriesId: string) {
+export async function rollbackPlayoffProgress(tx: Tx, seriesId: string) {
   const series = await tx.playoffSeries.findUnique({
     where: { id: seriesId },
     select: {
@@ -124,6 +124,13 @@ export async function resetMatchResult(matchId: string) {
       data: {
         homeGoals: null,
         awayGoals: null,
+        resultStatus: null,
+        finalizedAt: null,
+        homeSheetConfirmed: false,
+        awaySheetConfirmed: false,
+        mvpPlayerId: null,
+        replayUrl: null,
+        highlightsUrl: null,
       },
     });
 

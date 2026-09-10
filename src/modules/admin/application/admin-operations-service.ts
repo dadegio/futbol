@@ -30,6 +30,8 @@ export type AdminOperationalMatch = {
   homeSheetCount: number;
   awaySheetCount: number;
   status: MatchOperationalStatus;
+  resultStatus: "DRAFT" | "FINAL" | null;
+  lifecycleStatus: "SCHEDULED" | "POSTPONED" | "CANCELLED";
   issues: ReturnType<typeof deriveMatchOperationalState>["issues"];
   inCurrentWeek: boolean;
 };
@@ -56,6 +58,8 @@ export async function getLeagueAdminOperations(leagueId: string) {
       refereeManualOverride: true,
       homeGoals: true,
       awayGoals: true,
+      resultStatus: true,
+      lifecycleStatus: true,
       seriesId: true,
       leg: true,
       homeTeamId: true,
@@ -113,6 +117,8 @@ export async function getLeagueAdminOperations(leagueId: string) {
       refereeId: match.refereeId,
       homeGoals: match.homeGoals,
       awayGoals: match.awayGoals,
+      resultStatus: match.resultStatus,
+      lifecycleStatus: match.lifecycleStatus,
       homeSheetCount,
       awaySheetCount,
       refereeConflict,
@@ -141,6 +147,8 @@ export async function getLeagueAdminOperations(leagueId: string) {
       awayTeam: match.awayTeam,
       homeGoals: match.homeGoals,
       awayGoals: match.awayGoals,
+      resultStatus: match.resultStatus,
+      lifecycleStatus: match.lifecycleStatus,
       homeSheetCount,
       awaySheetCount,
       status: operational.status,
@@ -167,6 +175,8 @@ export async function getLeagueAdminOperations(leagueId: string) {
       refereeConflicts: items.filter((match) => match.issues.some((issue) => issue.code === "REFEREE_CONFLICT")).length,
       overdueResults: items.filter((match) => match.issues.some((issue) => issue.code === "RESULT_OVERDUE")).length,
       ready: items.filter((match) => match.status === "READY").length,
+      draftResults: items.filter((match) => match.status === "DRAFT_RESULT").length,
+      postponed: items.filter((match) => match.status === "POSTPONED").length,
       completed: items.filter((match) => match.status === "COMPLETED").length,
       currentWeek: items.filter((match) => match.inCurrentWeek).length,
       upcoming: upcoming.length,

@@ -38,6 +38,17 @@ enum MediaItemStatus {
   REJECTED
 }
 
+enum MatchLifecycleStatus {
+  SCHEDULED
+  POSTPONED
+  CANCELLED
+}
+
+enum MatchResultStatus {
+  DRAFT
+  FINAL
+}
+
 enum PlayerStatus {
   PENDING
   IN_REVIEW
@@ -103,6 +114,7 @@ model League {
   creatorProfiles CreatorProfile[]
   mediaItems    MediaItem[]
   auditLogs     AuditLog[]
+  teamFeePayments TeamFeePayment[]
 }
 
 
@@ -251,6 +263,7 @@ model Team {
   league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   players      Player[]
+  feePayments  TeamFeePayment[]
   sheetPlayers MatchSheetPlayer[]
   homeMatches  Match[]            @relation("HomeTeam")
   awayMatches  Match[]            @relation("AwayTeam")
@@ -299,6 +312,7 @@ model Player {
 
   stats        MatchPlayerStat[]
   sheetEntries MatchSheetPlayer[]
+  mvpMatches   Match[]            @relation("MatchMvp")
 
   @@unique([teamId, number])
   @@index([teamId])
@@ -324,6 +338,15 @@ model Match {
 
   homeGoals Int?
   awayGoals Int?
+  lifecycleStatus MatchLifecycleStatus @default(SCHEDULED)
+  originalDate DateTime?
+  resultStatus MatchResultStatus?
+  finalizedAt DateTime?
+  homeSheetConfirmed Boolean @default(false)
+  awaySheetConfirmed Boolean @default(false)
+  mvpPlayerId String?
+  replayUrl String?
+  highlightsUrl String?
 
   seriesId String?
   leg      Int?
@@ -340,6 +363,7 @@ model Match {
   series   PlayoffSeries? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   bookedBy User?          @relation("MatchBookedBy", fields: [bookedByUserId], references: [id], onDelete: SetNull)
   referee  Referee?       @relation(fields: [refereeId], references: [id], onDelete: SetNull)
+  mvpPlayer Player?        @relation("MatchMvp", fields: [mvpPlayerId], references: [id], onDelete: SetNull)
 
   stats        MatchPlayerStat[]
   sheetPlayers MatchSheetPlayer[]
@@ -354,6 +378,9 @@ model Match {
   @@index([bookedByUserId])
   @@index([refereeId])
   @@index([seriesId])
+  @@index([resultStatus])
+  @@index([lifecycleStatus])
+  @@index([mvpPlayerId])
 }
 
 
@@ -452,6 +479,23 @@ model MatchSheetPlayer {
   @@unique([matchId, playerId])
   @@index([playerId])
   @@index([teamId])
+}
+
+
+model TeamFeePayment {
+  id          String   @id @default(cuid())
+  leagueId    String
+  teamId      String
+  amountCents Int
+  note        String?
+  paidAt      DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, paidAt])
+  @@index([teamId, paidAt])
 }
 
 model PlayoffSeries {

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { after, test } from "node:test";
 import { prisma } from "../../lib/prisma.ts";
 import { saveMatchResult } from "../../src/modules/matches/application/save-match-result.ts";
+import { finalizeMatchResult, setMatchSheetConfirmation } from "../../src/modules/matches/application/match-lifecycle-service.ts";
 import {
   advancePlayoffSeries,
   createPlayoffs,
@@ -50,7 +51,7 @@ async function saveSimpleResult(
 ) {
   const home = teams.get(match.homeTeamId)!;
   const away = teams.get(match.awayTeamId)!;
-  return saveMatchResult({
+  await saveMatchResult({
     matchId: match.id,
     input: {
       homeGoals,
@@ -62,6 +63,9 @@ async function saveSimpleResult(
       ],
     },
   });
+  await setMatchSheetConfirmation(match.id, "home", true);
+  await setMatchSheetConfirmation(match.id, "away", true);
+  return finalizeMatchResult(match.id);
 }
 
 after(async () => {

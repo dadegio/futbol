@@ -13,6 +13,9 @@ import {
   ReceiptText,
   RotateCcw,
   Save,
+  Star,
+  PlayCircle,
+  Clapperboard,
   TriangleAlert,
   UsersRound,
   type LucideIcon,
@@ -38,6 +41,7 @@ import {
 } from "./MatchResultParts";
 import { MatchDateOverridePanel, RefereeAssignmentPanel } from "./MatchAdminPanels";
 import { PlayerPhotoDialog } from "./PlayerPhotoDialog";
+import MatchLifecyclePanel from "./MatchLifecyclePanel";
 
 export default function MatchResultForm({ match }: { match: Match }) {
   const { user, loading: authLoading } = useAuth();
@@ -49,11 +53,9 @@ export default function MatchResultForm({ match }: { match: Match }) {
     user?.role === "REFEREE" &&
     Boolean(user.refereeId) &&
     user.refereeId === match.referee?.id;
-  const canEditResult =
-    !authLoading &&
-    (isAdmin || isAssignedReferee);
-  const canBook =
-    !authLoading && (isAdmin || isCaptainOfMatch);
+  const canManageDraft = !authLoading && (isAdmin || isAssignedReferee);
+  const canEditResult = canManageDraft && match.resultStatus !== "FINAL" && match.lifecycleStatus !== "CANCELLED";
+  const canBook = !authLoading && (isAdmin || isCaptainOfMatch) && match.lifecycleStatus !== "CANCELLED";
 
   const router = useRouter();
 
@@ -307,7 +309,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(readApiError(data, "Errore salvataggio"));
-      setMsg("Salvato");
+      setMsg("Bozza salvata");
       router.refresh();
     } catch (error) {
       setErr(error instanceof Error ? error.message : "Errore salvataggio");
@@ -476,6 +478,45 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
         <SponsorBanner compact />
 
+        <MatchLifecyclePanel
+          matchId={match.id}
+          isAdmin={isAdmin}
+          canManageDraft={canManageDraft}
+          lifecycleStatus={match.lifecycleStatus ?? "SCHEDULED"}
+          resultStatus={match.resultStatus ?? null}
+          homeSheetConfirmed={match.homeSheetConfirmed === true}
+          awaySheetConfirmed={match.awaySheetConfirmed === true}
+          homeTeamName={match.homeTeam.name}
+          awayTeamName={match.awayTeam.name}
+          players={[...homePlayers, ...awayPlayers]}
+          mvpPlayerId={match.mvpPlayerId ?? null}
+          replayUrl={match.replayUrl ?? null}
+          highlightsUrl={match.highlightsUrl ?? null}
+        />
+
+        {match.resultStatus === "FINAL" && (match.mvpPlayer || match.replayUrl || match.highlightsUrl) && (
+          <Card>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent)]">Dopo partita</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+              <div>
+                {match.mvpPlayer && (
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-2xl bg-amber-400/10 text-amber-300"><Star size={18} /></span>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">MVP partita</p>
+                      <p className="mt-0.5 font-black text-[var(--foreground)]">#{match.mvpPlayer.number} {match.mvpPlayer.firstName} {match.mvpPlayer.lastName}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {match.replayUrl && <a href={match.replayUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 text-sm font-black text-[var(--foreground)] hover:border-[var(--accent)]"><PlayCircle size={15} /> Replay</a>}
+                {match.highlightsUrl && <a href={match.highlightsUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 text-sm font-black text-[var(--foreground)] hover:border-[var(--accent)]"><Clapperboard size={15} /> Highlights</a>}
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div id="match-booking" className="scroll-mt-20">
         <MatchSlotBooking
           leagueId={match.leagueId}
@@ -520,7 +561,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
           dateErr={dateErr}
         />
 
-        {!canEditResult && !authLoading && <p className="px-1 text-sm text-[var(--muted)]">Sola lettura — possono modificare distinta e risultato l&apos;admin e l&apos;arbitro assegnato. I capitani possono prenotare lo slot.</p>}
+        {!canEditResult && !authLoading && <p className="px-1 text-sm text-[var(--muted)]">{match.resultStatus === "FINAL" ? "Risultato definitivo — sola lettura. Un admin può riaprirlo dal pannello Stato gara." : match.lifecycleStatus === "CANCELLED" ? "Partita annullata — sola lettura." : "Sola lettura — possono modificare distinta e risultato l&apos;admin e l&apos;arbitro assegnato. I capitani possono prenotare lo slot."}</p>}
 
         {match.venueKey && (
           <Card variant="inner" className="border-[var(--accent)]/20">
@@ -567,7 +608,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
               <p className="mt-1 text-xs font-bold text-amber-300">Marcatori da completare: {match.homeTeam.name} {totals.homeGoalsSum}/{hg} · {match.awayTeam.name} {totals.awayGoalsSum}/{ag}</p>
             )}
             </div>
-            <Button onClick={save} disabled={saving}>{saving ? "Salvataggio…" : "Salva risultato"}</Button>
+            <Button onClick={save} disabled={saving}>{saving ? "Salvataggio…" : "Salva bozza"}</Button>
           </div>
         )}
 

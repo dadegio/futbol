@@ -56,6 +56,9 @@ export async function getLeagueSchedule({
       },
       homeGoals: true,
       awayGoals: true,
+      resultStatus: true,
+      lifecycleStatus: true,
+      originalDate: true,
       seriesId: true,
       leg: true,
       homeTeam: {
@@ -81,6 +84,8 @@ export async function getLeagueSchedule({
 
   return matches.map((match) => ({
     ...match,
+    homeGoals: match.resultStatus === "FINAL" ? match.homeGoals : null,
+    awayGoals: match.resultStatus === "FINAL" ? match.awayGoals : null,
     date: match.date?.toISOString() ?? null,
     slotEnd: match.slotEnd?.toISOString() ?? null,
     slotWeekStart: match.slotWeekStart?.toISOString() ?? null,

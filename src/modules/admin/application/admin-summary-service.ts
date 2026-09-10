@@ -3,7 +3,7 @@ import { FUTPOLI_RULES, isPlayerEligibleForMatchSheet } from "@/modules/players/
 import { AppError } from "@/modules/core/errors";
 
 export async function getLeagueAdminSummary(leagueId: string) {
-  const [league, teams, players, sheetEntries, matches] = await Promise.all([
+  const [league, teams, players, sheetEntries, matches, payments] = await Promise.all([
     prisma.league.findUnique({
       where: { id: leagueId },
       select: { id: true, name: true },
@@ -24,7 +24,7 @@ export async function getLeagueAdminSummary(leagueId: string) {
       },
     }),
     prisma.matchSheetPlayer.findMany({
-      where: { match: { leagueId } },
+      where: { match: { leagueId, resultStatus: "FINAL" } },
       select: { teamId: true },
     }),
     prisma.match.findMany({
@@ -36,7 +36,13 @@ export async function getLeagueAdminSummary(leagueId: string) {
         date: true,
         venueKey: true,
         refereeId: true,
+        resultStatus: true,
       },
+    }),
+    prisma.teamFeePayment.groupBy({
+      by: ["teamId"],
+      _sum: { amountCents: true },
+      where: { leagueId },
     }),
   ]);
 
@@ -46,12 +52,12 @@ export async function getLeagueAdminSummary(leagueId: string) {
     isPlayerEligibleForMatchSheet(player)
   ).length;
   const played = matches.filter(
-    (match) => match.homeGoals !== null && match.awayGoals !== null
+    (match) => match.resultStatus === "FINAL" && match.homeGoals !== null && match.awayGoals !== null
   );
   const playedMatches = played.length;
   const now = Date.now();
   const operationalAttention = matches.filter((match) => {
-    if (match.homeGoals !== null && match.awayGoals !== null) return false;
+    if (match.resultStatus === "FINAL") return false;
     if (!match.date || !match.venueKey || !match.refereeId) return true;
     return match.date.getTime() < now;
   }).length;
@@ -61,6 +67,8 @@ export async function getLeagueAdminSummary(leagueId: string) {
     sheetAppearancesByTeam.set(entry.teamId, (sheetAppearancesByTeam.get(entry.teamId) ?? 0) + 1);
   }
 
+  const paidByTeam = new Map(payments.map((row) => [row.teamId, row._sum.amountCents ?? 0]));
+
   const byTeam = teams.map((team) => {
     const teamPlayers = players.filter((player) => player.teamId === team.id);
     const teamAuthorized = teamPlayers.filter((player) =>
@@ -68,6 +76,7 @@ export async function getLeagueAdminSummary(leagueId: string) {
     ).length;
     const appearances = sheetAppearancesByTeam.get(team.id) ?? 0;
     const playerFeesCents = appearances * FUTPOLI_RULES.playerFeeCentsPerAppearance;
+    const paidCents = paidByTeam.get(team.id) ?? 0;
     return {
       teamId: team.id,
       teamName: team.name,
@@ -77,6 +86,8 @@ export async function getLeagueAdminSummary(leagueId: string) {
       wildcards: teamPlayers.filter((player) => player.wildcardUsed).length,
       appearances,
       playerFeesCents,
+      paidCents,
+      outstandingCents: Math.max(0, playerFeesCents - paidCents),
     };
   });
 
@@ -91,6 +102,8 @@ export async function getLeagueAdminSummary(leagueId: string) {
       wildcards: players.filter((player) => player.wildcardUsed).length,
       sheetAppearances: sheetEntries.length,
       playerFeesCents: sheetEntries.length * FUTPOLI_RULES.playerFeeCentsPerAppearance,
+      paidCents: payments.reduce((sum, row) => sum + (row._sum.amountCents ?? 0), 0),
+      outstandingCents: Math.max(0, sheetEntries.length * FUTPOLI_RULES.playerFeeCentsPerAppearance - payments.reduce((sum, row) => sum + (row._sum.amountCents ?? 0), 0)),
       matches: matches.length,
       playedMatches,
       operationalAttention,

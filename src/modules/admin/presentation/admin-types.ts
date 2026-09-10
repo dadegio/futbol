@@ -43,6 +43,8 @@ export type AdminSummary = {
     wildcards: number;
     sheetAppearances: number;
     playerFeesCents: number;
+    paidCents: number;
+    outstandingCents: number;
     matches: number;
     playedMatches: number;
     operationalAttention: number;
@@ -56,5 +58,7 @@ export type AdminSummary = {
     wildcards: number;
     appearances: number;
     playerFeesCents: number;
+    paidCents: number;
+    outstandingCents: number;
   }>;
 };

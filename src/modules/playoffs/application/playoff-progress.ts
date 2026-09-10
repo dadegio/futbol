@@ -120,6 +120,7 @@ export async function syncPlayoffSeriesWinner(
           awayTeamId: true,
           homeGoals: true,
           awayGoals: true,
+          resultStatus: true,
           leg: true,
         },
       },
@@ -130,8 +131,9 @@ export async function syncPlayoffSeriesWinner(
     throw new Error("Serie playoff non trovata");
   }
 
+  const finalMatches = series.matches.filter((match: { resultStatus?: string | null }) => match.resultStatus === "FINAL");
   const winnerId =
-    determineSeriesWinner(series.matches, format) ??
+    determineSeriesWinner(finalMatches, format) ??
     getWinnerFromPenalties(series);
 
   if (!winnerId) return null;

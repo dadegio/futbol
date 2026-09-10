@@ -2,7 +2,20 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus, X, Search } from "lucide-react";
+import {
+  Activity,
+  CalendarClock,
+  CircleAlert,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  Target,
+  Trophy,
+  UsersRound,
+  X,
+} from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
@@ -17,22 +30,29 @@ import {
 } from "./TeamDetailParts";
 import { AddPlayerPanel, TeamEditPanel } from "./TeamManagementPanels";
 
+type RosterFilter = "all" | "eligible" | "attention";
+
 async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-
-  const res = await authFetch("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
-
+  const res = await authFetch("/api/upload", { method: "POST", body: formData });
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data?.error ?? "Errore upload immagine");
-  }
-
+  if (!res.ok) throw new Error(data?.error ?? "Errore upload immagine");
   return data.url as string;
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Data da definire";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data da definire";
+  return date.toLocaleString("it-IT", {
+    timeZone: "Europe/Rome",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function TeamPage({
@@ -53,9 +73,7 @@ export default function TeamPage({
   const [badgeUrl, setBadgeUrl] = useState(initialTeam.badgeUrl ?? "");
   const [description, setDescription] = useState(initialTeam.description ?? "");
   const [colorHex, setColorHex] = useState(initialTeam.colorHex ?? "#F97316");
-  const [secondaryColorHex, setSecondaryColorHex] = useState(
-    initialTeam.secondaryColorHex ?? initialTeam.colorHex ?? "#F97316"
-  );
+  const [secondaryColorHex, setSecondaryColorHex] = useState(initialTeam.secondaryColorHex ?? initialTeam.colorHex ?? "#F97316");
   const [badgeFile, setBadgeFile] = useState<File | null>(null);
   const [removeBadge, setRemoveBadge] = useState(false);
   const [editingTeam, setEditingTeam] = useState(false);
@@ -64,6 +82,8 @@ export default function TeamPage({
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter>("all");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
@@ -73,17 +93,9 @@ export default function TeamPage({
 
   async function load() {
     setErr(null);
-
-    const res = await authFetch(`/api/teams/${teamId}`, {
-      cache: "no-store",
-    });
-
+    const res = await authFetch(`/api/teams/${teamId}`, { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data?.error ?? "Errore");
-    }
-
+    if (!res.ok) throw new Error(data?.error ?? "Errore");
     setTeam(data);
     setName(data.name ?? "");
     setBadgeUrl(data.badgeUrl ?? "");
@@ -103,51 +115,24 @@ export default function TeamPage({
   async function saveTeam() {
     setErr(null);
     setMsg(null);
-
     const trimmedName = name.trim();
-
-    if (!trimmedName) {
-      setErr("Inserisci il nome squadra");
-      return;
-    }
+    if (!trimmedName) return setErr("Inserisci il nome squadra");
 
     try {
       setSavingTeam(true);
-
-      let finalBadgeUrl: string | null = removeBadge
-        ? null
-        : badgeUrl.trim() || null;
-
+      let finalBadgeUrl: string | null = removeBadge ? null : badgeUrl.trim() || null;
       if (badgeFile) {
-        if (!badgeFile.type.startsWith("image/")) {
-          throw new Error("Seleziona un'immagine valida");
-        }
-
-        if (badgeFile.size > 5 * 1024 * 1024) {
-          throw new Error("Il logo deve essere massimo 5 MB");
-        }
-
+        if (!badgeFile.type.startsWith("image/")) throw new Error("Seleziona un'immagine valida");
+        if (badgeFile.size > 5 * 1024 * 1024) throw new Error("Il logo deve essere massimo 5 MB");
         finalBadgeUrl = await uploadImage(badgeFile);
       }
-
       const res = await authFetch(`/api/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: trimmedName,
-          badgeUrl: finalBadgeUrl,
-          description: description.trim() || null,
-          colorHex,
-          secondaryColorHex,
-        }),
+        body: JSON.stringify({ name: trimmedName, badgeUrl: finalBadgeUrl, description: description.trim() || null, colorHex, secondaryColorHex }),
       });
-
       const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data?.error ?? "Errore");
-      }
-
+      if (!res.ok) throw new Error(data?.error ?? "Errore");
       setMsg("Squadra aggiornata");
       setEditingTeam(false);
       await load();
@@ -161,291 +146,162 @@ export default function TeamPage({
   async function addPlayer() {
     setErr(null);
     setMsg(null);
-
     const n = Number(newNumber);
-
-    if (!newFirstName.trim() || !newLastName.trim()) {
-      setErr("Inserisci nome e cognome");
-      return;
-    }
-
-    if (!Number.isInteger(n) || n <= 0) {
-      setErr("Numero non valido");
-      return;
-    }
+    if (!newFirstName.trim() || !newLastName.trim()) return setErr("Inserisci nome e cognome");
+    if (!Number.isInteger(n) || n <= 0) return setErr("Numero non valido");
 
     const res = await authFetch(`/api/teams/${teamId}/players`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        firstName: newFirstName.trim(),
-        lastName: newLastName.trim(),
-        number: n,
-        position: newPosition || null,
-        photoUrl: newPhotoUrl.trim() ? newPhotoUrl.trim() : null,
-      }),
+      body: JSON.stringify({ firstName: newFirstName.trim(), lastName: newLastName.trim(), number: n, position: newPosition || null, photoUrl: newPhotoUrl.trim() || null }),
     });
-
     const data = await res.json().catch(() => ({}));
+    if (!res.ok) return setErr(data?.error ?? "Errore aggiunta giocatore");
 
-    if (!res.ok) {
-      setErr(data?.error ?? "Errore aggiunta giocatore");
-      return;
-    }
-
-    setNewFirstName("");
-    setNewLastName("");
-    setNewNumber("");
-    setNewPosition("");
-    setNewPhotoUrl("");
+    setNewFirstName(""); setNewLastName(""); setNewNumber(""); setNewPosition(""); setNewPhotoUrl("");
     setMsg("Giocatore aggiunto");
     setShowAddPlayer(false);
     await load();
   }
 
   async function deletePlayer(playerId: string, label: string) {
-    setErr(null);
-    setMsg(null);
-
+    setErr(null); setMsg(null);
     if (!window.confirm(`Eliminare "${label}"?`)) return;
-
-    const res = await authFetch(`/api/players/${playerId}`, {
-      method: "DELETE",
-    });
-
+    const res = await authFetch(`/api/players/${playerId}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      setErr(data?.error ?? "Errore eliminazione giocatore");
-      return;
-    }
-
+    if (!res.ok) return setErr(data?.error ?? "Errore eliminazione giocatore");
     setMsg("Giocatore eliminato");
     await load();
   }
 
-  const allPlayers = useMemo(() => {
-    const q = query.trim().toLowerCase();
+  const eligibleCount = useMemo(() => team.players.filter((player) => player.isEligibleForMatchSheet === true).length, [team.players]);
+  const attentionCount = team.players.length - eligibleCount;
+  const totalGoals = useMemo(() => team.players.reduce((sum, player) => sum + (player.goals ?? 0), 0), [team.players]);
+  const totalAppearances = useMemo(() => team.players.reduce((sum, player) => sum + (player.appearances ?? 0), 0), [team.players]);
+  const competition = team.competitionSummary;
 
+  const filteredPlayers = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase("it");
     return [...team.players]
       .filter((player) => {
-        if (!q) return true;
-
-        const fullName = `${player.firstName} ${player.lastName}`.toLowerCase();
-        const number = String(player.number);
-
-        return fullName.includes(q) || number.includes(q);
+        if (q) {
+          const fullName = `${player.firstName} ${player.lastName}`.toLocaleLowerCase("it");
+          if (!fullName.includes(q) && !String(player.number).includes(q)) return false;
+        }
+        if (roleFilter !== "all" && player.position !== roleFilter) return false;
+        if (rosterFilter === "eligible" && player.isEligibleForMatchSheet !== true) return false;
+        if (rosterFilter === "attention" && player.isEligibleForMatchSheet === true) return false;
+        return true;
       })
       .sort((a, b) => a.number - b.number);
-  }, [team, query]);
+  }, [query, roleFilter, rosterFilter, team.players]);
 
   const groupedPlayers = useMemo(() => {
-    const unknownPlayers = allPlayers.filter(
-      (player) => !player.position || !ROLE_ORDER.includes(player.position)
-    );
-
+    const unknown = filteredPlayers.filter((player) => !player.position || !ROLE_ORDER.includes(player.position));
     return [
-      ...ROLE_ORDER.map((role) => ({
-        role,
-        players: allPlayers.filter((player) => player.position === role),
-      })).filter((group) => group.players.length > 0),
-      ...(unknownPlayers.length > 0
-        ? [{ role: "Ruolo non impostato", players: unknownPlayers }]
-        : []),
+      ...ROLE_ORDER.map((role) => ({ role, players: filteredPlayers.filter((player) => player.position === role) })).filter((group) => group.players.length > 0),
+      ...(unknown.length ? [{ role: "Ruolo non impostato", players: unknown }] : []),
     ];
-  }, [allPlayers]);
+  }, [filteredPlayers]);
 
-  const eagerPlayerIds = useMemo(
-    () => new Set(allPlayers.slice(0, 4).map((player) => player.id)),
-    [allPlayers]
-  );
+  const eagerPlayerIds = useMemo(() => new Set(filteredPlayers.slice(0, 4).map((player) => player.id)), [filteredPlayers]);
 
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-5 pb-8">
         <header className="pt-2">
-          <Link
-            href={`/leagues/${leagueId}/teams`}
-            className="mb-7 flex items-center gap-3 text-sm text-[var(--muted)]"
-          >
-            <span className="text-xl leading-none">‹</span>
-            <span>{team.name}</span>
-          </Link>
+          <Link href={`/leagues/${leagueId}/teams`} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] hover:text-[var(--accent)]">‹ Tutte le squadre</Link>
 
-          <div className="grid gap-5 xl:grid-cols-[180px_minmax(0,1fr)_180px] xl:items-center 2xl:grid-cols-[220px_minmax(0,1fr)_180px]">
-            <TeamLogo name={team.name} badgeUrl={team.badgeUrl ?? null} />
-
-            <div className="min-w-0 flex-1">
-              <h1 className="[overflow-wrap:anywhere] text-4xl font-black leading-[0.95] tracking-[-0.07em] text-[var(--foreground)] lg:text-5xl">
-                {team.name}
-              </h1>
-              {team.colorHex && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--muted)]">
-                  <span
-                    className="h-3 w-10 rounded-full border border-[var(--border)]"
-                    style={{
-                      background: `linear-gradient(90deg, ${team.colorHex} 0 50%, ${team.secondaryColorHex ?? team.colorHex} 50% 100%)`,
-                    }}
-                  />
-                  <span>{team.colorHex}</span>
-                  <span aria-hidden="true">+</span>
-                  <span>{team.secondaryColorHex ?? team.colorHex}</span>
+          <Card className="overflow-hidden !p-0">
+            <div className="h-2" style={{ background: `linear-gradient(90deg, ${team.colorHex ?? "#F97316"}, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"})` }} />
+            <div className="grid gap-5 p-5 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center lg:p-7">
+              <TeamLogo name={team.name} badgeUrl={team.badgeUrl ?? null} />
+              <div className="min-w-0">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent)]">Scheda squadra</p>
+                    <h1 className="mt-1 break-words text-4xl font-black leading-[0.95] tracking-[-0.07em] text-[var(--foreground)] lg:text-5xl">{team.name}</h1>
+                    {team.description && <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[var(--muted)] sm:text-base">{team.description}</p>}
+                  </div>
+                  {competition && competition.played > 0 && (
+                    <div className="shrink-0 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 text-right">
+                      <p className="text-2xl font-black text-[var(--foreground)]">{competition.points} pt</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">{competition.wins}V · {competition.draws}N · {competition.losses}P</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              {team.description && (
-                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[var(--muted)] sm:text-base">
-                  {team.description}
-                </p>
-              )}
-            </div>
 
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--card)] p-5 text-right shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)]">
-              <div className="text-4xl font-black tracking-[-0.06em] text-[var(--foreground)]">
-                {team.players.length}
+                {canEdit && (
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => { setEditingTeam((value) => !value); setShowAddPlayer(false); }} className={actionClass(editingTeam)}>
+                      {editingTeam ? <X size={16} /> : <Pencil size={16} />} {editingTeam ? "Chiudi modifica" : "Modifica squadra"}
+                    </button>
+                    <button type="button" onClick={() => { setShowAddPlayer((value) => !value); setEditingTeam(false); }} disabled={team.players.length >= MAX_PLAYERS_PER_TEAM} className={actionClass(showAddPlayer)}>
+                      {showAddPlayer ? <X size={16} /> : <Plus size={16} />} {showAddPlayer ? "Chiudi" : "Aggiungi giocatore"}
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="text-sm text-[var(--muted)]">giocatori / {MAX_PLAYERS_PER_TEAM}</div>
             </div>
-          </div>
-
-          {canEdit && (
-            <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingTeam((value) => !value);
-                  setShowAddPlayer(false);
-                }}
-                className={[
-                  "flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition",
-                  editingTeam
-                    ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                    : "border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)]",
-                ].join(" ")}
-              >
-                {editingTeam ? <X size={16} /> : <Pencil size={16} />}
-                {editingTeam ? "Chiudi" : "Modifica"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddPlayer((value) => !value);
-                  setEditingTeam(false);
-                }}
-                disabled={team.players.length >= MAX_PLAYERS_PER_TEAM}
-                className={[
-                  "flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition disabled:opacity-40",
-                  showAddPlayer
-                    ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                    : "border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)]",
-                ].join(" ")}
-              >
-                {showAddPlayer ? <X size={16} /> : <Plus size={16} />}
-                {showAddPlayer ? "Chiudi" : "Aggiungi"}
-              </button>
-            </div>
-          )}
+          </Card>
         </header>
 
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
 
-        <TeamEditPanel
-          visible={canEdit && editingTeam}
-          name={name}
-          setName={setName}
-          badgePreview={badgePreview}
-          setBadgeFile={setBadgeFile}
-          setBadgeUrl={setBadgeUrl}
-          setRemoveBadge={setRemoveBadge}
-          colorHex={colorHex}
-          setColorHex={setColorHex}
-          secondaryColorHex={secondaryColorHex}
-          setSecondaryColorHex={setSecondaryColorHex}
-          description={description}
-          setDescription={setDescription}
-          saveTeam={saveTeam}
-          savingTeam={savingTeam}
-          close={() => setEditingTeam(false)}
-        />
-
-        <AddPlayerPanel
-          visible={canEdit && showAddPlayer}
-          firstName={newFirstName}
-          setFirstName={setNewFirstName}
-          lastName={newLastName}
-          setLastName={setNewLastName}
-          number={newNumber}
-          setNumber={setNewNumber}
-          position={newPosition}
-          setPosition={setNewPosition}
-          photoUrl={newPhotoUrl}
-          setPhotoUrl={setNewPhotoUrl}
-          addPlayer={addPlayer}
-          close={() => setShowAddPlayer(false)}
-        />
-
-        <div className="relative">
-          <Search
-            size={17}
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]"
-          />
-
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Cerca giocatore..."
-            className="h-11 w-full rounded-[14px] border border-[var(--border)] bg-[var(--card)] pl-11 pr-4 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)]"
-          />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <TeamMetric icon={UsersRound} label="Rosa" value={`${team.players.length}/${MAX_PLAYERS_PER_TEAM}`} note={`${eligibleCount} idonei`} />
+          <TeamMetric icon={Trophy} label="Punti" value={String(competition?.points ?? 0)} note={`${competition?.played ?? 0} partite`} />
+          <TeamMetric icon={Target} label="Gol" value={`${competition?.gf ?? 0}:${competition?.ga ?? 0}`} note={`Diff. ${signed(competition?.gd ?? 0)}`} />
+          <TeamMetric icon={Activity} label="Forma" value={competition?.form?.length ? competition.form.join(" ") : "—"} note={`${totalGoals} gol individuali · ${totalAppearances} presenze`} />
         </div>
 
+        {isAdmin && attentionCount > 0 && (
+          <Card className="border-amber-400/20 bg-amber-400/[0.04]">
+            <div className="flex items-start gap-3"><CircleAlert size={19} className="mt-0.5 shrink-0 text-amber-300" /><div><p className="font-black text-[var(--foreground)]">{attentionCount} giocator{attentionCount === 1 ? "e" : "i"} da completare</p><p className="mt-1 text-sm text-[var(--muted)]">Usa il filtro “Da completare” per vedere subito chi non è ancora idoneo alla distinta.</p></div></div>
+          </Card>
+        )}
+
+        {competition?.nextMatch && (
+          <Link href={`/leagues/${leagueId}/matches/${competition.nextMatch.id}`} className="block">
+            <Card className="transition hover:border-[var(--accent)]">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CalendarClock size={18} /></span><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">Prossima partita</p><p className="mt-0.5 text-base font-black text-[var(--foreground)]">{competition.nextMatch.home ? "vs" : "@"} {competition.nextMatch.opponent.name}</p></div></div>
+                <div className="text-left sm:text-right"><p className="text-sm font-black text-[var(--foreground)]">{competition.nextMatch.phase === "playoff" ? "Playoff" : `Giornata ${competition.nextMatch.round}`}</p><p className="mt-1 text-xs text-[var(--muted)]">{formatDate(competition.nextMatch.date)}</p>{competition.nextMatch.venueName && <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-[var(--muted)]"><MapPin size={11} /> {competition.nextMatch.venueName}</p>}</div>
+              </div>
+            </Card>
+          </Link>
+        )}
+
+        <TeamEditPanel visible={canEdit && editingTeam} name={name} setName={setName} badgePreview={badgePreview} setBadgeFile={setBadgeFile} setBadgeUrl={setBadgeUrl} setRemoveBadge={setRemoveBadge} colorHex={colorHex} setColorHex={setColorHex} secondaryColorHex={secondaryColorHex} setSecondaryColorHex={setSecondaryColorHex} description={description} setDescription={setDescription} saveTeam={saveTeam} savingTeam={savingTeam} close={() => setEditingTeam(false)} />
+        <AddPlayerPanel visible={canEdit && showAddPlayer} firstName={newFirstName} setFirstName={setNewFirstName} lastName={newLastName} setLastName={setNewLastName} number={newNumber} setNumber={setNewNumber} position={newPosition} setPosition={setNewPosition} photoUrl={newPhotoUrl} setPhotoUrl={setNewPhotoUrl} addPlayer={addPlayer} close={() => setShowAddPlayer(false)} />
+
+        <Card className="!p-3 sm:!p-4">
+          <div className="relative">
+            <Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cerca per nome o numero…" className="h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--card-2)] pl-11 pr-4 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]" />
+          </div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <Chip active={rosterFilter === "all"} onClick={() => setRosterFilter("all")}>Tutti</Chip>
+            <Chip active={rosterFilter === "eligible"} onClick={() => setRosterFilter("eligible")}><ShieldCheck size={12} /> Idonei</Chip>
+            {isAdmin && <Chip active={rosterFilter === "attention"} onClick={() => setRosterFilter("attention")}><CircleAlert size={12} /> Da completare</Chip>}
+            <span className="mx-1 w-px shrink-0 bg-[var(--border)]" />
+            <Chip active={roleFilter === "all"} onClick={() => setRoleFilter("all")}>Tutti i ruoli</Chip>
+            {ROLE_ORDER.map((role) => <Chip key={role} active={roleFilter === role} onClick={() => setRoleFilter(role)}>{role}</Chip>)}
+          </div>
+        </Card>
+
         {team.players.length === 0 ? (
-          <Card>
-            <p className="font-medium text-[var(--foreground)]">
-              Nessun giocatore.
-            </p>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Aggiungi il primo giocatore alla rosa.
-            </p>
-          </Card>
+          <Card><p className="font-medium text-[var(--foreground)]">Nessun giocatore.</p><p className="mt-1 text-sm text-[var(--muted)]">Aggiungi il primo giocatore alla rosa.</p></Card>
         ) : groupedPlayers.length === 0 ? (
-          <Card>
-            <p className="text-sm text-[var(--muted)]">
-              Nessun giocatore trovato.
-            </p>
-          </Card>
+          <Card><p className="text-sm text-[var(--muted)]">Nessun giocatore corrisponde ai filtri.</p></Card>
         ) : (
           <div className="space-y-5">
             {groupedPlayers.map(({ role, players }) => (
               <section key={role}>
-                <div className="mb-2 flex items-center justify-between">
-                  <h2 className="text-base font-medium text-[var(--foreground)]">
-                    {role}
-                  </h2>
-
-                  <span className="text-sm font-medium text-[var(--muted)]">
-                    {players.length}
-                  </span>
-                </div>
-
+                <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-black uppercase tracking-[0.12em] text-[var(--muted)]">{role}</h2><span className="text-xs font-bold text-[var(--muted)]">{players.length}</span></div>
                 <Card className="overflow-hidden !p-0">
-                  {players.map((player) => (
-                    <PlayerRow
-                      key={player.id}
-                      leagueId={leagueId}
-                      player={player}
-                      role={role}
-                      canEdit={canEdit}
-                      isAdmin={isAdmin}
-                      eagerPhoto={eagerPlayerIds.has(player.id)}
-                      onDelete={() =>
-                        deletePlayer(
-                          player.id,
-                          `${player.firstName} ${player.lastName}`
-                        )
-                      }
-                    />
-                  ))}
+                  {players.map((player) => <PlayerRow key={player.id} leagueId={leagueId} player={player} role={role} canEdit={canEdit} isAdmin={isAdmin} eagerPhoto={eagerPlayerIds.has(player.id)} onDelete={() => deletePlayer(player.id, `${player.firstName} ${player.lastName}`)} />)}
                 </Card>
               </section>
             ))}
@@ -455,3 +311,17 @@ export default function TeamPage({
     </DashboardShell>
   );
 }
+
+function actionClass(active: boolean) {
+  return ["inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:opacity-40", active ? "border-[var(--accent)] bg-[var(--accent)] text-black" : "border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)]"].join(" ");
+}
+
+function TeamMetric({ icon: Icon, label, value, note }: { icon: typeof Trophy; label: string; value: string; note?: string }) {
+  return <Card className="!p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={16} /></span><p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--foreground)]">{value}</p><p className="text-[11px] font-bold text-[var(--muted)]">{label}</p>{note && <p className="mt-1 text-[10px] text-[var(--muted)]">{note}</p>}</Card>;
+}
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return <button type="button" onClick={onClick} className={["inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-black transition", active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)]"].join(" ")}>{children}</button>;
+}
+
+function signed(value: number) { return value > 0 ? `+${value}` : String(value); }

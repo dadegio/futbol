@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireLeagueAdmin } from "@/modules/permissions/server-guards";
+import { getServerSession } from "@/modules/auth/server-session";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import {
   createLeagueTeam,
@@ -11,7 +12,8 @@ type Ctx = { params: Promise<{ leagueId: string }> };
 export async function GET(_: Request, ctx: Ctx) {
   try {
     const { leagueId } = await ctx.params;
-    return NextResponse.json(await listLeagueTeams(leagueId));
+    const session = await getServerSession();
+    return NextResponse.json(await listLeagueTeams(leagueId, session));
   } catch (error) {
     return apiErrorResponse(error, "Errore caricamento squadre");
   }

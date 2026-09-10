@@ -59,6 +59,16 @@ export type Match = {
   refereeFeeCents?: number | null;
   homeGoals: number | null;
   awayGoals: number | null;
+  lifecycleStatus?: "SCHEDULED" | "POSTPONED" | "CANCELLED";
+  originalDate?: string | null;
+  resultStatus?: "DRAFT" | "FINAL" | null;
+  finalizedAt?: string | null;
+  homeSheetConfirmed?: boolean;
+  awaySheetConfirmed?: boolean;
+  mvpPlayerId?: string | null;
+  mvpPlayer?: { id: string; firstName: string; lastName: string; number: number } | null;
+  replayUrl?: string | null;
+  highlightsUrl?: string | null;
   homeTeam: Team;
   awayTeam: Team;
   stats: StatRow[];

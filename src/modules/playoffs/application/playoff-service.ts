@@ -39,6 +39,8 @@ export async function getPlayoffs(leagueId: string) {
           leg: true,
           homeGoals: true,
           awayGoals: true,
+          resultStatus: true,
+          lifecycleStatus: true,
           homeTeamId: true,
           awayTeamId: true,
           date: true,
@@ -57,6 +59,8 @@ export async function getPlayoffs(leagueId: string) {
       ...row,
       matches: row.matches.map((match) => ({
         ...match,
+        homeGoals: match.resultStatus === "FINAL" ? match.homeGoals : null,
+        awayGoals: match.resultStatus === "FINAL" ? match.awayGoals : null,
         date: match.date?.toISOString() ?? null,
       })),
     })),

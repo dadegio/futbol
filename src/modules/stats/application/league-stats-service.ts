@@ -79,7 +79,7 @@ function maxUnbeatenStreak(results: FormResult[]) {
 
 export async function getLeagueStats(leagueId: string): Promise<LeagueStatsResponse> {
 
-  const [teams, players, matches, playerAgg, appearancesAgg, bestSingleMatchStat] =
+  const [teams, players, matches, playerAgg, appearancesAgg, bestSingleMatchStat, mvpMatches] =
     await Promise.all([
       prisma.team.findMany({
         where: { leagueId, activeInLeague: true },
@@ -119,6 +119,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
       prisma.match.findMany({
         where: {
           leagueId,
+          resultStatus: "FINAL",
           homeGoals: { not: null },
           awayGoals: { not: null },
         },
@@ -142,6 +143,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
         where: {
           match: {
             leagueId,
+            resultStatus: "FINAL",
             homeGoals: { not: null },
             awayGoals: { not: null },
           },
@@ -155,6 +157,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
         where: {
           match: {
             leagueId,
+            resultStatus: "FINAL",
             homeGoals: { not: null },
             awayGoals: { not: null },
           },
@@ -167,6 +170,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
           goals: { gt: 0 },
           match: {
             leagueId,
+            resultStatus: "FINAL",
             homeGoals: { not: null },
             awayGoals: { not: null },
           },
@@ -195,6 +199,10 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
             },
           },
         },
+      }),
+      prisma.match.findMany({
+        where: { leagueId, resultStatus: "FINAL", mvpPlayerId: { not: null } },
+        select: { mvpPlayerId: true },
       }),
     ]);
 
@@ -362,6 +370,10 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
   const appearancesById = new Map(
     appearancesAgg.map((row) => [row.playerId, row._count._all])
   );
+  const mvpById = new Map<string, number>();
+  for (const row of mvpMatches) {
+    if (row.mvpPlayerId) mvpById.set(row.mvpPlayerId, (mvpById.get(row.mvpPlayerId) ?? 0) + 1);
+  }
 
   const playerStats: PlayerStat[] = players.map((player) => {
     const agg = playerAggById.get(player.id) ?? { goals: 0, assists: 0 };
@@ -389,6 +401,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
       goalsPerAppearance: appearances ? round(agg.goals / appearances) : 0,
       assistsPerAppearance: appearances ? round(agg.assists / appearances) : 0,
       contributionsPerAppearance: appearances ? round(contributions / appearances) : 0,
+      mvpAwards: mvpById.get(player.id) ?? 0,
     };
   });
 
@@ -407,6 +420,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
     .sort((a, b) => b.assists - a.assists || b.goals - a.goals)[0] ?? null;
   const topContributor = playerStats.find((player) => player.contributions > 0) ?? null;
   const mostAppearances = [...playerStats].sort((a, b) => b.appearances - a.appearances || b.contributions - a.contributions)[0] ?? null;
+  const topMvp = [...playerStats].filter((player) => player.mvpAwards > 0).sort((a, b) => b.mvpAwards - a.mvpAwards || b.contributions - a.contributions)[0] ?? null;
 
   const teamsWithMatches = teamStats.filter((team) => team.played > 0);
   const bestAttack = [...teamsWithMatches].sort((a, b) => b.gf - a.gf || b.goalsPerGame - a.goalsPerGame)[0] ?? null;
@@ -474,6 +488,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
       topAssister,
       topContributor,
       mostAppearances,
+      topMvp,
     },
     records: {
       bestAttack,

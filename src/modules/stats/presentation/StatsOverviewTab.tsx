@@ -29,6 +29,7 @@ export function OverviewTab({ stats, leagueId }: { stats: LeagueStatsResponse; l
             <LeaderCell label="Assistman" player={leaders.topAssister} value={leaders.topAssister?.assists ?? 0} suffix="assist" leagueId={leagueId} />
             <LeaderCell label="Contributi" player={leaders.topContributor} value={leaders.topContributor?.contributions ?? 0} suffix="G+A" leagueId={leagueId} />
             <LeaderCell label="Presenze" player={leaders.mostAppearances} value={leaders.mostAppearances?.appearances ?? 0} suffix="gare" leagueId={leagueId} />
+            <LeaderCell label="MVP" player={leaders.topMvp} value={leaders.topMvp?.mvpAwards ?? 0} suffix="MVP" leagueId={leagueId} />
           </div>
         </Card>
 

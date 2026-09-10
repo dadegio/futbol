@@ -41,6 +41,9 @@ type Match = {
   } | null;
   homeGoals: number | null;
   awayGoals: number | null;
+  resultStatus?: "DRAFT" | "FINAL" | null;
+  lifecycleStatus?: "SCHEDULED" | "POSTPONED" | "CANCELLED";
+  originalDate?: string | null;
   homeTeam: Team;
   awayTeam: Team;
 };
@@ -66,7 +69,7 @@ async function getJSON<T>(url: string): Promise<T> {
 }
 
 function isPlayed(match: Match) {
-  return match.homeGoals !== null && match.awayGoals !== null;
+  return match.resultStatus === "FINAL" && match.homeGoals !== null && match.awayGoals !== null;
 }
 
 function isToday(date: Date) {
@@ -654,7 +657,10 @@ function CalendarSkeleton() {
 
 function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match }) {
   const played = isPlayed(match);
-  const live = isLiveMatch(match);
+  const postponed = match.lifecycleStatus === "POSTPONED";
+  const cancelled = match.lifecycleStatus === "CANCELLED";
+  const draft = match.resultStatus === "DRAFT";
+  const live = !postponed && !cancelled && isLiveMatch(match);
   const liveMinute = getLiveMinute(match);
 
   return (
@@ -668,8 +674,14 @@ function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match 
             <span className="mx-auto mb-1 block h-1.5 w-1.5 rounded-full bg-[var(--danger)]" />
             {liveMinute ?? "Live"}
           </div>
+        ) : cancelled ? (
+          <span className="text-[10px] font-black uppercase text-red-300">Annull.</span>
+        ) : postponed ? (
+          <span className="text-[10px] font-black uppercase text-amber-300">Rinv.</span>
         ) : played ? (
           <span className="text-sm font-medium text-[var(--muted)]">FT</span>
+        ) : draft ? (
+          <span className="text-[10px] font-black uppercase text-[var(--accent)]">Bozza</span>
         ) : (
           <span className="font-mono text-sm font-black text-[var(--foreground)]">
             {formatTime(match.date)}
@@ -678,8 +690,15 @@ function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match 
       </div>
 
       <div className="min-w-0 space-y-2">
-        <TeamLine team={match.homeTeam} muted={played && !live} />
-        <TeamLine team={match.awayTeam} muted={played && !live} />
+        <TeamLine team={match.homeTeam} muted={(played && !live) || cancelled} />
+        <TeamLine team={match.awayTeam} muted={(played && !live) || cancelled} />
+        {(postponed || cancelled || draft) && (
+          <div className="flex flex-wrap gap-1.5">
+            {postponed && <Badge variant="accent">Rinviata</Badge>}
+            {cancelled && <Badge variant="error">Annullata</Badge>}
+            {draft && !cancelled && <Badge variant="accent">Risultato in bozza</Badge>}
+          </div>
+        )}
         <div className="flex min-w-0 flex-col gap-1 pt-1 text-[11px] font-semibold text-[var(--muted)] sm:flex-row sm:flex-wrap sm:gap-x-4">
           <span className="flex min-w-0 items-center gap-1.5">
             <MapPin size={12} className="shrink-0 text-[var(--accent)]" />

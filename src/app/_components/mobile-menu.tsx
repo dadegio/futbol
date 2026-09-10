@@ -20,6 +20,7 @@ import {
   Youtube,
   Camera,
   UploadCloud,
+  Whistle,
 } from "lucide-react";
 import { clearAuthToken, useAuth, useCanAdminLeague, useCanCreateMedia, useIsSuperAdmin } from "@/lib/client-auth";
 import { resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
@@ -199,6 +200,19 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
                   />
                 ))}
               </div>
+            </section>
+          )}
+
+          {leagueId && user?.role === "REFEREE" && user.leagueId === leagueId && (
+            <section className="mt-6 border-t border-[var(--border)] pt-5">
+              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--accent)]">Arbitro</p>
+              <MenuLink
+                href={`/leagues/${leagueId}/my-match`}
+                label="La mia partita"
+                icon={<Whistle size={18} />}
+                active={pathname === `/leagues/${leagueId}/my-match`}
+                onClick={onClose}
+              />
             </section>
           )}
 

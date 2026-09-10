@@ -47,6 +47,8 @@ type OperationalMatch = {
   status: MatchOperationalStatus;
   issues: OperationalIssue[];
   inCurrentWeek: boolean;
+  resultStatus: "DRAFT" | "FINAL" | null;
+  lifecycleStatus: "SCHEDULED" | "POSTPONED" | "CANCELLED";
 };
 
 type OperationsResponse = {
@@ -58,6 +60,8 @@ type OperationsResponse = {
     refereeConflicts: number;
     overdueResults: number;
     ready: number;
+    draftResults: number;
+    postponed: number;
     completed: number;
     currentWeek: number;
     upcoming: number;
@@ -72,6 +76,9 @@ const STATUS_LABELS: Record<MatchOperationalStatus, string> = {
   BOOKED: "Prenotata",
   READY: "Pronta",
   AWAITING_RESULT: "Risultato mancante",
+  DRAFT_RESULT: "Bozza risultato",
+  POSTPONED: "Rinviata",
+  CANCELLED: "Annullata",
   COMPLETED: "Completata",
   ISSUE: "Problema",
 };
@@ -89,8 +96,8 @@ function formatDate(value: string | null) {
 
 function statusTone(status: MatchOperationalStatus) {
   if (status === "COMPLETED" || status === "READY") return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-  if (status === "AWAITING_RESULT" || status === "ISSUE") return "text-red-300 bg-red-500/10 border-red-500/20";
-  if (status === "NEEDS_SETUP") return "text-amber-300 bg-amber-500/10 border-amber-500/20";
+  if (status === "AWAITING_RESULT" || status === "ISSUE" || status === "CANCELLED") return "text-red-300 bg-red-500/10 border-red-500/20";
+  if (status === "NEEDS_SETUP" || status === "POSTPONED" || status === "DRAFT_RESULT") return "text-amber-300 bg-amber-500/10 border-amber-500/20";
   return "text-[var(--accent)] bg-[var(--accent-soft)] border-[var(--accent)]/20";
 }
 

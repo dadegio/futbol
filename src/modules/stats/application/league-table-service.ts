@@ -12,6 +12,7 @@ export async function getLeagueTable(leagueId: string) {
     where: {
       leagueId,
       seriesId: null,
+      resultStatus: "FINAL",
       homeGoals: { not: null },
       awayGoals: { not: null },
     },

@@ -5,6 +5,9 @@ export type MatchOperationalStatus =
   | "BOOKED"
   | "READY"
   | "AWAITING_RESULT"
+  | "DRAFT_RESULT"
+  | "POSTPONED"
+  | "CANCELLED"
   | "COMPLETED"
   | "ISSUE";
 
@@ -15,7 +18,9 @@ export type MatchOperationalIssueCode =
   | "REFEREE_CONFLICT"
   | "HOME_SHEET_INCOMPLETE"
   | "AWAY_SHEET_INCOMPLETE"
-  | "RESULT_OVERDUE";
+  | "RESULT_OVERDUE"
+  | "DRAFT_RESULT"
+  | "POSTPONED";
 
 export type MatchOperationalIssue = {
   code: MatchOperationalIssueCode;
@@ -34,6 +39,8 @@ export type MatchOperationalInput = {
   refereeConflict?: boolean;
   now?: Date;
   sheetAttentionHours?: number;
+  resultStatus?: "DRAFT" | "FINAL" | null;
+  lifecycleStatus?: "SCHEDULED" | "POSTPONED" | "CANCELLED";
 };
 
 export type MatchOperationalState = {
@@ -52,6 +59,8 @@ const LABELS: Record<MatchOperationalIssueCode, string> = {
   HOME_SHEET_INCOMPLETE: `Distinta casa sotto ${FUTPOLI_RULES.minPlayersInMatchSheet}`,
   AWAY_SHEET_INCOMPLETE: `Distinta ospite sotto ${FUTPOLI_RULES.minPlayersInMatchSheet}`,
   RESULT_OVERDUE: "Partita passata senza risultato",
+  DRAFT_RESULT: "Risultato salvato in bozza",
+  POSTPONED: "Partita rinviata da riprogrammare",
 };
 
 function issue(code: MatchOperationalIssueCode, severity: "warning" | "error" = "warning") {
@@ -62,14 +71,21 @@ export function deriveMatchOperationalState(input: MatchOperationalInput): Match
   const now = input.now ?? new Date();
   const homeGoals = input.homeGoals ?? null;
   const awayGoals = input.awayGoals ?? null;
-  const completed = homeGoals !== null && awayGoals !== null;
+  const completed = input.resultStatus === "FINAL" && homeGoals !== null && awayGoals !== null;
   const scheduled = Boolean(input.date);
 
+  if (input.lifecycleStatus === "CANCELLED") {
+    return { status: "CANCELLED", issues: [], completed: false, scheduled: false, ready: false };
+  }
+  if (input.lifecycleStatus === "POSTPONED") {
+    return { status: "POSTPONED", issues: [issue("POSTPONED")], completed: false, scheduled: false, ready: false };
+  }
   if (completed) {
     return { status: "COMPLETED", issues: [], completed: true, scheduled, ready: true };
   }
 
   const issues: MatchOperationalIssue[] = [];
+  if (input.resultStatus === "DRAFT") issues.push(issue("DRAFT_RESULT"));
   const date = input.date;
 
   if (!date) {
@@ -106,6 +122,10 @@ export function deriveMatchOperationalState(input: MatchOperationalInput): Match
       (input.homeSheetCount ?? 0) >= FUTPOLI_RULES.minPlayersInMatchSheet &&
       (input.awaySheetCount ?? 0) >= FUTPOLI_RULES.minPlayersInMatchSheet
   );
+
+  if (input.resultStatus === "DRAFT") {
+    return { status: "DRAFT_RESULT", issues, completed: false, scheduled, ready: false };
+  }
 
   if (issues.some((item) => item.code === "RESULT_OVERDUE")) {
     return { status: "AWAITING_RESULT", issues, completed: false, scheduled, ready: false };

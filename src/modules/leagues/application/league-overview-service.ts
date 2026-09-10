@@ -18,6 +18,11 @@ type OverviewMatchInput = {
   homeGoals: number | null;
   awayGoals: number | null;
   seriesId?: string | null;
+  resultStatus?: "DRAFT" | "FINAL" | null;
+  lifecycleStatus?: "SCHEDULED" | "POSTPONED" | "CANCELLED";
+  mvpPlayer?: { id: string; firstName: string; lastName: string; number: number } | null;
+  replayUrl?: string | null;
+  highlightsUrl?: string | null;
   leg?: number | null;
   referee: { id: string; name: string | null } | null;
   homeTeam: TeamLite;
@@ -25,8 +30,8 @@ type OverviewMatchInput = {
   series?: { bracketRound: number } | null;
 };
 
-function isPlayed(match: { homeGoals: number | null; awayGoals: number | null }) {
-  return match.homeGoals !== null && match.awayGoals !== null;
+function isPlayed(match: { homeGoals: number | null; awayGoals: number | null; resultStatus?: string | null }) {
+  return match.resultStatus === "FINAL" && match.homeGoals !== null && match.awayGoals !== null;
 }
 
 function playoffStageLabel(bracketRound?: number | null, teamCount?: number | null) {
@@ -51,8 +56,13 @@ function publicMatch(match: OverviewMatchInput, canSeeRefereeName: boolean, play
     referee: match.referee
       ? { id: match.referee.id, name: canSeeRefereeName ? match.referee.name : null }
       : null,
-    homeGoals: match.homeGoals,
-    awayGoals: match.awayGoals,
+    homeGoals: match.resultStatus === "FINAL" ? match.homeGoals : null,
+    awayGoals: match.resultStatus === "FINAL" ? match.awayGoals : null,
+    resultStatus: match.resultStatus ?? null,
+    lifecycleStatus: match.lifecycleStatus ?? "SCHEDULED",
+    mvpPlayer: match.resultStatus === "FINAL" ? match.mvpPlayer ?? null : null,
+    replayUrl: match.resultStatus === "FINAL" ? match.replayUrl ?? null : null,
+    highlightsUrl: match.resultStatus === "FINAL" ? match.highlightsUrl ?? null : null,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
     isPlayoff,
@@ -106,6 +116,11 @@ export async function getLeagueOverview({
         venueAddress: true,
         homeGoals: true,
         awayGoals: true,
+        resultStatus: true,
+        lifecycleStatus: true,
+        mvpPlayer: { select: { id: true, firstName: true, lastName: true, number: true } },
+        replayUrl: true,
+        highlightsUrl: true,
         referee: { select: { id: true, name: true } },
         homeTeam: { select: { id: true, name: true, badgeUrl: true } },
         awayTeam: { select: { id: true, name: true, badgeUrl: true } },
@@ -124,6 +139,11 @@ export async function getLeagueOverview({
         venueAddress: true,
         homeGoals: true,
         awayGoals: true,
+        resultStatus: true,
+        lifecycleStatus: true,
+        mvpPlayer: { select: { id: true, firstName: true, lastName: true, number: true } },
+        replayUrl: true,
+        highlightsUrl: true,
         seriesId: true,
         leg: true,
         referee: { select: { id: true, name: true } },

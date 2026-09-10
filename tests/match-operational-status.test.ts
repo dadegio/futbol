@@ -51,3 +51,29 @@ test("partita passata senza risultato ha priorità operativa", () => {
   assert.equal(state.status, "AWAITING_RESULT");
   assert.equal(state.issues.some((item) => item.code === "RESULT_OVERDUE"), true);
 });
+
+
+test("bozza risultato resta fuori dallo stato completato", () => {
+  const state = deriveMatchOperationalState({
+    date: new Date("2026-10-07T15:00:00.000Z"),
+    venueKey: "field-1",
+    refereeId: "ref-1",
+    homeGoals: 2,
+    awayGoals: 1,
+    resultStatus: "DRAFT",
+    homeSheetCount: 8,
+    awaySheetCount: 8,
+    now,
+  });
+  assert.equal(state.status, "DRAFT_RESULT");
+  assert.equal(state.completed, false);
+});
+
+test("rinviata e annullata hanno stati operativi espliciti", () => {
+  const postponed = deriveMatchOperationalState({ date: null, lifecycleStatus: "POSTPONED", now });
+  const cancelled = deriveMatchOperationalState({ date: null, lifecycleStatus: "CANCELLED", now });
+  assert.equal(postponed.status, "POSTPONED");
+  assert.equal(postponed.issues[0]?.code, "POSTPONED");
+  assert.equal(cancelled.status, "CANCELLED");
+  assert.equal(cancelled.issues.length, 0);
+});

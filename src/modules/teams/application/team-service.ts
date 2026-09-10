@@ -4,8 +4,12 @@ import {
   sanitizePlayerForRole,
 } from "@/modules/players/application/player-visibility";
 import type { SessionUser } from "@/lib/session";
-import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
+import {
+  FUTPOLI_RULES,
+  isPlayerEligibleForMatchSheet,
+} from "@/modules/players/domain/tournament-rules";
 import { AppError } from "@/modules/core/errors";
+import { calculateLeagueTable } from "@/modules/stats/domain/league-table";
 
 function normalizedNullableText(value: unknown) {
   if (value === undefined) return undefined;
@@ -24,22 +28,136 @@ function assertColor(color: string | null | undefined, label: string) {
   }
 }
 
-export async function listLeagueTeams(leagueId: string) {
-  return prisma.team.findMany({
-    where: { leagueId, activeInLeague: true },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      badgeUrl: true,
-      description: true,
-      colorHex: true,
-      secondaryColorHex: true,
-      activeInLeague: true,
-      leagueId: true,
-      _count: { select: { players: true } },
-    },
-  });
+export async function listLeagueTeams(
+  leagueId: string,
+  session: SessionUser | null = null
+) {
+  const showAdminDetails = canSeeAdminPlayerDetails(session, leagueId);
+  const now = new Date();
+
+  const [teams, finalMatches, upcomingMatches, adminPlayers] = await Promise.all([
+    prisma.team.findMany({
+      where: { leagueId, activeInLeague: true },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        badgeUrl: true,
+        description: true,
+        colorHex: true,
+        secondaryColorHex: true,
+        activeInLeague: true,
+        leagueId: true,
+        _count: { select: { players: true } },
+      },
+    }),
+    prisma.match.findMany({
+      where: {
+        leagueId,
+        seriesId: null,
+        resultStatus: "FINAL",
+        homeGoals: { not: null },
+        awayGoals: { not: null },
+      },
+      select: {
+        homeTeamId: true,
+        awayTeamId: true,
+        homeGoals: true,
+        awayGoals: true,
+      },
+    }),
+    prisma.match.findMany({
+      where: {
+        leagueId,
+        lifecycleStatus: "SCHEDULED",
+        date: { gte: now },
+      },
+      orderBy: [{ date: "asc" }, { round: "asc" }],
+      select: {
+        id: true,
+        round: true,
+        date: true,
+        seriesId: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeTeam: { select: { id: true, name: true } },
+        awayTeam: { select: { id: true, name: true } },
+      },
+    }),
+    showAdminDetails
+      ? prisma.player.findMany({
+          where: { team: { leagueId, activeInLeague: true } },
+          select: {
+            teamId: true,
+            status: true,
+            documentSigned: true,
+            mediaConsent: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const table = calculateLeagueTable(
+    teams.map((team) => ({ id: team.id, name: team.name, badgeUrl: team.badgeUrl })),
+    finalMatches
+  );
+  const standingByTeam = new Map(table.map((row, index) => [row.teamId, { ...row, position: index + 1 }]));
+
+  const nextByTeam = new Map<string, {
+    id: string;
+    round: number;
+    date: string | null;
+    phase: "league" | "playoff";
+    opponent: { id: string; name: string };
+    home: boolean;
+  }>();
+
+  for (const match of upcomingMatches) {
+    if (!nextByTeam.has(match.homeTeamId)) {
+      nextByTeam.set(match.homeTeamId, {
+        id: match.id,
+        round: match.round,
+        date: match.date?.toISOString() ?? null,
+        phase: match.seriesId ? "playoff" : "league",
+        opponent: match.awayTeam,
+        home: true,
+      });
+    }
+    if (!nextByTeam.has(match.awayTeamId)) {
+      nextByTeam.set(match.awayTeamId, {
+        id: match.id,
+        round: match.round,
+        date: match.date?.toISOString() ?? null,
+        phase: match.seriesId ? "playoff" : "league",
+        opponent: match.homeTeam,
+        home: false,
+      });
+    }
+  }
+
+  const adminByTeam = new Map<string, { eligiblePlayers: number; attentionPlayers: number }>();
+  if (showAdminDetails) {
+    for (const player of adminPlayers) {
+      const current = adminByTeam.get(player.teamId) ?? { eligiblePlayers: 0, attentionPlayers: 0 };
+      if (isPlayerEligibleForMatchSheet(player)) current.eligiblePlayers += 1;
+      else current.attentionPlayers += 1;
+      adminByTeam.set(player.teamId, current);
+    }
+  }
+
+  return teams.map((team) => ({
+    ...team,
+    standing: standingByTeam.get(team.id) ?? null,
+    nextMatch: nextByTeam.get(team.id) ?? null,
+    ...(showAdminDetails
+      ? {
+          adminRoster: adminByTeam.get(team.id) ?? {
+            eligiblePlayers: 0,
+            attentionPlayers: team._count.players,
+          },
+        }
+      : {}),
+  }));
 }
 
 export async function createLeagueTeam({
@@ -104,6 +222,17 @@ export async function listAllTeams() {
   }));
 }
 
+function resultForTeam(
+  teamId: string,
+  match: { homeTeamId: string; awayTeamId: string; homeGoals: number | null; awayGoals: number | null }
+) {
+  if (match.homeGoals === null || match.awayGoals === null) return null;
+  const home = match.homeTeamId === teamId;
+  const gf = home ? match.homeGoals : match.awayGoals;
+  const ga = home ? match.awayGoals : match.homeGoals;
+  return gf > ga ? "W" as const : gf < ga ? "L" as const : "D" as const;
+}
+
 export async function getTeamDetail({
   teamId,
   session,
@@ -118,13 +247,60 @@ export async function getTeamDetail({
       players: {
         orderBy: { number: "asc" },
         include: {
-          stats: { select: { goals: true, assists: true } },
-          sheetEntries: { select: { id: true } },
+          stats: {
+            where: { match: { resultStatus: "FINAL" } },
+            select: { goals: true, assists: true },
+          },
+          sheetEntries: {
+            where: { match: { resultStatus: "FINAL" } },
+            select: { id: true },
+          },
         },
       },
     },
   });
   if (!team) throw new AppError(404, "Squadra non trovata");
+
+  const [finalMatches, nextMatch] = await Promise.all([
+    prisma.match.findMany({
+      where: {
+        leagueId: team.league.id,
+        seriesId: null,
+        resultStatus: "FINAL",
+        OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
+      },
+      orderBy: [{ date: "desc" }, { round: "desc" }],
+      select: {
+        id: true,
+        round: true,
+        date: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeGoals: true,
+        awayGoals: true,
+      },
+    }),
+    prisma.match.findFirst({
+      where: {
+        leagueId: team.league.id,
+        lifecycleStatus: "SCHEDULED",
+        date: { gte: new Date() },
+        OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
+      },
+      orderBy: [{ date: "asc" }, { round: "asc" }],
+      select: {
+        id: true,
+        round: true,
+        date: true,
+        seriesId: true,
+        venueName: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        homeTeam: { select: { id: true, name: true, badgeUrl: true } },
+        awayTeam: { select: { id: true, name: true, badgeUrl: true } },
+      },
+    }),
+  ]);
 
   const showAdminDetails = canSeeAdminPlayerDetails(session, team.league.id);
   const players = team.players.map(({ stats, sheetEntries, ...player }) => {
@@ -144,7 +320,45 @@ export async function getTeamDetail({
     );
   });
 
-  return { ...team, players };
+  const competition = finalMatches.reduce(
+    (acc, match) => {
+      if (match.homeGoals === null || match.awayGoals === null) return acc;
+      const home = match.homeTeamId === team.id;
+      const gf = home ? match.homeGoals : match.awayGoals;
+      const ga = home ? match.awayGoals : match.homeGoals;
+      acc.played += 1;
+      acc.gf += gf;
+      acc.ga += ga;
+      if (gf > ga) { acc.wins += 1; acc.points += 3; }
+      else if (gf < ga) acc.losses += 1;
+      else { acc.draws += 1; acc.points += 1; }
+      return acc;
+    },
+    { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, points: 0 }
+  );
+
+  const next = nextMatch
+    ? {
+        id: nextMatch.id,
+        round: nextMatch.round,
+        phase: nextMatch.seriesId ? "playoff" as const : "league" as const,
+        date: nextMatch.date?.toISOString() ?? null,
+        venueName: nextMatch.venueName,
+        home: nextMatch.homeTeamId === team.id,
+        opponent: nextMatch.homeTeamId === team.id ? nextMatch.awayTeam : nextMatch.homeTeam,
+      }
+    : null;
+
+  return {
+    ...team,
+    players,
+    competitionSummary: {
+      ...competition,
+      gd: competition.gf - competition.ga,
+      form: finalMatches.slice(0, 5).map((match) => resultForTeam(team.id, match)).filter(Boolean),
+      nextMatch: next,
+    },
+  };
 }
 
 export async function updateTeam({

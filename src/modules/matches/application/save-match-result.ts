@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/modules/core/errors";
-import { syncPlayoffSeriesWinner } from "@/modules/playoffs/application/playoff-progress";
 import {
   FUTPOLI_RULES,
   isPlayerEligibleForMatchSheet,
@@ -84,15 +83,14 @@ export async function saveMatchResult({
       homeTeamId: true,
       awayTeamId: true,
       seriesId: true,
-      league: {
-        select: {
-          playoffFormat: true,
-        },
-      },
+      resultStatus: true,
+      lifecycleStatus: true,
     },
   });
 
   if (!match) throw new AppError(404, "Partita non trovata", "MATCH_NOT_FOUND");
+  if (match.resultStatus === "FINAL") throw new AppError(409, "Risultato definitivo: riapri prima la partita", "RESULT_FINAL");
+  if (match.lifecycleStatus === "CANCELLED") throw new AppError(409, "Partita annullata", "MATCH_CANCELLED");
 
   const playerIds = [...new Set([...rows.map((row) => row.playerId), ...requestedSheetIds])];
 
@@ -183,14 +181,16 @@ export async function saveMatchResult({
     );
   }
 
-  let winnerId: string | null = null;
-
   await prisma.$transaction(async (tx) => {
     await tx.match.update({
       where: { id: matchId },
       data: {
         ...(homeGoals !== undefined ? { homeGoals } : {}),
         ...(awayGoals !== undefined ? { awayGoals } : {}),
+        resultStatus: "DRAFT",
+        finalizedAt: null,
+        homeSheetConfirmed: false,
+        awaySheetConfirmed: false,
       },
     });
 
@@ -217,23 +217,7 @@ export async function saveMatchResult({
       });
     }
 
-    if (match.seriesId && match.league.playoffFormat) {
-      await tx.playoffSeries.update({
-        where: { id: match.seriesId },
-        data: {
-          winnerId: null,
-          penaltiesHome: null,
-          penaltiesAway: null,
-        },
-      });
-
-      winnerId = await syncPlayoffSeriesWinner(tx as any, {
-        leagueId: match.leagueId,
-        seriesId: match.seriesId,
-        format: match.league.playoffFormat,
-      });
-    }
   });
 
-  return { leagueId: match.leagueId, winnerId };
+  return { leagueId: match.leagueId, winnerId: null, resultStatus: "DRAFT" as const };
 }

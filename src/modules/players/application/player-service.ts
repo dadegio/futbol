@@ -502,11 +502,11 @@ export async function getPlayerStats({
 
   const [aggregate, sheetEntries, recentStats, appearances] = await Promise.all([
     prisma.matchPlayerStat.aggregate({
-      where: { playerId },
+      where: { playerId, match: { resultStatus: "FINAL" } },
       _sum: { goals: true, assists: true },
     }),
     prisma.matchSheetPlayer.findMany({
-      where: { playerId },
+      where: { playerId, match: { resultStatus: "FINAL" } },
       orderBy: [{ match: { date: "desc" } }, { createdAt: "desc" }],
       take: 8,
       select: {
@@ -524,10 +524,10 @@ export async function getPlayerStats({
       },
     }),
     prisma.matchPlayerStat.findMany({
-      where: { playerId },
+      where: { playerId, match: { resultStatus: "FINAL" } },
       select: { matchId: true, goals: true, assists: true },
     }),
-    prisma.matchSheetPlayer.count({ where: { playerId } }),
+    prisma.matchSheetPlayer.count({ where: { playerId, match: { resultStatus: "FINAL" } } }),
   ]);
 
   const statsByMatch = new Map<string, { goals: number; assists: number }>(

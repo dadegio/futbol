@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { sanitizePlayerForRole } from "@/modules/players/application/player-visibility";
 import type { SessionUser } from "@/lib/session";
 import { AppError } from "@/modules/core/errors";
-import { isLeagueAdmin } from "@/modules/permissions/permissions";
+import {
+  isLeagueAdmin,
+  isRefereeAssignedToMatch,
+} from "@/modules/permissions/permissions";
 import { getRefereeMatchFeeCents } from "@/modules/referees/domain/referee-cost";
 
 export async function getMatchDetail({
@@ -16,6 +19,7 @@ export async function getMatchDetail({
     where: { id: matchId },
     include: {
       referee: { select: { id: true, name: true } },
+      mvpPlayer: { select: { id: true, firstName: true, lastName: true, number: true, teamId: true } },
       homeTeam: {
         select: {
           id: true,
@@ -86,10 +90,26 @@ export async function getMatchDetail({
 
   if (!match) throw new AppError(404, "Partita non trovata");
 
+  const canViewDraft =
+    isLeagueAdmin(session, match.leagueId) ||
+    isRefereeAssignedToMatch(session, match.refereeId);
+  const canViewRecordedData = match.resultStatus === "FINAL" || canViewDraft;
+  const canViewFinalExtras = match.resultStatus === "FINAL" || isLeagueAdmin(session, match.leagueId);
   const { refereeCostCents: _legacyRefereeCostCents, ...visibleMatch } = match;
 
   return {
     ...visibleMatch,
+    homeGoals: canViewRecordedData ? match.homeGoals : null,
+    awayGoals: canViewRecordedData ? match.awayGoals : null,
+    stats: canViewRecordedData ? match.stats : [],
+    sheetPlayers: canViewRecordedData ? match.sheetPlayers : [],
+    homeSheetConfirmed: canViewRecordedData ? match.homeSheetConfirmed : false,
+    awaySheetConfirmed: canViewRecordedData ? match.awaySheetConfirmed : false,
+    finalizedAt: match.resultStatus === "FINAL" || canViewDraft ? match.finalizedAt : null,
+    mvpPlayerId: canViewFinalExtras ? match.mvpPlayerId : null,
+    mvpPlayer: canViewFinalExtras ? match.mvpPlayer : null,
+    replayUrl: canViewFinalExtras ? match.replayUrl : null,
+    highlightsUrl: canViewFinalExtras ? match.highlightsUrl : null,
     refereeFeeCents:
       match.venueKey && match.referee
         ? getRefereeMatchFeeCents(match.referee.name)
@@ -97,7 +117,7 @@ export async function getMatchDetail({
     referee: match.referee
       ? {
           id: match.referee.id,
-          name: isLeagueAdmin(session, match.leagueId)
+          name: isLeagueAdmin(session, match.leagueId) || isRefereeAssignedToMatch(session, match.refereeId)
             ? match.referee.name
             : null,
         }

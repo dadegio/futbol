@@ -37,6 +37,24 @@ Variabili sensibili principali:
 
 `npm run check:hygiene` verifica i casi più comuni di file sensibili versionati accidentalmente.
 
+## Lifecycle partita e migration V11
+
+La release che introduce bozza/finalizzazione, rinvio/annullamento, MVP e pagamenti quote aggiunge una migration Prisma. Prima di rendere operative le nuove funzioni sul database di produzione:
+
+```bash
+npm run db:deploy
+```
+
+Il flusso risultato è: **salvataggio bozza → conferma distinta casa/ospite → finalizzazione**. Solo i risultati `FINAL` entrano in classifica, statistiche, quote presenza e dati pubblici. Un admin può riaprire un risultato definitivo; rinvio e annullamento liberano campo, slot e arbitro.
+
+Prima del deploy verificare idealmente:
+
+```bash
+npm run modernization
+npm run build
+npm run test:integration
+```
+
 ## Database
 
 Prima dell'avvio del torneo:

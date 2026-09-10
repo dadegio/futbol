@@ -132,3 +132,16 @@ export async function listAuditLogs({
     nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null,
   };
 }
+
+
+export async function getMatchTimeline(matchId: string, limit = 30) {
+  const match = await prisma.match.findUnique({ where: { id: matchId }, select: { leagueId: true } });
+  if (!match) return null;
+  const logs = await prisma.auditLog.findMany({
+    where: { leagueId: match.leagueId, entityType: "match", entityId: matchId },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: Math.min(Math.max(limit, 1), 100),
+    select: { id: true, action: true, summary: true, actorUsername: true, actorRole: true, createdAt: true },
+  });
+  return { leagueId: match.leagueId, logs };
+}

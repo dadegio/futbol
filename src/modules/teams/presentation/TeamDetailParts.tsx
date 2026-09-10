@@ -37,6 +37,26 @@ export type Team = {
   secondaryColorHex?: string | null;
   league: { id: string; name: string };
   players: Player[];
+  competitionSummary?: {
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    gf: number;
+    ga: number;
+    gd: number;
+    points: number;
+    form: Array<"W" | "D" | "L">;
+    nextMatch: {
+      id: string;
+      round: number;
+      phase: "league" | "playoff";
+      date: string | null;
+      venueName?: string | null;
+      home: boolean;
+      opponent: { id: string; name: string; badgeUrl?: string | null };
+    } | null;
+  };
 };
 
 export const POSITIONS = ["Portiere", "Difensore", "Centrocampista", "Attaccante"];

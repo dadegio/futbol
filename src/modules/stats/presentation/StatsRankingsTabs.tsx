@@ -7,7 +7,7 @@ import Card from "src/app/_components/ui/card";
 import type { PlayerStat, TeamStat } from "@/modules/stats/domain/league-stats";
 import { FormDots, MetricNumber, PlayerAvatar, SmallMetric, TeamLogo, formScore } from "@/modules/stats/presentation/StatsUi";
 
-type PlayerSort = "contributions" | "goals" | "assists" | "appearances" | "rate";
+type PlayerSort = "contributions" | "goals" | "assists" | "appearances" | "mvp" | "rate";
 type TeamSort = "points" | "attack" | "defense" | "cleanSheets" | "form";
 
 export function TeamsTab({ teams, leagueId }: { teams: TeamStat[]; leagueId: string }) {
@@ -101,6 +101,7 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
     if (sort === "goals") return rows.sort((a, b) => b.goals - a.goals || b.assists - a.assists);
     if (sort === "assists") return rows.sort((a, b) => b.assists - a.assists || b.goals - a.goals);
     if (sort === "appearances") return rows.sort((a, b) => b.appearances - a.appearances || b.contributions - a.contributions);
+    if (sort === "mvp") return rows.sort((a, b) => b.mvpAwards - a.mvpAwards || b.contributions - a.contributions);
     if (sort === "rate") return rows.sort((a, b) => b.contributionsPerAppearance - a.contributionsPerAppearance || b.contributions - a.contributions);
     return rows.sort((a, b) => b.contributions - a.contributions || b.goals - a.goals || b.assists - a.assists);
   }, [players, query, sort]);
@@ -126,6 +127,7 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
           <option value="goals">Gol</option>
           <option value="assists">Assist</option>
           <option value="appearances">Presenze</option>
+          <option value="mvp">MVP</option>
           <option value="rate">G+A per presenza</option>
         </select>
       </Card>
@@ -161,7 +163,7 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
                 <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-[var(--muted)]">
                   <TeamLogo name={player.teamName} badgeUrl={player.teamBadgeUrl} size="xs" />
                   <span className="truncate">#{player.number} · {player.teamName}</span>
-                  <span className="hidden sm:inline">· {player.appearances} pres.</span>
+                  <span className="hidden sm:inline">· {player.appearances} pres.{player.mvpAwards > 0 ? ` · ${player.mvpAwards} MVP` : ""}</span>
                 </div>
               </div>
               <MetricNumber value={player.goals} />

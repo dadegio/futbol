@@ -9,6 +9,7 @@ import YouTubeVideoCard from "src/app/_components/youtube-video-card";
 import SponsorBanner from "src/app/_components/sponsor-banner";
 import LeagueAdSlot from "src/app/_components/league-ad-slot";
 import { authFetch } from "@/lib/client-auth";
+import { Clapperboard, PlayCircle, Star } from "lucide-react";
 
 type League = {
   id: string;
@@ -38,6 +39,11 @@ type Match = {
   } | null;
   homeGoals: number | null;
   awayGoals: number | null;
+  resultStatus?: "DRAFT" | "FINAL" | null;
+  lifecycleStatus?: "SCHEDULED" | "POSTPONED" | "CANCELLED";
+  mvpPlayer?: { id: string; firstName: string; lastName: string; number: number } | null;
+  replayUrl?: string | null;
+  highlightsUrl?: string | null;
   homeTeam: Team;
   awayTeam: Team;
   isPlayoff?: boolean;
@@ -69,6 +75,8 @@ type PlayoffSeries = {
     leg: number;
     homeGoals: number | null;
     awayGoals: number | null;
+    resultStatus?: "DRAFT" | "FINAL" | null;
+    lifecycleStatus?: "SCHEDULED" | "POSTPONED" | "CANCELLED";
     homeTeamId: string;
     awayTeamId: string;
     date: string | null;
@@ -111,7 +119,7 @@ async function getJSON<T>(url: string): Promise<T> {
 }
 
 function isPlayed(match: Match) {
-  return match.homeGoals !== null && match.awayGoals !== null;
+  return match.resultStatus === "FINAL" && match.homeGoals !== null && match.awayGoals !== null;
 }
 
 function isToday(date: Date) {
@@ -229,6 +237,8 @@ function normalizePlayoffMatches(
         date: match.date,
         homeGoals: match.homeGoals,
         awayGoals: match.awayGoals,
+        resultStatus: match.resultStatus ?? null,
+        lifecycleStatus: match.lifecycleStatus ?? "SCHEDULED",
         homeTeam,
         awayTeam,
         isPlayoff: true,
@@ -296,8 +306,23 @@ export default function LeagueHomePage() {
     return liveMatch ? getLiveMinute(liveMatch) : null;
   }, [liveMatch]);
 
-  const nextMatches = useMemo(
-    () => overviewMatches.filter((match) => !isPlayed(match)).slice(0, 2),
+  const nextMatches = useMemo(() => {
+    const now = Date.now();
+    return overviewMatches
+      .filter((match) =>
+        !isPlayed(match) &&
+        (match.lifecycleStatus ?? "SCHEDULED") === "SCHEDULED" &&
+        match.date &&
+        new Date(match.date).getTime() >= now
+      )
+      .slice(0, 2);
+  }, [overviewMatches]);
+
+  const recentResults = useMemo(() =>
+    overviewMatches
+      .filter((match) => isPlayed(match))
+      .sort((a, b) => (b.date ? new Date(b.date).getTime() : 0) - (a.date ? new Date(a.date).getTime() : 0))
+      .slice(0, 3),
     [overviewMatches]
   );
 
@@ -425,6 +450,21 @@ export default function LeagueHomePage() {
         )}
 
 
+
+        {recentResults.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold tracking-[-0.03em]">Ultimi risultati</h2>
+                <p className="mt-1 text-sm text-[var(--muted)]">Risultati definitivi, MVP e contenuti della gara.</p>
+              </div>
+              <Link href={`/leagues/${leagueId}/calendar`} className="text-sm font-semibold text-[var(--accent)]">Tutti →</Link>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-3">
+              {recentResults.map((match) => <RecentResultCard key={match.id} match={match} leagueId={leagueId} />)}
+            </div>
+          </section>
+        )}
 
         <section className="space-y-3">
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
@@ -595,6 +635,36 @@ function SummaryStat({
         {label}
       </div>
     </div>
+  );
+}
+
+
+function RecentResultCard({ match, leagueId }: { match: Match; leagueId: string }) {
+  return (
+    <Card className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--accent)]">
+          {match.isPlayoff ? match.stageLabel ?? "Playoff" : `Giornata ${match.round}`}
+        </span>
+        <span className="text-xs text-[var(--muted)]">{formatMatchDateTime(match.date)}</span>
+      </div>
+      <Link href={`/leagues/${leagueId}/matches/${match.id}`} className="block rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-3 transition hover:border-[var(--border-strong)]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+          <span className="truncate text-sm font-black text-[var(--foreground)]">{match.homeTeam.name}</span>
+          <span className="whitespace-nowrap text-xl font-black text-[var(--imperial-gold-2)]">{match.homeGoals}–{match.awayGoals}</span>
+          <span className="truncate text-right text-sm font-black text-[var(--foreground)]">{match.awayTeam.name}</span>
+        </div>
+      </Link>
+      {match.mvpPlayer && (
+        <div className="flex items-center gap-2 text-xs text-[var(--muted)]"><Star size={14} className="text-amber-300" /><span><strong className="text-[var(--foreground)]">MVP</strong> · #{match.mvpPlayer.number} {match.mvpPlayer.firstName} {match.mvpPlayer.lastName}</span></div>
+      )}
+      {(match.replayUrl || match.highlightsUrl) && (
+        <div className="flex flex-wrap gap-2">
+          {match.replayUrl && <a href={match.replayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-bold text-[var(--foreground)]"><PlayCircle size={14} /> Replay</a>}
+          {match.highlightsUrl && <a href={match.highlightsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-bold text-[var(--foreground)]"><Clapperboard size={14} /> Highlights</a>}
+        </div>
+      )}
+    </Card>
   );
 }
 

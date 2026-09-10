@@ -4,6 +4,8 @@ import { after, test } from "node:test";
 import { prisma } from "../../lib/prisma.ts";
 import { saveMatchResult } from "../../src/modules/matches/application/save-match-result.ts";
 import { resetMatchResult } from "../../src/modules/matches/application/reset-match-result.ts";
+import { finalizeMatchResult, reopenMatchResult, setMatchSheetConfirmation, updateMatchLifecycle, updateMatchExtras } from "../../src/modules/matches/application/match-lifecycle-service.ts";
+import { recordTeamFeePayment } from "../../src/modules/admin/application/team-fee-payment-service.ts";
 import { getLeagueTable } from "../../src/modules/stats/application/league-table-service.ts";
 import { getLeagueStats } from "../../src/modules/stats/application/league-stats-service.ts";
 
@@ -77,11 +79,24 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
     },
   });
 
-  const stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  let stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
   assert.equal(stored.homeGoals, 3);
   assert.equal(stored.awayGoals, 1);
+  assert.equal(stored.resultStatus, "DRAFT");
   assert.equal(await prisma.matchSheetPlayer.count({ where: { matchId: match.id } }), 16);
   assert.equal(await prisma.matchPlayerStat.count({ where: { matchId: match.id } }), 3);
+
+  const draftTable = await getLeagueTable(league.id);
+  assert.equal(draftTable.every((row) => row.played === 0), true, "la bozza non deve entrare in classifica");
+  const draftStats = await getLeagueStats(league.id);
+  assert.equal(draftStats.overview.completedMatches, 0);
+
+  await setMatchSheetConfirmation(match.id, "home", true);
+  await setMatchSheetConfirmation(match.id, "away", true);
+  await finalizeMatchResult(match.id);
+  stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.resultStatus, "FINAL");
+  assert.ok(stored.finalizedAt);
 
   const table = await getLeagueTable(league.id);
   assert.deepEqual(
@@ -242,4 +257,65 @@ test("reset partita elimina distinta e risultato ma conserva prenotazione e arbi
   const table = await getLeagueTable(league.id);
   assert.equal(table.find((row) => row.teamId === home.id)?.played, 0);
   assert.equal(table.find((row) => row.teamId === away.id)?.played, 0);
+});
+
+
+test("lifecycle: riapertura, MVP e rinvio mantengono coerenti dati e booking", async () => {
+  const league = await createLeague("lifecycle");
+  const home = await createTeamWithEligiblePlayers(league.id, "LifeHome");
+  const away = await createTeamWithEligiblePlayers(league.id, "LifeAway");
+  const referee = await prisma.referee.create({ data: { leagueId: league.id, name: `Lifecycle Ref ${randomUUID()}` } });
+  const date = new Date("2026-11-04T19:00:00.000Z");
+  const match = await prisma.match.create({
+    data: { leagueId: league.id, round: 3, homeTeamId: home.id, awayTeamId: away.id, date, slotEnd: new Date("2026-11-04T20:00:00.000Z"), venueKey: "life-field", venueName: "Campo Lifecycle", refereeId: referee.id },
+  });
+
+  await saveMatchResult({ matchId: match.id, input: { homeGoals: 1, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }] } });
+  await setMatchSheetConfirmation(match.id, "home", true);
+  await setMatchSheetConfirmation(match.id, "away", true);
+  await finalizeMatchResult(match.id);
+  await updateMatchExtras(match.id, { mvpPlayerId: home.playerIds[0], replayUrl: "https://example.com/replay", highlightsUrl: "https://example.com/highlights" });
+
+  let stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.resultStatus, "FINAL");
+  assert.equal(stored.mvpPlayerId, home.playerIds[0]);
+
+  await reopenMatchResult(match.id);
+  stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.resultStatus, "DRAFT");
+  assert.equal(stored.homeSheetConfirmed, false);
+  assert.equal(stored.awaySheetConfirmed, false);
+  assert.equal(stored.mvpPlayerId, null);
+
+  await resetMatchResult(match.id);
+  await updateMatchLifecycle(match.id, "postpone");
+  stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.lifecycleStatus, "POSTPONED");
+  assert.equal(stored.date, null);
+  assert.equal(stored.venueKey, null);
+  assert.equal(stored.refereeId, null);
+  assert.equal(stored.originalDate?.toISOString(), date.toISOString());
+
+  await updateMatchLifecycle(match.id, "restore");
+  stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.lifecycleStatus, "SCHEDULED");
+  assert.equal(stored.date?.toISOString(), date.toISOString());
+});
+
+test("quote presenza: maturano solo su gare definitive e non si può pagare oltre il residuo", async () => {
+  const league = await createLeague("fees");
+  const home = await createTeamWithEligiblePlayers(league.id, "FeeHome");
+  const away = await createTeamWithEligiblePlayers(league.id, "FeeAway");
+  const match = await prisma.match.create({ data: { leagueId: league.id, round: 1, homeTeamId: home.id, awayTeamId: away.id } });
+
+  await saveMatchResult({ matchId: match.id, input: { homeGoals: 1, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }] } });
+  await assert.rejects(() => recordTeamFeePayment(league.id, { teamId: home.id, amountCents: 1 }));
+
+  await setMatchSheetConfirmation(match.id, "home", true);
+  await setMatchSheetConfirmation(match.id, "away", true);
+  await finalizeMatchResult(match.id);
+  const payment = await recordTeamFeePayment(league.id, { teamId: home.id, amountCents: 200, note: "test" });
+  assert.equal(payment.dueCents, 400);
+  assert.equal(payment.outstandingCents, 200);
+  await assert.rejects(() => recordTeamFeePayment(league.id, { teamId: home.id, amountCents: 201 }));
 });
