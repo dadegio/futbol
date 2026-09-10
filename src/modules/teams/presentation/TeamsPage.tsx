@@ -373,6 +373,18 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 
 function TeamLogo({ name, badgeUrl }: { name: string; badgeUrl: string | null }) {
   const initials = name.split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase();
-  if (badgeUrl) return <div className="grid h-[82px] w-[82px] shrink-0 place-items-center rounded-[24px] border border-white/10 bg-black/20 p-2 shadow-[0_16px_42px_rgba(0,0,0,0.25)]"><img src={badgeUrl} alt={`Logo ${name}`} className="h-full w-full object-contain" /></div>;
+
+  if (badgeUrl) {
+    return (
+      <div className="relative h-[82px] w-[82px] shrink-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/20 shadow-[0_16px_42px_rgba(0,0,0,0.25)]">
+        <img
+          src={badgeUrl}
+          alt={`Logo ${name}`}
+          className="absolute inset-0 h-full w-full object-contain"
+        />
+      </div>
+    );
+  }
+
   return <span className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-[24px] border border-[var(--border)] bg-[var(--accent-soft)] text-lg font-black text-[var(--accent)]">{initials}</span>;
 }
