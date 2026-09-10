@@ -72,7 +72,7 @@ I test di integrazione richiedono `TEST_DATABASE_URL` e usano uno schema tempora
 
 In produzione gli upload devono utilizzare Vercel Blob. L'assenza di `BLOB_READ_WRITE_TOKEN` deve essere trattata come errore di configurazione, non come fallback verso il filesystem di Vercel.
 
-Prima di cancellare vecchi file da `public/uploads`, verificare che nessun record del database li referenzi ancora.
+I fallback locali scrivono in `public/uploads` e `public/media` soltanto in sviluppo: entrambe le cartelle sono ignorate da Git e la quality gate blocca eventuali file runtime già finiti nell’indice. Prima di cancellare un vecchio file già pubblicato, verificare che nessun record del database lo referenzi ancora.
 
 ## Monitoraggio durante le giornate
 

@@ -373,6 +373,19 @@ export default function MatchResultForm({ match }: { match: Match }) {
       ? getRefereeMatchFeeCents(adminRefereeName)
       : match.refereeFeeCents ?? null
     : null;
+  const publicFinal =
+    match.resultStatus === "FINAL" && match.homeGoals !== null && match.awayGoals !== null;
+  const heroPlayed = canEditResult ? played : publicFinal;
+  const heroHomeGoals = canEditResult ? hg : (match.homeGoals ?? 0);
+  const heroAwayGoals = canEditResult ? ag : (match.awayGoals ?? 0);
+  const publicStatusLabel =
+    match.lifecycleStatus === "CANCELLED"
+      ? "Annullata"
+      : match.lifecycleStatus === "POSTPONED"
+        ? "Rinviata"
+        : publicFinal
+          ? "Finale"
+          : "Programmata";
   const hasRecordedData =
     homeGoals !== "" ||
     awayGoals !== "" ||
@@ -413,25 +426,38 @@ export default function MatchResultForm({ match }: { match: Match }) {
                 </h1>
               </div>
               <div className="hidden rounded-full border border-[var(--border)] bg-black/20 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-[var(--muted)] sm:block">
-                distinta / risultato
+                {canManageDraft ? "gestione gara" : publicStatusLabel}
               </div>
             </div>
 
             <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-              <TeamScoreBlock team={match.homeTeam} faded={played && hg < ag} />
+              <TeamScoreBlock team={match.homeTeam} faded={heroPlayed && heroHomeGoals < heroAwayGoals} />
               <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center gap-2 rounded-[28px] border border-white/10 bg-black/30 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <ScoreInput value={homeGoals} setValue={setHomeGoals} readOnly={!canEditResult} />
-                  <span className="text-2xl font-black text-[var(--muted)]">:</span>
-                  <ScoreInput value={awayGoals} setValue={setAwayGoals} readOnly={!canEditResult} />
-                </div>
-                {played && (
+                {canEditResult ? (
+                  <div className="flex items-center gap-2 rounded-[28px] border border-white/10 bg-black/30 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                    <ScoreInput value={homeGoals} setValue={setHomeGoals} />
+                    <span className="text-2xl font-black text-[var(--muted)]">:</span>
+                    <ScoreInput value={awayGoals} setValue={setAwayGoals} />
+                  </div>
+                ) : (
+                  <div className="min-w-[116px] rounded-[28px] border border-white/10 bg-black/30 px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:min-w-[150px]">
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--muted)]">{publicStatusLabel}</p>
+                    <p className="mt-1 text-4xl font-black tracking-[-0.06em] text-[var(--foreground)] sm:text-6xl">
+                      {publicFinal ? `${match.homeGoals} : ${match.awayGoals}` : "VS"}
+                    </p>
+                  </div>
+                )}
+                {heroPlayed && (
                   <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-black text-[var(--accent)]">
-                    {hg > ag ? `${match.homeTeam.name} avanti` : hg < ag ? `${match.awayTeam.name} avanti` : "Pareggio"}
+                    {heroHomeGoals > heroAwayGoals
+                      ? `${match.homeTeam.name} vincente`
+                      : heroHomeGoals < heroAwayGoals
+                        ? `${match.awayTeam.name} vincente`
+                        : "Pareggio"}
                   </span>
                 )}
               </div>
-              <TeamScoreBlock team={match.awayTeam} faded={played && ag < hg} />
+              <TeamScoreBlock team={match.awayTeam} faded={heroPlayed && heroAwayGoals < heroHomeGoals} />
             </div>
           </div>
 
@@ -478,21 +504,23 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
         <SponsorBanner compact />
 
-        <MatchLifecyclePanel
-          matchId={match.id}
-          isAdmin={isAdmin}
-          canManageDraft={canManageDraft}
-          lifecycleStatus={match.lifecycleStatus ?? "SCHEDULED"}
-          resultStatus={match.resultStatus ?? null}
-          homeSheetConfirmed={match.homeSheetConfirmed === true}
-          awaySheetConfirmed={match.awaySheetConfirmed === true}
-          homeTeamName={match.homeTeam.name}
-          awayTeamName={match.awayTeam.name}
-          players={[...homePlayers, ...awayPlayers]}
-          mvpPlayerId={match.mvpPlayerId ?? null}
-          replayUrl={match.replayUrl ?? null}
-          highlightsUrl={match.highlightsUrl ?? null}
-        />
+        {canManageDraft && (
+          <MatchLifecyclePanel
+            matchId={match.id}
+            isAdmin={isAdmin}
+            canManageDraft={canManageDraft}
+            lifecycleStatus={match.lifecycleStatus ?? "SCHEDULED"}
+            resultStatus={match.resultStatus ?? null}
+            homeSheetConfirmed={match.homeSheetConfirmed === true}
+            awaySheetConfirmed={match.awaySheetConfirmed === true}
+            homeTeamName={match.homeTeam.name}
+            awayTeamName={match.awayTeam.name}
+            players={[...homePlayers, ...awayPlayers]}
+            mvpPlayerId={match.mvpPlayerId ?? null}
+            replayUrl={match.replayUrl ?? null}
+            highlightsUrl={match.highlightsUrl ?? null}
+          />
+        )}
 
         {match.resultStatus === "FINAL" && (match.mvpPlayer || match.replayUrl || match.highlightsUrl) && (
           <Card>
@@ -517,53 +545,69 @@ export default function MatchResultForm({ match }: { match: Match }) {
           </Card>
         )}
 
-        <div id="match-booking" className="scroll-mt-20">
-        <MatchSlotBooking
-          leagueId={match.leagueId}
-          matchId={match.id}
-          canBook={canBook}
-          initialBooking={
-            match.date && match.venueKey
-              ? {
-                  startsAt: match.date,
-                  endsAt: match.slotEnd,
-                  venueKey: match.venueKey,
-                  venueName: match.venueName,
-                  address: match.venueAddress,
-                }
-              : null
-          }
-        />
-        </div>
+        {canBook && (
+          <div id="match-booking" className="scroll-mt-20">
+            <MatchSlotBooking
+              leagueId={match.leagueId}
+              matchId={match.id}
+              canBook={canBook}
+              initialBooking={
+                match.date && match.venueKey
+                  ? {
+                      startsAt: match.date,
+                      endsAt: match.slotEnd,
+                      venueKey: match.venueKey,
+                      venueName: match.venueName,
+                      address: match.venueAddress,
+                    }
+                  : null
+              }
+            />
+          </div>
+        )}
 
-        <RefereeAssignmentPanel
-          isAdmin={isAdmin}
-          selectedRefereeName={selectedRefereeName}
-          matchDate={match.date}
-          refereeId={match.refereeId}
-          refereeChoice={refereeChoice}
-          setRefereeChoice={setRefereeChoice}
-          loadingReferees={loadingReferees}
-          savingReferee={savingReferee}
-          saveRefereeChoice={saveRefereeChoice}
-          adminRefereeState={adminRefereeState}
-          refereeMsg={refereeMsg}
-          refereeErr={refereeErr}
-        />
+        {isAdmin && (
+          <>
+            <RefereeAssignmentPanel
+              isAdmin={isAdmin}
+              selectedRefereeName={selectedRefereeName}
+              matchDate={match.date}
+              refereeId={match.refereeId}
+              refereeChoice={refereeChoice}
+              setRefereeChoice={setRefereeChoice}
+              loadingReferees={loadingReferees}
+              savingReferee={savingReferee}
+              saveRefereeChoice={saveRefereeChoice}
+              adminRefereeState={adminRefereeState}
+              refereeMsg={refereeMsg}
+              refereeErr={refereeErr}
+            />
 
-        <MatchDateOverridePanel
-          isAdmin={isAdmin}
-          dateValue={dateValue}
-          setDateValue={setDateValue}
-          saveDate={saveDate}
-          savingDate={savingDate}
-          dateMsg={dateMsg}
-          dateErr={dateErr}
-        />
+            <MatchDateOverridePanel
+              isAdmin={isAdmin}
+              dateValue={dateValue}
+              setDateValue={setDateValue}
+              saveDate={saveDate}
+              savingDate={savingDate}
+              dateMsg={dateMsg}
+              dateErr={dateErr}
+            />
+          </>
+        )}
 
-        {!canEditResult && !authLoading && <p className="px-1 text-sm text-[var(--muted)]">{match.resultStatus === "FINAL" ? "Risultato definitivo — sola lettura. Un admin può riaprirlo dal pannello Stato gara." : match.lifecycleStatus === "CANCELLED" ? "Partita annullata — sola lettura." : "Sola lettura — possono modificare distinta e risultato l&apos;admin e l&apos;arbitro assegnato. I capitani possono prenotare lo slot."}</p>}
+        {user && !canEditResult && !authLoading && (
+          <p className="px-1 text-sm text-[var(--muted)]">
+            {match.resultStatus === "FINAL"
+              ? "Risultato definitivo — sola lettura."
+              : match.lifecycleStatus === "CANCELLED"
+                ? "Partita annullata — sola lettura."
+                : isCaptainOfMatch
+                  ? "Puoi gestire la prenotazione dello slot; distinta e risultato sono gestiti dagli ufficiali di gara."
+                  : "Partita in sola lettura."}
+          </p>
+        )}
 
-        {match.venueKey && (
+        {(isAdmin || isCaptainOfMatch) && match.venueKey && (
           <Card variant="inner" className="border-[var(--accent)]/20">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -591,8 +635,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
         )}
 
         <div id="match-sheets" className="scroll-mt-20 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
-          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
+          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
+          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
         </div>
 
         {canEditResult && (

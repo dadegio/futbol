@@ -74,7 +74,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
 
   const links = leagueId
     ? [
-        { href: `/leagues/${leagueId}`,           label: "Overview",    icon: <Home size={17} /> },
+        { href: `/leagues/${leagueId}`,           label: "Home",    icon: <Home size={17} /> },
         { href: `/leagues/${leagueId}/table`,      label: "Classifica",  icon: <Trophy size={17} /> },
         { href: `/leagues/${leagueId}/calendar`,   label: "Calendario",  icon: <CalendarDays size={17} /> },
         ...(hasPlayoffs ? [{ href: `/leagues/${leagueId}/playoffs`, label: "Playoff", icon: <Swords size={17} /> }] : []),

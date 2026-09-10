@@ -63,9 +63,10 @@ export default function TablePage() {
       <div className="w-full space-y-5 pb-8">
         <header className="pt-2">
           <div className="flex items-end justify-between gap-3">
-            <h1 className="text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)]">
-              Classifica
-            </h1>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent)]">Stagione regolare</p>
+              <h1 className="mt-1 text-[34px] font-black tracking-[-0.06em] text-[var(--foreground)] sm:text-[42px]">Classifica</h1>
+            </div>
 
             <span className="shrink-0 text-sm font-semibold text-[var(--muted)]">
               G{currentRound}
@@ -94,22 +95,12 @@ export default function TablePage() {
 
               <div>
                 {rows.map((row, index) => {
-                  const isPromotion = index < 2;
-                  const isRelegation = index === rows.length - 1;
-
                   return (
                     <Link
                       key={row.teamId}
                       href={`/leagues/${leagueId}/teams/${row.teamId}`}
                       className="grid grid-cols-[34px_minmax(0,1.8fr)_34px_34px_46px_46px] items-center border-b border-[var(--border)] px-2 py-3 transition hover:bg-white/5 last:border-b-0 sm:grid-cols-[40px_minmax(0,2.2fr)_42px_42px_42px_42px_52px_56px] sm:px-3 sm:py-4"                    >
                       <div className="relative text-center text-sm text-[var(--muted)]">
-                        {isPromotion && (
-                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--accent)]" />
-                        )}
-
-                        {isRelegation && (
-                          <span className="absolute left-[-8px] top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-[var(--danger)]" />
-                        )}
 
                         {index + 1}
                       </div>
@@ -166,17 +157,7 @@ export default function TablePage() {
                 })}
               </div>
 
-              <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-                  Promozione
-                </span>
 
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[var(--danger)]" />
-                  Retrocessione
-                </span>
-              </div>
             </>
           )}
         </Card>

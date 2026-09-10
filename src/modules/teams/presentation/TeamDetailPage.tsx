@@ -212,9 +212,11 @@ export default function TeamPage({
         <header className="pt-2">
           <Link href={`/leagues/${leagueId}/teams`} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] hover:text-[var(--accent)]">‹ Tutte le squadre</Link>
 
-          <Card className="overflow-hidden !p-0">
+          <Card className="relative overflow-hidden !p-0">
             <div className="h-2" style={{ background: `linear-gradient(90deg, ${team.colorHex ?? "#F97316"}, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"})` }} />
-            <div className="grid gap-5 p-5 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center lg:p-7">
+            <div className="pointer-events-none absolute inset-0 opacity-80" style={{ background: `radial-gradient(circle at 88% 20%, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"}24, transparent 24rem), linear-gradient(115deg, ${team.colorHex ?? "#F97316"}12, transparent 45%)` }} />
+            {team.badgeUrl && <img src={team.badgeUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -right-16 top-1/2 h-72 w-72 -translate-y-1/2 rotate-[-9deg] object-contain opacity-[0.06] blur-[1px]" />}
+            <div className="relative grid gap-5 p-5 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center lg:p-7">
               <TeamLogo name={team.name} badgeUrl={team.badgeUrl ?? null} />
               <div className="min-w-0">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -250,7 +252,7 @@ export default function TeamPage({
         {err && <Badge variant="error">{err}</Badge>}
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <TeamMetric icon={UsersRound} label="Rosa" value={`${team.players.length}/${MAX_PLAYERS_PER_TEAM}`} note={`${eligibleCount} idonei`} />
+          <TeamMetric icon={UsersRound} label={isAdmin ? "Rosa" : "Giocatori"} value={isAdmin ? `${team.players.length}/${MAX_PLAYERS_PER_TEAM}` : String(team.players.length)} note={isAdmin ? `${eligibleCount} idonei` : undefined} />
           <TeamMetric icon={Trophy} label="Punti" value={String(competition?.points ?? 0)} note={`${competition?.played ?? 0} partite`} />
           <TeamMetric icon={Target} label="Gol" value={`${competition?.gf ?? 0}:${competition?.ga ?? 0}`} note={`Diff. ${signed(competition?.gd ?? 0)}`} />
           <TeamMetric icon={Activity} label="Forma" value={competition?.form?.length ? competition.form.join(" ") : "—"} note={`${totalGoals} gol individuali · ${totalAppearances} presenze`} />
@@ -263,13 +265,19 @@ export default function TeamPage({
         )}
 
         {competition?.nextMatch && (
-          <Link href={`/leagues/${leagueId}/matches/${competition.nextMatch.id}`} className="block">
-            <Card className="transition hover:border-[var(--accent)]">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CalendarClock size={18} /></span><div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">Prossima partita</p><p className="mt-0.5 text-base font-black text-[var(--foreground)]">{competition.nextMatch.home ? "vs" : "@"} {competition.nextMatch.opponent.name}</p></div></div>
-                <div className="text-left sm:text-right"><p className="text-sm font-black text-[var(--foreground)]">{competition.nextMatch.phase === "playoff" ? "Playoff" : `Giornata ${competition.nextMatch.round}`}</p><p className="mt-1 text-xs text-[var(--muted)]">{formatDate(competition.nextMatch.date)}</p>{competition.nextMatch.venueName && <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-[var(--muted)]"><MapPin size={11} /> {competition.nextMatch.venueName}</p>}</div>
+          <Link href={`/leagues/${leagueId}/matches/${competition.nextMatch.id}`} className="group block">
+            <article className="relative min-h-[170px] overflow-hidden rounded-[28px] border border-white/10 bg-black/35 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.24)] transition hover:-translate-y-0.5 hover:border-[var(--border-strong)] sm:p-6">
+              <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(115deg, ${team.colorHex ?? "#F97316"}45 0%, ${team.colorHex ?? "#F97316"}13 44%, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"}35 100%)` }} />
+              {team.badgeUrl && <img src={team.badgeUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-64 w-64 rotate-[-10deg] object-contain opacity-[0.12] blur-[1px] transition duration-500 group-hover:scale-[1.03]" />}
+              <div className="relative flex min-h-[120px] flex-col justify-between gap-6 sm:flex-row sm:items-end">
+                <div>
+                  <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/60"><CalendarClock size={14} /> Prossima partita</p>
+                  <p className="mt-4 text-2xl font-black tracking-[-0.045em] text-white">{competition.nextMatch.home ? "vs" : "@"} {competition.nextMatch.opponent.name}</p>
+                  <p className="mt-2 text-xs font-bold text-white/65">{competition.nextMatch.phase === "playoff" ? "Playoff" : `Giornata ${competition.nextMatch.round}`} · {formatDate(competition.nextMatch.date)}</p>
+                </div>
+                {competition.nextMatch.venueName && <p className="inline-flex items-center gap-1.5 text-xs font-bold text-white/60"><MapPin size={13} /> {competition.nextMatch.venueName}</p>}
               </div>
-            </Card>
+            </article>
           </Link>
         )}
 
@@ -283,9 +291,9 @@ export default function TeamPage({
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             <Chip active={rosterFilter === "all"} onClick={() => setRosterFilter("all")}>Tutti</Chip>
-            <Chip active={rosterFilter === "eligible"} onClick={() => setRosterFilter("eligible")}><ShieldCheck size={12} /> Idonei</Chip>
+            {isAdmin && <Chip active={rosterFilter === "eligible"} onClick={() => setRosterFilter("eligible")}><ShieldCheck size={12} /> Idonei</Chip>}
             {isAdmin && <Chip active={rosterFilter === "attention"} onClick={() => setRosterFilter("attention")}><CircleAlert size={12} /> Da completare</Chip>}
-            <span className="mx-1 w-px shrink-0 bg-[var(--border)]" />
+            {isAdmin && <span className="mx-1 w-px shrink-0 bg-[var(--border)]" />}
             <Chip active={roleFilter === "all"} onClick={() => setRoleFilter("all")}>Tutti i ruoli</Chip>
             {ROLE_ORDER.map((role) => <Chip key={role} active={roleFilter === role} onClick={() => setRoleFilter(role)}>{role}</Chip>)}
           </div>

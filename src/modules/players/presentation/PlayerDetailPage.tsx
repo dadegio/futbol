@@ -282,8 +282,11 @@ export default function PlayerPage({
               <PlayerAvatar firstName={player.firstName} lastName={player.lastName} number={player.number} photoUrl={player.photoUrl ?? null} photoZoom={player.photoZoom ?? 1} photoPositionX={player.photoPositionX ?? 50} photoPositionY={player.photoPositionY ?? 50} />
             </div>
 
-            <div className="flex min-w-0 flex-col justify-between gap-7 p-5 sm:p-7 lg:p-8">
-              <div>
+            <div className="relative flex min-w-0 flex-col justify-between gap-7 overflow-hidden p-5 sm:p-7 lg:p-8">
+              {player.team?.badgeUrl && (
+                <img src={player.team.badgeUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -right-16 top-1/2 h-72 w-72 -translate-y-1/2 rotate-[-10deg] object-contain opacity-[0.055] blur-[1px]" />
+              )}
+              <div className="relative">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--accent)]">#{player.number}</span>
                   {player.position && <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">{player.position}</span>}
@@ -307,14 +310,16 @@ export default function PlayerPage({
                 )}
               </div>
 
-              <div>
-                <div className="mb-3 flex items-center gap-2">
-                  <span className={[
-                    "h-2 w-2 rounded-full",
-                    player.isEligibleForMatchSheet ? "bg-[var(--accent)]" : "bg-amber-300",
-                  ].join(" ")} />
-                  <span className="text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">{playerStatusLabel(player)}</span>
-                </div>
+              <div className="relative">
+                {isAdmin && (
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className={[
+                      "h-2 w-2 rounded-full",
+                      player.isEligibleForMatchSheet ? "bg-[var(--accent)]" : "bg-amber-300",
+                    ].join(" ")} />
+                    <span className="text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">{playerStatusLabel(player)}</span>
+                  </div>
+                )}
 
                 <div className={isAdmin ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "grid grid-cols-3 gap-2"}>
                   <HeroStat label="Gol" value={goals} icon={<Goal size={15} />} />
@@ -341,11 +346,11 @@ export default function PlayerPage({
               )}
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className={isAdmin ? "mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" : "mt-5 grid gap-3 sm:grid-cols-3"}>
               <InfoRow label="Nome" value={fullName} />
               <InfoRow label="Numero" value={`#${player.number}`} />
               <InfoRow label="Ruolo" value={player.position || "Non impostato"} />
-              <InfoRow label="Iscrizione" value={playerStatusLabel(player)} />
+              {isAdmin && <InfoRow label="Iscrizione" value={playerStatusLabel(player)} />}
             </div>
           </Card>
 

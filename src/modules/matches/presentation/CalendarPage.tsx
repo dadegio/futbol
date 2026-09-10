@@ -600,7 +600,7 @@ export default function CalendarPage({
 
                 <Card className="overflow-hidden !p-0">
                   {group.matches.map((match) => (
-                    <CalendarMatchRow key={match.id} leagueId={leagueId} match={match} />
+                    <CalendarMatchRow key={match.id} leagueId={leagueId} match={match} isAdmin={isAdmin} />
                   ))}
                 </Card>
               </section>
@@ -655,7 +655,7 @@ function CalendarSkeleton() {
   );
 }
 
-function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match }) {
+function CalendarMatchRow({ leagueId, match, isAdmin }: { leagueId: string; match: Match; isAdmin: boolean }) {
   const played = isPlayed(match);
   const postponed = match.lifecycleStatus === "POSTPONED";
   const cancelled = match.lifecycleStatus === "CANCELLED";
@@ -680,7 +680,7 @@ function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match 
           <span className="text-[10px] font-black uppercase text-amber-300">Rinv.</span>
         ) : played ? (
           <span className="text-sm font-medium text-[var(--muted)]">FT</span>
-        ) : draft ? (
+        ) : draft && isAdmin ? (
           <span className="text-[10px] font-black uppercase text-[var(--accent)]">Bozza</span>
         ) : (
           <span className="font-mono text-sm font-black text-[var(--foreground)]">
@@ -692,11 +692,11 @@ function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match 
       <div className="min-w-0 space-y-2">
         <TeamLine team={match.homeTeam} muted={(played && !live) || cancelled} />
         <TeamLine team={match.awayTeam} muted={(played && !live) || cancelled} />
-        {(postponed || cancelled || draft) && (
+        {(postponed || cancelled || (draft && isAdmin)) && (
           <div className="flex flex-wrap gap-1.5">
             {postponed && <Badge variant="accent">Rinviata</Badge>}
             {cancelled && <Badge variant="error">Annullata</Badge>}
-            {draft && !cancelled && <Badge variant="accent">Risultato in bozza</Badge>}
+            {draft && isAdmin && !cancelled && <Badge variant="accent">Risultato in bozza</Badge>}
           </div>
         )}
         <div className="flex min-w-0 flex-col gap-1 pt-1 text-[11px] font-semibold text-[var(--muted)] sm:flex-row sm:flex-wrap sm:gap-x-4">
@@ -708,12 +708,14 @@ function CalendarMatchRow({ leagueId, match }: { leagueId: string; match: Match 
                 : "Campo da prenotare"}
             </span>
           </span>
-          <span className="flex min-w-0 items-center gap-1.5">
-            <UsersRound size={12} className="shrink-0 text-[var(--accent)]" />
-            <span className="truncate">
-              Arbitro: {match.referee ? (match.referee.name || "assegnato") : "da assegnare"}
+          {isAdmin && (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <UsersRound size={12} className="shrink-0 text-[var(--accent)]" />
+              <span className="truncate">
+                Arbitro: {match.referee ? (match.referee.name || "assegnato") : "da assegnare"}
+              </span>
             </span>
-          </span>
+          )}
         </div>
       </div>
 
@@ -761,13 +763,13 @@ function TeamLogo({ name, badgeUrl }: { name: string; badgeUrl: string | null })
       <img
         src={badgeUrl}
         alt={`Logo ${name}`}
-        className="h-6 w-6 shrink-0 rounded-md object-contain"
+        className="h-8 w-8 shrink-0 rounded-xl object-contain"
       />
     );
   }
 
   return (
-    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#eef0ec] text-[9px] font-black text-[var(--foreground)]">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef0ec] text-[10px] font-black text-[var(--foreground)]">
       {initials}
     </span>
   );

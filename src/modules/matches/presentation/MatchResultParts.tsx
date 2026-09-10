@@ -207,6 +207,7 @@ export function TeamStatsCard({
   setPlayerStat,
   readOnly,
   isAdmin,
+  showEligibility = false,
   onPreviewPhoto,
   onSelectEligible,
 }: {
@@ -220,10 +221,15 @@ export function TeamStatsCard({
   setPlayerStat: (playerId: string, key: "goals" | "assists", value: string) => void;
   readOnly?: boolean;
   isAdmin?: boolean;
+  showEligibility?: boolean;
   onPreviewPhoto: (player: Player) => void;
   onSelectEligible?: (checked: boolean) => void;
 }) {
   const eligibleCount = players.filter(isPlayerEligible).length;
+  const hasPublishedSheet = !showEligibility && players.some((player) => sheet[player.id]);
+  const displayedPlayers = hasPublishedSheet
+    ? players.filter((player) => sheet[player.id])
+    : players;
   const teamColor = safeTeamColor(colorHex);
   const teamSecondaryColor = safeTeamColor(secondaryColorHex ?? colorHex);
 
@@ -239,10 +245,12 @@ export function TeamStatsCard({
       >
         <div>
           <h2 className="text-base font-black text-[var(--foreground)]">{title}</h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">{eligibleCount} giocatori selezionabili</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            {showEligibility ? `${eligibleCount} giocatori selezionabili` : "Distinta e statistiche gara"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          {!readOnly && onSelectEligible && (
+          {showEligibility && !readOnly && onSelectEligible && (
             <>
               <button type="button" onClick={() => onSelectEligible(true)} className="rounded-full bg-[var(--card-2)] px-2.5 py-1 text-[10px] font-black text-[var(--accent)]">Idonei</button>
               <button type="button" onClick={() => onSelectEligible(false)} className="rounded-full bg-[var(--card-2)] px-2.5 py-1 text-[10px] font-black text-[var(--muted)]">Azzera</button>
@@ -252,11 +260,11 @@ export function TeamStatsCard({
         </div>
       </div>
 
-      {players.length === 0 ? (
+      {displayedPlayers.length === 0 ? (
         <p className="px-4 py-4 text-sm text-[var(--muted)]">Nessun giocatore.</p>
       ) : (
         <div>
-          {players.map((p, i) => {
+          {displayedPlayers.map((p, i) => {
             const hasStats = Number(stats[p.id]?.goals || 0) > 0 || Number(stats[p.id]?.assists || 0) > 0;
             const eligible = isPlayerEligible(p);
             return (
@@ -264,7 +272,7 @@ export function TeamStatsCard({
                 key={p.id}
                 className={[
                   "grid items-center gap-3 px-4 py-3",
-                  i < players.length - 1 ? "border-b border-[var(--border)]" : "",
+                  i < displayedPlayers.length - 1 ? "border-b border-[var(--border)]" : "",
                   hasStats ? "bg-[var(--accent-soft)]" : "",
                 ].join(" ")}
                 style={{ gridTemplateColumns: "32px 48px minmax(0,1fr) auto" }}
@@ -275,17 +283,23 @@ export function TeamStatsCard({
 
                 <div className="min-w-0">
                   <span className="block truncate text-[13px] font-black text-[var(--foreground)]">{p.firstName} {p.lastName}</span>
-                  <span className={["mt-0.5 flex items-center gap-1 truncate text-[10px] font-bold", eligible ? "text-emerald-300" : "text-amber-300"].join(" ")}>
-                    {eligible ? <ShieldCheck size={12} /> : <CircleDot size={12} />}
-                    {playerEligibilityLabel(p, isAdmin)}
-                  </span>
+                  {showEligibility && (
+                    <span className={["mt-0.5 flex items-center gap-1 truncate text-[10px] font-bold", eligible ? "text-emerald-300" : "text-amber-300"].join(" ")}>
+                      {eligible ? <ShieldCheck size={12} /> : <CircleDot size={12} />}
+                      {playerEligibilityLabel(p, isAdmin)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                  <label className="flex min-h-8 items-center gap-1 text-[10px] font-black text-[var(--muted)]">
-                    <input type="checkbox" checked={sheet[p.id] ?? false} disabled={readOnly || !eligible} onChange={(event) => toggleSheet(p.id, event.target.checked)} />
-                    Distinta
-                  </label>
+                  {showEligibility ? (
+                    <label className="flex min-h-8 items-center gap-1 text-[10px] font-black text-[var(--muted)]">
+                      <input type="checkbox" checked={sheet[p.id] ?? false} disabled={readOnly || !eligible} onChange={(event) => toggleSheet(p.id, event.target.checked)} />
+                      Distinta
+                    </label>
+                  ) : sheet[p.id] ? (
+                    <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">In distinta</span>
+                  ) : null}
                   <div className="flex items-center gap-1.5">
                     <StatInput label="G" value={stats[p.id]?.goals ?? ""} onChange={(v) => setPlayerStat(p.id, "goals", v)} readOnly={readOnly} />
                     <StatInput label="A" value={stats[p.id]?.assists ?? ""} onChange={(v) => setPlayerStat(p.id, "assists", v)} readOnly={readOnly} />

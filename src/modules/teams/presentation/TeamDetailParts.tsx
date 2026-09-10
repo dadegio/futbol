@@ -111,7 +111,7 @@ export function PlayerRow({
   return (
     <div className={[
       "grid grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:grid-cols-[104px_minmax(0,1fr)_auto]",
-      isAdminOk(player) ? "" : "bg-amber-400/5",
+      isAdmin && !isAdminOk(player) ? "bg-amber-400/5" : "",
     ].join(" ")}>
       <PlayerPhoto
         name={fullName}
@@ -141,8 +141,7 @@ export function PlayerRow({
           <span>#{player.number}</span>
           <span>·</span>
           <span>{shortRole}</span>
-          <span>·</span>
-          <span>{playerStatusLabel(player)}</span>
+          {isAdmin && <><span>·</span><span>{playerStatusLabel(player)}</span></>}
         </div>
         <div className="mt-1 text-xs text-[var(--muted)]">
           {player.appearances ?? 0} presenze

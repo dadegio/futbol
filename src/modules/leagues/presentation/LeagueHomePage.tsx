@@ -360,40 +360,16 @@ export default function LeagueHomePage() {
         </header>
 
         {err && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {err}
-          </div>
+          <Card className="border-amber-400/20 bg-amber-400/[0.05]">
+            <p className="font-black text-[var(--foreground)]">Dati del torneo temporaneamente non disponibili</p>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">Riprova tra poco. Sponsor e contenuti media restano comunque consultabili.</p>
+          </Card>
         )}
 
         <SponsorBanner compact />
 
         <LeagueAdSlot league={league} placement="league" />
 
-        <Card className="space-y-4">
-          <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-            <div className="text-base font-semibold">Stagione regolare</div>
-            <div className="text-sm font-semibold text-[var(--muted)]">
-              G{currentRound}
-              <span className="mx-2 text-[var(--muted)]">/</span>
-              {totalRounds}
-            </div>
-          </div>
-
-          <div className="h-1.5 rounded-full bg-[rgba(210,174,114,0.18)]">
-            <div
-              className="h-1.5 rounded-full bg-[linear-gradient(90deg,var(--imperial-green-2),var(--imperial-gold))]"
-              style={{
-                width: `${Math.min((currentRound / totalRounds) * 100, 100)}%`,
-              }}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-3">
-            <SummaryStat label="Squadre" value={teamCount} />
-            <SummaryStat label="Partite" value={matchCount} />
-            <SummaryStat label="Goal" value={totalGoals} />
-          </div>
-        </Card>
 {liveMatch && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
@@ -450,6 +426,57 @@ export default function LeagueHomePage() {
         )}
 
 
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-[-0.03em]">Calendario</h2>
+
+            <Link
+              href={`/leagues/${leagueId}/calendar`}
+              className="text-sm font-semibold text-[var(--accent)]"
+            >
+              Tutte →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {nextMatches.length > 0 ? (
+              nextMatches.map((match) => (
+                <NextMatchCard key={match.id} match={match} leagueId={leagueId} />
+              ))
+            ) : (
+              <Card>
+                <p className="text-sm text-[var(--muted)]">
+                  Nessuna partita in programma.
+                </p>
+              </Card>
+            )}
+          </div>
+        </section>
+
+        {!err && summary && (
+          <Card className="overflow-hidden !p-0">
+            <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--muted)]">Stagione regolare</p>
+                  <p className="shrink-0 text-xs font-black text-[var(--accent)]">G{currentRound} / {totalRounds}</p>
+                </div>
+                <div className="mt-2 h-1 rounded-full bg-[rgba(210,174,114,0.16)]">
+                  <div
+                    className="h-1 rounded-full bg-[linear-gradient(90deg,var(--imperial-green-2),var(--imperial-gold))]"
+                    style={{ width: `${Math.min((currentRound / totalRounds) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:min-w-[330px]">
+                <SummaryStat label="Squadre" value={teamCount} compact />
+                <SummaryStat label="Partite" value={matchCount} compact />
+                <SummaryStat label="Gol" value={totalGoals} compact />
+              </div>
+            </div>
+          </Card>
+        )}
 
         {recentResults.length > 0 && (
           <section className="space-y-3">
@@ -524,32 +551,7 @@ export default function LeagueHomePage() {
           </Card>
         </section>
 
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-[-0.03em]">Calendario</h2>
 
-            <Link
-              href={`/leagues/${leagueId}/calendar`}
-              className="text-sm font-semibold text-[var(--accent)]"
-            >
-              Tutte →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {nextMatches.length > 0 ? (
-              nextMatches.map((match) => (
-                <NextMatchCard key={match.id} match={match} />
-              ))
-            ) : (
-              <Card>
-                <p className="text-sm text-[var(--muted)]">
-                  Nessuna partita in programma.
-                </p>
-              </Card>
-            )}
-          </div>
-        </section>
       </div>
     </DashboardShell>
   );
@@ -624,14 +626,16 @@ function LeagueOverviewSkeleton() {
 function SummaryStat({
   label,
   value,
+  compact = false,
 }: {
   label: string;
   value: number;
+  compact?: boolean;
 }) {
   return (
-    <div className="imperial-plate rounded-2xl px-4 py-3">
-      <div className="text-3xl font-black tracking-[-0.02em] text-[var(--imperial-gold-2)]">{value}</div>
-      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">
+    <div className={compact ? "rounded-xl border border-[rgba(210,174,114,0.14)] bg-black/10 px-3 py-2" : "imperial-plate rounded-2xl px-4 py-3"}>
+      <div className={compact ? "text-lg font-black text-[var(--imperial-gold-2)]" : "text-3xl font-black tracking-[-0.02em] text-[var(--imperial-gold-2)]"}>{value}</div>
+      <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
         {label}
       </div>
     </div>
@@ -668,9 +672,10 @@ function RecentResultCard({ match, leagueId }: { match: Match; leagueId: string 
   );
 }
 
-function NextMatchCard({ match }: { match: Match }) {
+function NextMatchCard({ match, leagueId }: { match: Match; leagueId: string }) {
   return (
-    <Card className="turf-card min-h-[136px]">
+    <Link href={`/leagues/${leagueId}/matches/${match.id}`} className="block">
+    <Card className="turf-card min-h-[136px] transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
           {formatMatchDateTime(match.date)}
@@ -683,9 +688,8 @@ function NextMatchCard({ match }: { match: Match }) {
         )}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-[var(--muted)]">
-        <span>{match.venueName ?? "Campo da prenotare"}</span>
-        <span>Arbitro: {match.referee ? (match.referee.name || "assegnato") : "da assegnare"}</span>
+      <div className="mb-4 text-[11px] font-semibold text-[var(--muted)]">
+        <span>{match.venueName ?? "Campo da definire"}</span>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
@@ -710,6 +714,7 @@ function NextMatchCard({ match }: { match: Match }) {
         </div>
       </div>
     </Card>
+    </Link>
   );
 }
 

@@ -13,6 +13,9 @@ if (listed.status !== 0) {
 }
 
 const allowedEnvExamples = new Set([".env.example", ".env.test.example"]);
+const legacyRuntimeFiles = new Set([
+  "public/uploads/1783524934699-bb95b411-4c87-450f-905c-21e7bee87388-logo.jpeg",
+]);
 const tracked = listed.stdout.split("\0").filter(Boolean).map(normalize);
 
 const shouldUntrack = (file) => {
@@ -21,6 +24,7 @@ const shouldUntrack = (file) => {
 
   if (lower.startsWith(".idea/") || lower.startsWith(".vscode/") || lower.startsWith(".vercel/")) return true;
   if (lower.startsWith("src/generated/prisma/")) return true;
+  if ((lower.startsWith("public/uploads/") || lower.startsWith("public/media/")) && !legacyRuntimeFiles.has(file)) return true;
   if ((basename === ".env" || basename.startsWith(".env.")) && !allowedEnvExamples.has(basename)) return true;
   if (/\.(pem|key|p12|pfx|db|sqlite|sqlite3)$/i.test(file)) return true;
   return false;

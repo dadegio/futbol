@@ -46,7 +46,7 @@ export default async function VideosPage({ params, searchParams }: VideosPagePro
         <header className="pt-2">
           <Link href={`/leagues/${leagueId}`} className="mb-8 flex items-center gap-3 text-sm text-[var(--muted)]">
             <ArrowLeft size={16} />
-            <span>Overview torneo</span>
+            <span>Home torneo</span>
           </Link>
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -103,9 +103,9 @@ export default async function VideosPage({ params, searchParams }: VideosPagePro
                     <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-[rgba(210,174,114,0.36)] bg-black/30 text-[var(--accent)]">
                       <Play size={30} fill="currentColor" />
                     </div>
-                    <h3 className="mt-4 text-xl font-black text-[var(--foreground)]">Configura la playlist</h3>
+                    <h3 className="mt-4 text-xl font-black text-[var(--foreground)]">Video non ancora disponibili</h3>
                     <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
-                      Aggiungi <code className="text-[var(--foreground)]">NEXT_PUBLIC_YOUTUBE_PLAYLIST_ID</code> oppure <code className="text-[var(--foreground)]">NEXT_PUBLIC_YOUTUBE_PLAYLIST_URL</code> nel file <code className="text-[var(--foreground)]">.env</code>.
+                      I contenuti ufficiali di Cammino TV compariranno qui appena pubblicati.
                     </p>
                   </div>
                 </div>
@@ -174,9 +174,7 @@ export default async function VideosPage({ params, searchParams }: VideosPagePro
               ) : (
                 <div className="space-y-3 p-5 text-sm leading-relaxed text-[var(--muted)]">
                   <p>
-                    Il player usa direttamente la playlist. L&apos;elenco laterale
-                    non è disponibile finché YouTube non restituisce il feed
-                    pubblico.
+                    L&apos;archivio laterale sarà disponibile insieme ai prossimi contenuti ufficiali.
                   </p>
                   <a
                     href={youtubePlaylistConfig.url}

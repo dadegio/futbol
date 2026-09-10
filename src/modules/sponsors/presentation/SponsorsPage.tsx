@@ -128,7 +128,7 @@ export default function SponsorsPage() {
             </div>
             <h2 className="mt-4 text-xl font-black text-[var(--foreground)]">Nessuno sponsor pubblicato</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">
-              Quando l'admin aggiunge uno sponsor attivo, comparirà qui con link e contatti diretti.
+              I partner ufficiali del torneo verranno pubblicati qui con link e contatti utili.
             </p>
             {canAdmin && <Link href={`/leagues/${leagueId}/admin`} className="mt-5 inline-block"><Button>Vai alle impostazioni</Button></Link>}
           </Card>

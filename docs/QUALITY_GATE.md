@@ -140,8 +140,8 @@ npm run ci
 
 `npm run check:hygiene` blocca file ambiente, chiavi private, database locali,
 configurazioni IDE/Vercel e Prisma Client generato se finiscono per errore sotto
-versionamento. L'unico upload legacy già noto in `public/uploads` produce un warning finché non
-si verifica che nessun record del database lo referenzi più. Qualunque nuovo file
-runtime forzato sotto `public/uploads` blocca invece il controllo: i nuovi upload
-locali sono ignorati da `.gitignore` e in produzione devono essere salvati su
-Vercel Blob.
+versionamento. Gli upload runtime presenti in `public/uploads` o `public/media` bloccano la
+quality gate. L'unico upload legacy già noto resta temporaneamente in allowlist
+con warning: prima di rimuoverlo va verificato che nessun record del database lo
+referenzi ancora. I nuovi upload locali sono ignorati da `.gitignore` e in
+produzione devono essere salvati su Vercel Blob.

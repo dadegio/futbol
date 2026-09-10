@@ -57,3 +57,4 @@ next-env.d.ts
 # Runtime uploads: production media belongs in Vercel Blob.
 # Existing tracked uploads are intentionally not deleted automatically.
 /public/uploads/*
+/public/media/*

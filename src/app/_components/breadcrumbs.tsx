@@ -42,7 +42,7 @@ export default function Breadcrumbs({ leagueId }: BreadcrumbsProps) {
   if (segments.length === 0) return null;
 
   const crumbs: { label: string; href?: string }[] = [
-    { label: "Overview", href: base },
+    { label: "Home", href: base },
   ];
 
   let accumulated = base;

@@ -326,7 +326,7 @@ export default function SponsorManager({ leagueId }: { leagueId: string }) {
                 disabled={uploading}
                 className="block w-full text-xs text-[var(--muted)] file:mr-3 file:rounded-xl file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-2 file:text-xs file:font-black file:text-[var(--accent)]"
               />
-              <Input className="mt-3" value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} placeholder="/uploads/logo.png oppure https://…" />
+              <Input className="mt-3" value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} placeholder="https://… (URL del logo)" />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">

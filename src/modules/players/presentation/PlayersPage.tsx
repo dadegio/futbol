@@ -10,7 +10,7 @@ import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Badge from "src/app/_components/ui/badge";
 import OptimizedPlayerImage from "src/app/_components/optimized-player-image";
-import { authFetch } from "@/lib/client-auth";
+import { authFetch, useCanAdminLeague } from "@/lib/client-auth";
 
 type Row = {
   id: string;
@@ -38,6 +38,8 @@ export default function PlayersPage() {
   const router = useRouter();
   const q = (sp.get("q") ?? "").trim();
   const status = (sp.get("status") ?? "").trim();
+  const isAdmin = useCanAdminLeague(leagueId);
+  const effectiveStatus = isAdmin ? status : "";
 
   const [rows, setRows] = useState<Row[]>([]);
   const [search, setSearch] = useState(q);
@@ -54,7 +56,7 @@ export default function PlayersPage() {
     setErr(null);
     setLoading(true);
 
-    authFetch(`/api/leagues/${leagueId}/players?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`, {
+    authFetch(`/api/leagues/${leagueId}/players?q=${encodeURIComponent(q)}&status=${encodeURIComponent(effectiveStatus)}`, {
       cache: "no-store",
     })
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
@@ -64,7 +66,7 @@ export default function PlayersPage() {
       })
       .catch((e) => setErr(e.message))
       .finally(() => setLoading(false));
-  }, [leagueId, q, status]);
+  }, [effectiveStatus, leagueId, q]);
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -73,8 +75,8 @@ export default function PlayersPage() {
 
     router.push(
       value
-        ? `/leagues/${leagueId}/players?q=${encodeURIComponent(value)}${status ? `&status=${status}` : ""}`
-        : `/leagues/${leagueId}/players${status ? `?status=${status}` : ""}`
+        ? `/leagues/${leagueId}/players?q=${encodeURIComponent(value)}${isAdmin && status ? `&status=${status}` : ""}`
+        : `/leagues/${leagueId}/players${isAdmin && status ? `?status=${status}` : ""}`
     );
   }
 
@@ -114,14 +116,14 @@ export default function PlayersPage() {
             <CardHeader
               tag="Giocatori"
               title="Giocatori"
-              description="Tutte le rose del torneo in un unico posto, con profili più leggibili e foto mostrate senza ritagli aggressivi."
+              description={isAdmin ? "Tutte le rose del torneo, con ricerca e controlli amministrativi quando servono." : "Volti, numeri e ruoli del torneo. Cerca un giocatore e apri il suo profilo."}
               level={1}
             />
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <InfoBox label="Risultati" value={loading ? "…" : String(rows.length)} />
               <InfoBox label="Squadre" value={String(grouped.length)} />
-              <InfoBox label="Filtro" value={q || status ? "Attivo" : "Tutti"} />
+              <InfoBox label="Vista" value={q ? "Ricerca" : "Tutti"} />
             </div>
           </div>
         </Card>
@@ -145,33 +147,27 @@ export default function PlayersPage() {
             <Button className="h-12 md:min-w-[150px]">Cerca</Button>
           </form>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-[var(--muted)]">
-              <SlidersHorizontal size={13} /> Stato
-            </span>
-            {[
-              ["", "Tutti"],
-              ["ok", "Iscrizione OK"],
-              ["todo", "Da completare"],
-            ].map(([value, label]) => {
-              const active = status === value;
-              const href = `/leagues/${leagueId}/players${value ? `?status=${value}${q ? `&q=${encodeURIComponent(q)}` : ""}` : q ? `?q=${encodeURIComponent(q)}` : ""}`;
-              return (
-                <Link
-                  key={value}
-                  href={href}
-                  className={[
+          {isAdmin && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-[var(--muted)]">
+                <SlidersHorizontal size={13} /> Stato iscrizione
+              </span>
+              {[
+                ["", "Tutti"],
+                ["ok", "Iscrizione OK"],
+                ["todo", "Da completare"],
+              ].map(([value, label]) => {
+                const active = status === value;
+                const href = `/leagues/${leagueId}/players${value ? `?status=${value}${q ? `&q=${encodeURIComponent(q)}` : ""}` : q ? `?q=${encodeURIComponent(q)}` : ""}`;
+                return (
+                  <Link key={value} href={href} className={[
                     "rounded-full border px-3 py-1.5 text-xs font-black transition",
-                    active
-                      ? "border-[var(--accent)] bg-[var(--accent)] text-black"
-                      : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)] hover:text-[var(--foreground)]",
-                  ].join(" ")}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
+                    active ? "border-[var(--accent)] bg-[var(--accent)] text-black" : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)] hover:text-[var(--foreground)]",
+                  ].join(" ")}>{label}</Link>
+                );
+              })}
+            </div>
+          )}
 
           {err && (
             <Badge variant="error" className="mt-4">
@@ -238,6 +234,7 @@ export default function PlayersPage() {
                         player={player}
                         leagueId={leagueId}
                         eagerPhoto={eagerPlayerIds.has(player.id)}
+                        isAdmin={isAdmin}
                       />
                     ))}
                   </div>
@@ -255,10 +252,12 @@ function PlayerCard({
   player,
   leagueId,
   eagerPhoto = false,
+  isAdmin,
 }: {
   player: Row;
   leagueId: string;
   eagerPhoto?: boolean;
+  isAdmin: boolean;
 }) {
   const fullName = `${player.firstName} ${player.lastName}`;
 
@@ -319,17 +318,17 @@ function PlayerCard({
               </span>
             </div>
 
-            <span
-              className={[
+            {isAdmin ? (
+              <span className={[
                 "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.1em]",
-                player.isEligibleForMatchSheet
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "bg-amber-400/10 text-amber-300",
-              ].join(" ")}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              {player.registrationStatus ?? "Da completare"}
-            </span>
+                player.isEligibleForMatchSheet ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-amber-400/10 text-amber-300",
+              ].join(" ")}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {player.registrationStatus ?? "Da completare"}
+              </span>
+            ) : (
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--accent)]">Apri profilo</span>
+            )}
           </div>
         </div>
       </div>

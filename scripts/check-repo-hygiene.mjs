@@ -32,7 +32,7 @@ function trackedFiles() {
 
 const files = trackedFiles();
 const allowedEnvExamples = new Set([".env.example", ".env.test.example"]);
-const knownLegacyRuntimeUploads = new Set([
+const legacyRuntimeFiles = new Set([
   "public/uploads/1783524934699-bb95b411-4c87-450f-905c-21e7bee87388-logo.jpeg",
 ]);
 
@@ -52,11 +52,11 @@ for (const file of files) {
   if (lower.startsWith("src/generated/prisma/")) {
     errors.push(`${file}: Prisma Client è generato e non deve essere versionato.`);
   }
-  if (lower.startsWith("public/uploads/")) {
-    if (knownLegacyRuntimeUploads.has(file)) {
-      warnings.push(`${file}: upload legacy ancora versionato. Verifica il DB prima di rimuoverlo.`);
+  if (lower.startsWith("public/uploads/") || lower.startsWith("public/media/")) {
+    if (legacyRuntimeFiles.has(file)) {
+      warnings.push(`${file}: upload legacy ancora versionato; verifica i riferimenti nel DB prima di rimuoverlo.`);
     } else {
-      errors.push(`${file}: upload runtime non deve essere versionato; usa Vercel Blob o storage persistente.`);
+      errors.push(`${file}: media runtime versionato. Spostalo su storage persistente e rimuovilo dall'indice Git.`);
     }
   }
 

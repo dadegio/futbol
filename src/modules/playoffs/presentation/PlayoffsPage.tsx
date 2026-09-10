@@ -117,9 +117,11 @@ export default function PlayoffsPage({
         {/* Header */}
         <Card>
           <CardHeader
-            tag="Playoff"
-            title="Fase a eliminazione"
-            description="Configura e gestisci i playoff del torneo."
+            tag="Fase finale"
+            title="Tabellone playoff"
+            description={isAdmin
+              ? "Segui il percorso verso la finale o gestisci la configurazione del tabellone."
+              : "Segui accoppiamenti, risultati e percorso delle squadre verso la finale."}
           />
         </Card>
 

@@ -97,7 +97,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
 
   const tournamentLinks = leagueId
     ? [
-        { href: `/leagues/${leagueId}`, label: "Overview", icon: <Home size={18} /> },
+        { href: `/leagues/${leagueId}`, label: "Home", icon: <Home size={18} /> },
         { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Table2 size={18} /> },
         { href: `/leagues/${leagueId}/calendar`, label: "Calendario", icon: <CalendarDays size={18} /> },
         ...(hasPlayoffs
