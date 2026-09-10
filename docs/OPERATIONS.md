@@ -11,6 +11,8 @@ npm run modernization
 npm run build
 ```
 
+In produzione Vercel, `npm run build` applica automaticamente `prisma migrate deploy` **prima** di generare il Prisma Client e compilare Next.js. Le build Preview non applicano migration al database di produzione. Questo evita che un deploy del codice raggiunga un database rimasto alla migration precedente.
+
 Dopo il push devono risultare verdi sia **GitHub Actions / Quality Gate** sia il deployment Vercel.
 
 Il controllo di disponibilità minimale è esposto su:
@@ -19,7 +21,7 @@ Il controllo di disponibilità minimale è esposto su:
 GET /api/health
 ```
 
-Restituisce solamente stato database, latenza e timestamp; non espone configurazione o credenziali.
+Restituisce stato database, compatibilità minima dello schema (`schema: ok|outdated`), latenza e timestamp; non espone configurazione o credenziali. Se il DB risponde ma manca una migration richiesta dall'app, lo stato è `degraded` con `database: ok` e `schema: outdated`.
 
 ## Variabili e segreti
 

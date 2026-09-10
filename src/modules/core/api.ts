@@ -19,7 +19,11 @@ export function apiErrorResponse(error: unknown, fallback = "Errore interno") {
   if (error instanceof AppError) {
     return jsonError(error.message, error.status, error.code);
   }
-  return jsonError(fallback, 500);
+
+  // Non esporre dettagli interni al client, ma conservarli nei log server/Vercel
+  // per rendere diagnosticabili errori Prisma, mismatch di schema e problemi runtime.
+  console.error(`[api] ${fallback}:`, error);
+  return jsonError(fallback, 500, "INTERNAL_ERROR");
 }
 
 export function assertOrThrow(condition: unknown, status: number, message: string, code?: string): asserts condition {

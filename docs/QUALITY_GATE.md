@@ -58,9 +58,10 @@ Variabili richieste in modalità bloccante:
 
 Variabili consigliate o condizionali:
 
+- `DIRECT_URL` (consigliato per Prisma Migrate)
 - `BLOB_READ_WRITE_TOKEN`
 - `NEXT_PUBLIC_APP_URL`
-- `YOUTUBE_PLAYLIST_ID`
+- `NEXT_PUBLIC_YOUTUBE_PLAYLIST_ID`
 
 Per un controllo non bloccante:
 
@@ -139,7 +140,8 @@ npm run ci
 
 `npm run check:hygiene` blocca file ambiente, chiavi private, database locali,
 configurazioni IDE/Vercel e Prisma Client generato se finiscono per errore sotto
-versionamento. Gli upload già presenti in `public/uploads` producono soltanto un
-warning: prima di rimuoverli va verificato che nessun record del database li
-referenzi ancora. I nuovi upload locali sono ignorati da `.gitignore` e in
-produzione devono essere salvati su Vercel Blob.
+versionamento. L'unico upload legacy già noto in `public/uploads` produce un warning finché non
+si verifica che nessun record del database lo referenzi più. Qualunque nuovo file
+runtime forzato sotto `public/uploads` blocca invece il controllo: i nuovi upload
+locali sono ignorati da `.gitignore` e in produzione devono essere salvati su
+Vercel Blob.

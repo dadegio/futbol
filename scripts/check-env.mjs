@@ -47,6 +47,7 @@ function warnEnv(name, description) {
 }
 
 requireEnv("DATABASE_URL", "necessario per Prisma/Neon");
+warnEnv("DIRECT_URL", "consigliato per Prisma Migrate e deploy di produzione");
 requireEnv("AUTH_SECRET", "necessario per sessioni e login");
 
 const authSecret = env("AUTH_SECRET");
@@ -56,7 +57,7 @@ if (authSecret && authSecret.length < 32) {
 
 warnEnv("BLOB_READ_WRITE_TOKEN", "necessario solo se usi Vercel Blob per upload media");
 warnEnv("NEXT_PUBLIC_APP_URL", "consigliato per link assoluti, SEO e integrazioni esterne");
-warnEnv("YOUTUBE_PLAYLIST_ID", "necessario solo per mostrare una playlist YouTube globale");
+warnEnv("NEXT_PUBLIC_YOUTUBE_PLAYLIST_ID", "necessario solo per mostrare una playlist YouTube globale");
 
 if (env("NODE_ENV") === "production") {
   requireEnv("BLOB_READ_WRITE_TOKEN", "obbligatorio in produzione per upload persistenti");
