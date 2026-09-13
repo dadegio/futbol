@@ -4,8 +4,10 @@ import {
   findFieldSlot,
   getFieldSlotOccurrences,
   getRoundSlotWeek,
+  getSlotWeekDistance,
   getSlotWeekWindow,
   isWithinSlotWeek,
+  shiftSlotWeek,
 } from "../src/modules/fields/domain/field-slots.ts";
 
 const field = {
@@ -47,4 +49,12 @@ test("ogni giornata avanza di una settimana di calendario", () => {
   const round2 = getRoundSlotWeek(first, 2);
   assert.equal(round2.startsAt.toISOString(), "2026-10-04T22:00:00.000Z");
   assert.equal(round2.endsAt.toISOString(), "2026-10-11T22:00:00.000Z");
+});
+
+test("posticipo calendario conserva le distanze anche attraverso il cambio ora", () => {
+  const beforeDstChange = new Date("2026-10-18T22:00:00.000Z");
+  const shifted = shiftSlotWeek(beforeDstChange, 2);
+
+  assert.equal(shifted.startsAt.toISOString(), "2026-11-01T23:00:00.000Z");
+  assert.equal(getSlotWeekDistance(beforeDstChange, shifted.startsAt), 2);
 });

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   MapPin,
@@ -32,6 +33,7 @@ type Match = {
   round: number;
   date: string | null;
   slotEnd: string | null;
+  slotWeekStart: string | null;
   venueKey: string | null;
   venueName: string | null;
   venueAddress: string | null;
@@ -55,6 +57,18 @@ type GeneratorResult = {
   rounds: number;
   scheduled: boolean;
   schedulingMode: "captain_booking" | "fixed_slots";
+};
+
+type RescheduleResult = {
+  updated: number;
+  fromRound: number;
+  affectedRounds: number;
+  shiftWeeks: number;
+  previousWeekStart: string;
+  newWeekStart: string;
+  bookingsReleased: number;
+  confirmationsReset: number;
+  manualRefereesKept: number;
 };
 
 async function getJSON<T>(url: string): Promise<T> {
@@ -167,6 +181,44 @@ function toDatetimeLocalValue(date: Date) {
   return local.toISOString().slice(0, 16);
 }
 
+function getRomeDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Rome",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const read = (type: "year" | "month" | "day") =>
+    Number(parts.find((part) => part.type === type)?.value ?? "0");
+
+  return { year: read("year"), month: read("month"), day: read("day") };
+}
+
+function addRomeCalendarDaysToInput(iso: string, days: number) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = getRomeDateParts(date);
+  const shifted = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+  return [
+    shifted.getUTCFullYear(),
+    String(shifted.getUTCMonth() + 1).padStart(2, "0"),
+    String(shifted.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function formatWeekDate(iso: string | null) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("it-IT", {
+    timeZone: "Europe/Rome",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export default function CalendarPage({
   leagueId,
   initialMatches,
@@ -202,6 +254,10 @@ export default function CalendarPage({
     return toDatetimeLocalValue(next);
   });
   const [generating, setGenerating] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleFromRound, setRescheduleFromRound] = useState(1);
+  const [rescheduleStartDate, setRescheduleStartDate] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
 
   async function load() {
     setErr(null);
@@ -348,6 +404,74 @@ export default function CalendarPage({
     }
   }
 
+  function roundWeekAnchor(round: number) {
+    const match = matches.find(
+      (candidate) =>
+        candidate.round === round && Boolean(candidate.slotWeekStart ?? candidate.date)
+    );
+    return match?.slotWeekStart ?? match?.date ?? null;
+  }
+
+  function setRescheduleRound(round: number) {
+    setRescheduleFromRound(round);
+    const anchor = roundWeekAnchor(round);
+    setRescheduleStartDate(anchor ? addRomeCalendarDaysToInput(anchor, 7) : "");
+  }
+
+  function openReschedulePanel() {
+    const firstRound = rounds[0] ?? 1;
+    setRescheduleRound(firstRound);
+    setRescheduleOpen(true);
+    setErr(null);
+    setMsg(null);
+  }
+
+  async function rescheduleCalendar() {
+    if (!rescheduleStartDate || rescheduling) return;
+
+    const accepted = window.confirm(
+      `Posticipare il calendario dalla G${rescheduleFromRound}?\n\n` +
+        "Accoppiamenti, giornate e casa/trasferta resteranno invariati. " +
+        "Le prenotazioni di campo e gli orari delle partite interessate verranno liberati e dovranno essere riconfermati."
+    );
+    if (!accepted) return;
+
+    setErr(null);
+    setMsg(null);
+    setRescheduling(true);
+
+    try {
+      const res = await authFetch(`/api/leagues/${leagueId}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "reschedule",
+          fromRound: rescheduleFromRound,
+          newStartDate: rescheduleStartDate,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(readApiError(data, "Errore posticipo calendario"));
+      }
+
+      const result = data as RescheduleResult;
+      setMsg(
+        `Calendario posticipato di ${result.shiftWeeks} ${
+          result.shiftWeeks === 1 ? "settimana" : "settimane"
+        } dalla G${result.fromRound}: ${result.updated} partite in ${result.affectedRounds} giornate. ` +
+          `${result.bookingsReleased} prenotazioni/orari liberati; accoppiamenti invariati.`
+      );
+      setRescheduleOpen(false);
+      await load();
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Errore posticipo calendario");
+    } finally {
+      setRescheduling(false);
+    }
+  }
+
   function goToPreviousRound() {
     if (!visibleRound) return;
 
@@ -466,6 +590,14 @@ export default function CalendarPage({
                   <RefreshCw size={15} />
                   Rigenera
                 </Button>
+                <Button
+                  variant="secondary"
+                  onClick={openReschedulePanel}
+                  disabled={generating || rescheduling || loading || matches.length === 0}
+                >
+                  <CalendarDays size={15} />
+                  Posticipa calendario
+                </Button>
               </div>
             </div>
 
@@ -544,6 +676,77 @@ export default function CalendarPage({
                 Alterna casa/trasferta
               </label>
             </div>
+
+            {rescheduleOpen && (
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                  <div className="max-w-2xl">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays size={17} className="text-[var(--accent)]" />
+                      <p className="font-black text-[var(--foreground)]">Posticipa senza rigenerare</p>
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                      Mantiene esattamente accoppiamenti, numeri di giornata e casa/trasferta.
+                      Tutte le settimane interessate vengono traslate dello stesso intervallo, quindi
+                      eventuali pause già previste nel calendario restano invariate. Campi e orari
+                      vengono liberati per evitare prenotazioni non valide sulle nuove date.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setRescheduleOpen(false)}
+                    className="text-sm font-bold text-[var(--muted)] hover:text-[var(--foreground)]"
+                  >
+                    Chiudi
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-[180px_minmax(220px,1fr)_auto] md:items-end">
+                  <label className="space-y-1.5 text-sm font-semibold text-[var(--foreground)]">
+                    Da giornata
+                    <Select
+                      value={String(rescheduleFromRound)}
+                      onChange={(event) => setRescheduleRound(Number(event.target.value))}
+                    >
+                      {rounds.map((round) => (
+                        <option key={round} value={round} className="text-black">
+                          Giornata {round}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+
+                  <label className="space-y-1.5 text-sm font-semibold text-[var(--foreground)]">
+                    Nuova settimana della G{rescheduleFromRound}
+                    <Input
+                      type="date"
+                      value={rescheduleStartDate}
+                      onChange={(event) => setRescheduleStartDate(event.target.value)}
+                      required
+                    />
+                    <span className="block text-xs font-normal text-[var(--muted)]">
+                      Attuale: {formatWeekDate(roundWeekAnchor(rescheduleFromRound))}. Puoi scegliere
+                      qualsiasi giorno della nuova settimana.
+                    </span>
+                  </label>
+
+                  <Button
+                    onClick={rescheduleCalendar}
+                    disabled={!rescheduleStartDate || rescheduling}
+                  >
+                    <CalendarDays size={15} />
+                    {rescheduling ? "Posticipo…" : "Conferma posticipo"}
+                  </Button>
+                </div>
+
+                <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs leading-relaxed text-[var(--muted)]">
+                  Le distinte già selezionate restano associate alla stessa partita, ma le eventuali
+                  conferme vengono azzerate. Gli arbitri assegnati manualmente restano associati;
+                  quelli automatici saranno ricalcolati quando verrà scelto il nuovo slot.
+                </div>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">

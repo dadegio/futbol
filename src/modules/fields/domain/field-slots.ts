@@ -198,6 +198,43 @@ export function getRoundSlotWeek(
   );
 }
 
+export function getSlotWeekDistance(from: Date, to: Date) {
+  const fromWeek = getSlotWeekWindow(from);
+  const toWeek = getSlotWeekWindow(to);
+  const fromParts = getRomeParts(fromWeek.startsAt);
+  const toParts = getRomeParts(toWeek.startsAt);
+  const fromDay = Date.UTC(fromParts.year, fromParts.month - 1, fromParts.day);
+  const toDay = Date.UTC(toParts.year, toParts.month - 1, toParts.day);
+  const days = Math.round((toDay - fromDay) / 86_400_000);
+
+  return Math.trunc(days / 7);
+}
+
+export function shiftSlotWeek(anchor: Date, weeks: number): SlotWeekWindow {
+  if (!Number.isInteger(weeks)) {
+    throw new Error("Spostamento settimane non valido");
+  }
+
+  const week = getSlotWeekWindow(anchor);
+  const parts = getRomeParts(week.startsAt);
+  const shiftedMonday = addCalendarDays(
+    parts.year,
+    parts.month,
+    parts.day,
+    weeks * 7
+  );
+
+  return getSlotWeekWindow(
+    zonedDateTimeToUtc(
+      shiftedMonday.year,
+      shiftedMonday.month,
+      shiftedMonday.day,
+      0,
+      0
+    )
+  );
+}
+
 export function isWithinSlotWeek(date: Date, weekStart: Date) {
   const week = getSlotWeekWindow(weekStart);
   const timestamp = date.getTime();

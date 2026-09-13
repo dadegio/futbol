@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { generateRoundRobin } from "@/modules/matches/domain/scheduler";
 import { rebalanceLeagueReferees } from "@/modules/referees/application/rebalance-league-referees";
+import { rescheduleLeagueSchedule } from "@/modules/matches/application/calendar-reschedule-service";
 import {
   getFirstFullSlotWeek,
   getFieldSlotOccurrences,
@@ -107,6 +108,10 @@ export async function createLeagueSchedule({
 
   if (mode === "manual") {
     return createManualMatch(leagueId, input);
+  }
+
+  if (mode === "reschedule") {
+    return rescheduleLeagueSchedule(leagueId, input);
   }
 
   return generateLeagueSchedule(leagueId, input);

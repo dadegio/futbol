@@ -69,6 +69,10 @@ Per un controllo non bloccante:
 node scripts/check-env.mjs --soft
 ```
 
+## Test calendario e cambio ora
+
+I test di dominio verificano anche che il posticipo del calendario lavori per settimane di calendario in `Europe/Rome`, non sommando semplicemente millisecondi. In questo modo lo spostamento resta corretto anche attraversando il passaggio tra ora legale e ora solare e conserva le pause già previste tra le giornate.
+
 ## Workflow consigliato
 
 Prima di ogni patch o push:

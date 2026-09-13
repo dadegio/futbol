@@ -74,6 +74,20 @@ In produzione gli upload devono utilizzare Vercel Blob. L'assenza di `BLOB_READ_
 
 I fallback locali scrivono in `public/uploads` e `public/media` soltanto in sviluppo: entrambe le cartelle sono ignorate da Git e la quality gate blocca eventuali file runtime già finiti nell’indice. Prima di cancellare un vecchio file già pubblicato, verificare che nessun record del database lo referenzi ancora.
 
+
+## Posticipo calendario senza rigenerazione
+
+Dalla pagina **Calendario** un amministratore del torneo può usare **Posticipa calendario** per spostare in avanti il programma senza ricreare gli accoppiamenti. L'operazione:
+
+- mantiene gli stessi record partita, quindi non cambia `homeTeamId`, `awayTeamId`, giornata, casa/trasferta o eventuali riferimenti interni;
+- trasla tutte le settimane dalla giornata scelta dello stesso numero di settimane, preservando anche pause e intervalli già presenti nel calendario;
+- libera data/ora, campo e prenotazione delle gare interessate, che dovranno essere riconfermati sulle nuove settimane;
+- mantiene le distinte selezionate ma azzera le conferme;
+- mantiene soltanto gli arbitri assegnati manualmente, mentre quelli automatici vengono ricalcolati quando le gare ricevono un nuovo slot;
+- rifiuta l'operazione se nelle gare interessate esistono risultati, statistiche o stati `POSTPONED`/`CANCELLED`.
+
+Per posticipare l'intero torneo selezionare **Giornata 1**. Per spostare solo la parte restante della stagione selezionare la prima giornata da ripianificare.
+
 ## Monitoraggio durante le giornate
 
 Controllare almeno:
