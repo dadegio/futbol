@@ -73,6 +73,8 @@ node scripts/check-env.mjs --soft
 
 I test di dominio verificano anche che il posticipo del calendario lavori per settimane di calendario in `Europe/Rome`, non sommando semplicemente millisecondi. In questo modo lo spostamento resta corretto anche attraversando il passaggio tra ora legale e ora solare e conserva le pause già previste tra le giornate.
 
+La quality gate controlla inoltre la presenza del servizio e della route admin-only usati per spostare una singola partita tra le giornate. Questa modifica non richiede migration Prisma: aggiorna record `Match` esistenti e, quando si riallinea la settimana, libera in modo esplicito campo/orario/prenotazione prima della nuova prenotazione.
+
 ## Workflow consigliato
 
 Prima di ogni patch o push:

@@ -88,6 +88,12 @@ Dalla pagina **Calendario** un amministratore del torneo può usare **Posticipa 
 
 Per posticipare l'intero torneo selezionare **Giornata 1**. Per spostare solo la parte restante della stagione selezionare la prima giornata da ripianificare.
 
+### Modifica libera di una singola partita
+
+Gli amministratori possono inoltre usare **Sposta** direttamente sulla riga di una partita del calendario. È possibile assegnare la gara a un'altra giornata senza rigenerare il calendario. Per impostazione predefinita la partita adotta la settimana della giornata di destinazione: data, campo e prenotazione vengono liberati, mentre l'accoppiamento e l'ID della gara restano invariati. Disattivando **Allinea anche la settimana di gioco** viene modificato soltanto il numero di giornata, lasciando intatti data e campo.
+
+Se una delle due squadre ha già una partita nella giornata scelta, l'interfaccia mostra un avviso ma consente comunque all'admin di procedere. I conflitti reali di data/orario continuano a essere bloccati dalle regole di prenotazione. Ogni spostamento viene registrato nell'audit log.
+
 ## Monitoraggio durante le giornate
 
 Controllare almeno:
