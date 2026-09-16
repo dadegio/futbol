@@ -39,8 +39,6 @@ mustExist("src/modules/leagues/application/league-overview-service.ts");
 mustExist("src/app/api/leagues/[leagueId]/overview/route.ts");
 mustExist("src/modules/matches/application/league-schedule-service.ts");
 mustExist("src/modules/matches/application/calendar-reschedule-service.ts");
-mustExist("src/modules/matches/application/calendar-match-editor-service.ts");
-mustExist("src/app/api/matches/[matchId]/round/route.ts");
 mustExist("src/modules/media/application/media-storage.ts");
 mustExist("src/modules/auth/application/authenticate-user.ts");
 mustExist("src/modules/auth/application/bootstrap-service.ts");
@@ -81,13 +79,6 @@ mustContain("src/modules/matches/application/calendar-reschedule-service.ts", [
   "shiftSlotWeek",
   "refereeManualOverride",
   "homeSheetConfirmed",
-]);
-
-mustContain("src/modules/matches/application/calendar-match-editor-service.ts", [
-  "moveMatchToRound",
-  "alignToTargetWeek",
-  "targetRound",
-  "refereeManualOverride",
 ]);
 
 mustContain("src/modules/media/application/media-storage.ts", [

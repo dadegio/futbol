@@ -71,15 +71,6 @@ type RescheduleResult = {
   manualRefereesKept: number;
 };
 
-type MoveMatchRoundResult = {
-  previousRound: number;
-  targetRound: number;
-  alignedWeek: boolean;
-  bookingReleased: boolean;
-  warnings: string[];
-  matchLabel: string;
-};
-
 async function getJSON<T>(url: string): Promise<T> {
   const res = await authFetch(url, { cache: "no-store" });
   const data = await res.json().catch(() => ({}));
@@ -267,10 +258,6 @@ export default function CalendarPage({
   const [rescheduleFromRound, setRescheduleFromRound] = useState(1);
   const [rescheduleStartDate, setRescheduleStartDate] = useState("");
   const [rescheduling, setRescheduling] = useState(false);
-  const [roundEditMatchId, setRoundEditMatchId] = useState<string | null>(null);
-  const [roundEditTarget, setRoundEditTarget] = useState<number | null>(null);
-  const [roundEditAlignWeek, setRoundEditAlignWeek] = useState(true);
-  const [movingRound, setMovingRound] = useState(false);
 
   async function load() {
     setErr(null);
@@ -482,98 +469,6 @@ export default function CalendarPage({
       setErr(error instanceof Error ? error.message : "Errore posticipo calendario");
     } finally {
       setRescheduling(false);
-    }
-  }
-
-  const roundEditMatch = useMemo(
-    () => matches.find((match) => match.id === roundEditMatchId) ?? null,
-    [matches, roundEditMatchId]
-  );
-
-  const roundEditConflicts = useMemo(() => {
-    if (!roundEditMatch || !roundEditTarget) return [];
-
-    return matches.filter(
-      (candidate) =>
-        candidate.id !== roundEditMatch.id &&
-        candidate.round === roundEditTarget &&
-        (candidate.homeTeam.id === roundEditMatch.homeTeam.id ||
-          candidate.awayTeam.id === roundEditMatch.homeTeam.id ||
-          candidate.homeTeam.id === roundEditMatch.awayTeam.id ||
-          candidate.awayTeam.id === roundEditMatch.awayTeam.id)
-    );
-  }, [matches, roundEditMatch, roundEditTarget]);
-
-  function openRoundEditor(match: Match) {
-    setRoundEditMatchId(match.id);
-    setRoundEditTarget(match.round);
-    setRoundEditAlignWeek(true);
-    setErr(null);
-    setMsg(null);
-  }
-
-  async function moveMatchRound() {
-    if (!roundEditMatch || !roundEditTarget || movingRound) return;
-    if (roundEditTarget === roundEditMatch.round) {
-      setErr("Seleziona una giornata diversa da quella attuale");
-      return;
-    }
-
-    const conflictText =
-      roundEditConflicts.length > 0
-        ? `\n\nAttenzione: ${roundEditConflicts.length} partita${
-            roundEditConflicts.length === 1 ? "" : "e"
-          } della giornata scelta coinvolgono già una delle due squadre.`
-        : "";
-
-    const accepted = window.confirm(
-      `Spostare ${roundEditMatch.homeTeam.name} - ${roundEditMatch.awayTeam.name} ` +
-        `dalla G${roundEditMatch.round} alla G${roundEditTarget}?` +
-        (roundEditAlignWeek
-          ? "\n\nLa partita adotterà la settimana della nuova giornata. Data, campo e prenotazione verranno liberati."
-          : "\n\nVerrà modificato solo il numero di giornata: data, campo e prenotazione resteranno invariati.") +
-        conflictText
-    );
-    if (!accepted) return;
-
-    setErr(null);
-    setMsg(null);
-    setMovingRound(true);
-
-    try {
-      const res = await authFetch(`/api/matches/${roundEditMatch.id}/round`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          round: roundEditTarget,
-          alignToTargetWeek: roundEditAlignWeek,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(readApiError(data, "Errore modifica giornata"));
-      }
-
-      const result = data as MoveMatchRoundResult;
-      const warningSuffix = result.warnings.length
-        ? ` Attenzione: ${result.warnings.join(" · ")}.`
-        : "";
-      setMsg(
-        `${result.matchLabel} spostata da G${result.previousRound} a G${result.targetRound}.` +
-          (result.alignedWeek
-            ? " Settimana riallineata; campo e orario sono da riconfermare."
-            : " Data e prenotazione mantenute.") +
-          warningSuffix
-      );
-      setRoundEditMatchId(null);
-      setRoundEditTarget(null);
-      await load();
-      setSelectedRound(result.targetRound);
-    } catch (error: unknown) {
-      setErr(error instanceof Error ? error.message : "Errore modifica giornata");
-    } finally {
-      setMovingRound(false);
     }
   }
 
@@ -875,85 +770,6 @@ export default function CalendarPage({
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
 
-        {isAdmin && roundEditMatch && (
-          <Card className="border-[var(--accent)]/30 bg-[var(--card-2)]">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
-                  Modifica calendario
-                </p>
-                <h3 className="mt-1 text-lg font-black text-[var(--foreground)]">
-                  {roundEditMatch.homeTeam.name} - {roundEditMatch.awayTeam.name}
-                </h3>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  Attualmente in G{roundEditMatch.round}. Puoi spostare questa singola partita senza
-                  rigenerare gli altri accoppiamenti.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setRoundEditMatchId(null)}
-                className="text-sm font-bold text-[var(--muted)] hover:text-[var(--foreground)]"
-              >
-                Chiudi
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-end">
-              <label className="space-y-1.5 text-sm font-semibold text-[var(--foreground)]">
-                Nuova giornata
-                <Select
-                  value={String(roundEditTarget ?? roundEditMatch.round)}
-                  onChange={(event) => setRoundEditTarget(Number(event.target.value))}
-                >
-                  {rounds.map((round) => (
-                    <option key={round} value={round} className="text-black">
-                      Giornata {round}{round === roundEditMatch.round ? " · attuale" : ""}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-
-              <label className="flex min-h-[44px] items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm text-[var(--foreground)]">
-                <input
-                  type="checkbox"
-                  checked={roundEditAlignWeek}
-                  onChange={(event) => setRoundEditAlignWeek(event.target.checked)}
-                  className="mt-1"
-                />
-                <span>
-                  <strong className="block">Allinea anche la settimana di gioco</strong>
-                  <span className="text-xs leading-relaxed text-[var(--muted)]">
-                    Consigliato: usa la settimana della nuova giornata e libera data, campo e slot.
-                    Se lo disattivi cambia solo l&apos;etichetta della giornata.
-                  </span>
-                </span>
-              </label>
-
-              <Button
-                onClick={moveMatchRound}
-                disabled={
-                  movingRound ||
-                  !roundEditTarget ||
-                  roundEditTarget === roundEditMatch.round
-                }
-              >
-                <CalendarDays size={15} />
-                {movingRound ? "Sposto…" : "Sposta partita"}
-              </Button>
-            </div>
-
-            {roundEditConflicts.length > 0 && (
-              <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-100">
-                Una delle due squadre ha già {roundEditConflicts.length === 1 ? "una partita" : `${roundEditConflicts.length} partite`} in G{roundEditTarget}.
-                L&apos;admin può comunque procedere: gli eventuali conflitti reali di orario saranno
-                bloccati quando verrà prenotato lo slot.
-              </div>
-            )}
-          </Card>
-        )}
-
         {loading && <CalendarSkeleton />}
 
         {!loading && matches.length === 0 && (
@@ -987,13 +803,7 @@ export default function CalendarPage({
 
                 <Card className="overflow-hidden !p-0">
                   {group.matches.map((match) => (
-                    <CalendarMatchRow
-                      key={match.id}
-                      leagueId={leagueId}
-                      match={match}
-                      isAdmin={isAdmin}
-                      onEditRound={openRoundEditor}
-                    />
+                    <CalendarMatchRow key={match.id} leagueId={leagueId} match={match} isAdmin={isAdmin} />
                   ))}
                 </Card>
               </section>
@@ -1048,17 +858,7 @@ function CalendarSkeleton() {
   );
 }
 
-function CalendarMatchRow({
-  leagueId,
-  match,
-  isAdmin,
-  onEditRound,
-}: {
-  leagueId: string;
-  match: Match;
-  isAdmin: boolean;
-  onEditRound: (match: Match) => void;
-}) {
+function CalendarMatchRow({ leagueId, match, isAdmin }: { leagueId: string; match: Match; isAdmin: boolean }) {
   const played = isPlayed(match);
   const postponed = match.lifecycleStatus === "POSTPONED";
   const cancelled = match.lifecycleStatus === "CANCELLED";
@@ -1067,14 +867,10 @@ function CalendarMatchRow({
   const liveMinute = getLiveMinute(match);
 
   return (
-    <div className="relative border-b border-[var(--border)] last:border-b-0">
-      <Link
-        href={`/leagues/${leagueId}/matches/${match.id}`}
-        className={[
-          "grid grid-cols-[58px_minmax(0,1fr)_auto_18px] items-center gap-2 px-3 py-4 active:bg-black/[0.02]",
-          isAdmin ? "pr-24 sm:pr-28" : "",
-        ].join(" ")}
-      >
+    <Link
+      href={`/leagues/${leagueId}/matches/${match.id}`}
+      className="grid grid-cols-[58px_minmax(0,1fr)_auto_18px] items-center gap-2 border-b border-[var(--border)] px-3 py-4 last:border-b-0 active:bg-black/[0.02]"
+    >
       <div className="text-center">
         {live ? (
           <div className="text-xs font-semibold text-[var(--danger)]">
@@ -1135,20 +931,8 @@ function CalendarMatchRow({
         )}
       </div>
 
-        <span className="text-xl text-[var(--muted)]">›</span>
-      </Link>
-
-      {isAdmin && (
-        <button
-          type="button"
-          onClick={() => onEditRound(match)}
-          className="absolute right-8 top-1/2 -translate-y-1/2 rounded-lg border border-[var(--border)] bg-[var(--card-2)] px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] text-[var(--accent)] transition hover:border-[var(--accent)]/50 hover:bg-[var(--card)] sm:right-9 sm:px-2.5"
-          aria-label={`Sposta ${match.homeTeam.name} - ${match.awayTeam.name} in un'altra giornata`}
-        >
-          Sposta
-        </button>
-      )}
-    </div>
+      <span className="text-xl text-[var(--muted)]">›</span>
+    </Link>
   );
 }
 
