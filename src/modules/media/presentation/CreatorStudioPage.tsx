@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Camera, CheckCircle2, ExternalLink, Image as ImageIcon, Instagram, Mail, Save, UploadCloud, UserRound, Video } from "lucide-react";
+import { CalendarDays, Camera, CheckCircle2, ExternalLink, Image as ImageIcon, Instagram, Mail, MapPin, Save, UploadCloud, UserRound, Video } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card, { CardHeader } from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
@@ -35,6 +35,16 @@ type Profile = {
 
 type Team = { id: string; name: string; players: Array<{ id: string; firstName: string; lastName: string; number: number }> };
 type Match = { id: string; round: number; date: string | null; homeTeam: { name: string }; awayTeam: { name: string } };
+type CreatorAssignmentMatch = {
+  id: string;
+  round: number;
+  date: string | null;
+  slotEnd: string | null;
+  venueName: string | null;
+  venueAddress: string | null;
+  homeTeam: { id: string; name: string; badgeUrl: string | null };
+  awayTeam: { id: string; name: string; badgeUrl: string | null };
+};
 type MediaItem = { id: string; type: string; status: string; title: string | null; caption: string | null; fileUrl: string; createdAt: string; socialUrl: string | null };
 
 type StudioData = {
@@ -43,6 +53,7 @@ type StudioData = {
   league: { id: string; name: string } | null;
   teams: Team[];
   matches: Match[];
+  assignments: CreatorAssignmentMatch[];
   media: MediaItem[];
 };
 
@@ -270,6 +281,55 @@ export default function CreatorStudioPage() {
                 </div>
                 <Button type="button" onClick={saveProfile} disabled={savingProfile}><Save size={16} className="mr-2" /> {savingProfile ? "Salvataggio…" : "Salva profilo"}</Button>
               </div>
+            </div>
+          </Card>
+        )}
+
+        {data?.assignments && data.assignments.length > 0 && (
+          <Card>
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <CalendarDays size={20} />
+              </div>
+              <CardHeader
+                tag="Copertura assegnata"
+                title="Le tue prossime partite"
+                description="L'admin del torneo ti ha assegnato queste gare per foto, video o contenuti social."
+              />
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {data.assignments.map((match) => {
+                const when = match.date
+                  ? new Intl.DateTimeFormat("it-IT", {
+                      weekday: "short",
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(match.date))
+                  : "Data da definire";
+                return (
+                  <Link
+                    key={match.id}
+                    href={`/leagues/${leagueId}/matches/${match.id}`}
+                    className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4 transition hover:border-[var(--border-strong)]"
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
+                      Giornata {match.round}
+                    </p>
+                    <p className="mt-2 text-sm font-black text-[var(--foreground)]">
+                      {match.homeTeam.name} <span className="text-[var(--muted)]">vs</span> {match.awayTeam.name}
+                    </p>
+                    <p className="mt-2 text-xs font-bold text-[var(--muted)]">{when}</p>
+                    {(match.venueName || match.venueAddress) && (
+                      <p className="mt-2 flex items-start gap-1.5 text-xs text-[var(--muted)]">
+                        <MapPin size={13} className="mt-0.5 shrink-0" />
+                        <span>{match.venueName || match.venueAddress}</span>
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </Card>
         )}

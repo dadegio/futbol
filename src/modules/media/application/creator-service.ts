@@ -80,6 +80,23 @@ function parseProfile(input: Record<string, unknown>) {
   };
 }
 
+async function validatePreferredTeam(
+  leagueId: string,
+  value: unknown
+): Promise<string | null> {
+  const preferredTeamId = text(value, 120);
+  if (!preferredTeamId) return null;
+
+  const team = await prisma.team.findFirst({
+    where: { id: preferredTeamId, leagueId, activeInLeague: true },
+    select: { id: true },
+  });
+  if (!team) {
+    throw new AppError(400, "La squadra preferita non appartiene al torneo attivo");
+  }
+  return team.id;
+}
+
 async function getCreatorAccess(leagueId: string, session: SessionUser | null) {
   if (!session) throw new AppError(401, "Devi effettuare il login");
 
@@ -112,7 +129,7 @@ export async function getCreatorWorkspace({
   session: SessionUser | null;
 }) {
   const access = await getCreatorAccess(leagueId, session);
-  const [league, teams, matches, media] = await Promise.all([
+  const [league, teams, matches, media, assignments] = await Promise.all([
     prisma.league.findUnique({
       where: { id: leagueId },
       select: { id: true, name: true },
@@ -123,6 +140,7 @@ export async function getCreatorWorkspace({
       select: {
         id: true,
         name: true,
+        badgeUrl: true,
         players: {
           orderBy: { number: "asc" },
           select: {
@@ -153,6 +171,25 @@ export async function getCreatorWorkspace({
       orderBy: { createdAt: "desc" },
       take: 80,
     }),
+    access.profile
+      ? prisma.match.findMany({
+          where: {
+            leagueId,
+            creatorAssignments: { some: { creatorId: access.profile.id } },
+          },
+          orderBy: [{ round: "asc" }, { date: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            round: true,
+            date: true,
+            slotEnd: true,
+            venueName: true,
+            venueAddress: true,
+            homeTeam: { select: { id: true, name: true, badgeUrl: true } },
+            awayTeam: { select: { id: true, name: true, badgeUrl: true } },
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   return {
@@ -161,6 +198,7 @@ export async function getCreatorWorkspace({
     league,
     teams,
     matches,
+    assignments,
     media,
   };
 }
@@ -179,9 +217,19 @@ export async function updateOwnCreatorProfile({
     throw new AppError(400, "Seleziona un profilo creator specifico");
   }
   const data = parseProfile(input);
+  const hasPreferredTeam = Object.prototype.hasOwnProperty.call(
+    input,
+    "preferredTeamId"
+  );
+  const preferredTeamId = hasPreferredTeam
+    ? await validatePreferredTeam(leagueId, input.preferredTeamId)
+    : undefined;
   return prisma.creatorProfile.update({
     where: { id: access.profile.id },
-    data,
+    data: {
+      ...data,
+      ...(hasPreferredTeam ? { preferredTeamId: preferredTeamId ?? null } : {}),
+    },
   });
 }
 
@@ -208,19 +256,26 @@ export async function listCreators({
       phone: true,
       websiteUrl: true,
       primaryColor: true,
+      preferredTeamId: true,
+      preferredTeam: {
+        select: { id: true, name: true, badgeUrl: true },
+      },
       showEmail: true,
       showInstagram: true,
       showTikTok: true,
       showYoutube: true,
       showPhone: true,
       active: true,
-      _count: { select: { mediaItems: true } },
+      _count: { select: { mediaItems: true, matchAssignments: true } },
     },
   });
 
   if (canAdmin) return creators;
   return creators.map((creator) => ({
     ...creator,
+    preferredTeamId: undefined,
+    preferredTeam: undefined,
+    _count: { mediaItems: creator._count.mediaItems },
     email: creator.showEmail ? creator.email : null,
     phone: creator.showPhone ? creator.phone : null,
     instagramUrl: creator.showInstagram ? creator.instagramUrl : null,

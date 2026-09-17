@@ -748,16 +748,6 @@ export default function CalendarPage({
               </div>
             )}
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
-                Slot settimanali configurati
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-                Martedì 21:00 · Anastasio Germonio — Mercoledì 20:00 e 21:00 ·
-                Anastasio Germonio e Sant&apos;Ignazio — Mercoledì 21:00 e
-                giovedì 21:00 · Circolo della Stampa.
-              </p>
-            </div>
           </Card>
         )}
 

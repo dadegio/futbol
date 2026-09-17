@@ -8,6 +8,7 @@ import Badge from "src/app/_components/ui/badge";
 import Button from "src/app/_components/ui/button";
 import Select from "src/app/_components/ui/select";
 import { authFetch } from "@/lib/client-auth";
+import CreatorAssignmentPlanner from "./CreatorAssignmentPlanner";
 
 type Creator = {
   id: string;
@@ -17,7 +18,7 @@ type Creator = {
   instagramUrl: string | null;
   email: string | null;
   active: boolean;
-  _count?: { mediaItems: number };
+  _count?: { mediaItems: number; matchAssignments?: number };
 };
 
 type MediaItem = {
@@ -124,6 +125,8 @@ export default function CreatorManager({ leagueId }: { leagueId: string }) {
         <MiniStat label="Pubblicati" value={published.length} />
       </div>
 
+      <CreatorAssignmentPlanner leagueId={leagueId} />
+
       <div className="mt-5 grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
         <section className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -139,7 +142,7 @@ export default function CreatorManager({ leagueId }: { leagueId: string }) {
                   {creator.avatarUrl ? <img src={creator.avatarUrl} alt="" loading="lazy" decoding="async" className="h-12 w-12 rounded-2xl object-cover" /> : <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><UserRound size={20} /></div>}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-[var(--foreground)]">{creator.displayName}</p>
-                    <p className="truncate text-xs text-[var(--muted)]">{creator.roleLabel || "Creator"} · {creator._count?.mediaItems ?? 0} contenuti</p>
+                    <p className="truncate text-xs text-[var(--muted)]">{creator.roleLabel || "Creator"} · {creator._count?.mediaItems ?? 0} contenuti · {creator._count?.matchAssignments ?? 0} partite</p>
                   </div>
                   {!creator.active && <Badge variant="default">off</Badge>}
                 </div>

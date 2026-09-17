@@ -183,8 +183,9 @@ model CreatorProfile {
   youtubeUrl   String?
   email        String?
   phone        String?
-  websiteUrl   String?
-  primaryColor String?
+  websiteUrl      String?
+  primaryColor    String?
+  preferredTeamId String?
 
   showEmail     Boolean @default(false)
   showInstagram Boolean @default(true)
@@ -196,11 +197,14 @@ model CreatorProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mediaItems MediaItem[]
+  league           League                   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredTeam    Team?                    @relation("CreatorPreferredTeam", fields: [preferredTeamId], references: [id], onDelete: SetNull)
+  mediaItems       MediaItem[]
+  matchAssignments CreatorMatchAssignment[]
 
   @@index([leagueId, active])
+  @@index([preferredTeamId])
   @@index([displayName])
 }
 
@@ -272,8 +276,9 @@ model Team {
   awaySeries PlayoffSeries[] @relation("SeriesAway")
   wonSeries  PlayoffSeries[] @relation("SeriesWinner")
 
-  captain User? @relation("TeamCaptain")
-  affiliatedReferees Referee[] @relation("RefereeTeamAffiliation")
+  captain             User?            @relation("TeamCaptain")
+  affiliatedReferees  Referee[]        @relation("RefereeTeamAffiliation")
+  preferredByCreators CreatorProfile[] @relation("CreatorPreferredTeam")
 
   @@unique([leagueId, name])
   @@index([leagueId, activeInLeague])
@@ -365,8 +370,9 @@ model Match {
   referee  Referee?       @relation(fields: [refereeId], references: [id], onDelete: SetNull)
   mvpPlayer Player?        @relation("MatchMvp", fields: [mvpPlayerId], references: [id], onDelete: SetNull)
 
-  stats        MatchPlayerStat[]
-  sheetPlayers MatchSheetPlayer[]
+  stats              MatchPlayerStat[]
+  sheetPlayers       MatchSheetPlayer[]
+  creatorAssignments CreatorMatchAssignment[]
 
   @@unique([venueKey, date])
   @@unique([seriesId, leg])
@@ -383,6 +389,20 @@ model Match {
   @@index([mvpPlayerId])
 }
 
+model CreatorMatchAssignment {
+  id        String   @id @default(cuid())
+  creatorId String
+  matchId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  match   Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, matchId])
+  @@index([creatorId])
+  @@index([matchId])
+}
 
 model Field {
   id        String   @id @default(cuid())
