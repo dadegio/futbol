@@ -187,6 +187,10 @@ export async function getCreatorWorkspace({
             venueAddress: true,
             homeTeam: { select: { id: true, name: true, badgeUrl: true } },
             awayTeam: { select: { id: true, name: true, badgeUrl: true } },
+            creatorAssignments: {
+              where: { creatorId: access.profile.id },
+              select: { role: true },
+            },
           },
         })
       : Promise.resolve([]),
@@ -198,7 +202,11 @@ export async function getCreatorWorkspace({
     league,
     teams,
     matches,
-    assignments,
+    assignments: assignments.map((match) => ({
+      ...match,
+      assignmentRole: match.creatorAssignments[0]?.role ?? "PHOTO",
+      creatorAssignments: undefined,
+    })),
     media,
   };
 }
@@ -257,6 +265,8 @@ export async function listCreators({
       websiteUrl: true,
       primaryColor: true,
       preferredTeamId: true,
+      coverageRole: true,
+      weeklyAssignmentLimit: true,
       preferredTeam: {
         select: { id: true, name: true, badgeUrl: true },
       },
@@ -275,6 +285,8 @@ export async function listCreators({
     ...creator,
     preferredTeamId: undefined,
     preferredTeam: undefined,
+    coverageRole: undefined,
+    weeklyAssignmentLimit: undefined,
     _count: { mediaItems: creator._count.mediaItems },
     email: creator.showEmail ? creator.email : null,
     phone: creator.showPhone ? creator.phone : null,

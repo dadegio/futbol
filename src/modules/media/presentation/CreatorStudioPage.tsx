@@ -44,6 +44,7 @@ type CreatorAssignmentMatch = {
   venueAddress: string | null;
   homeTeam: { id: string; name: string; badgeUrl: string | null };
   awayTeam: { id: string; name: string; badgeUrl: string | null };
+  assignmentRole: "PHOTO" | "VIDEO";
 };
 type MediaItem = { id: string; type: string; status: string; title: string | null; caption: string | null; fileUrl: string; createdAt: string; socialUrl: string | null };
 
@@ -314,9 +315,14 @@ export default function CreatorStudioPage() {
                     href={`/leagues/${leagueId}/matches/${match.id}`}
                     className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4 transition hover:border-[var(--border-strong)]"
                   >
-                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
-                      Giornata {match.round}
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
+                        Giornata {match.round}
+                      </p>
+                      <Badge variant={match.assignmentRole === "VIDEO" ? "default" : "success"}>
+                        {match.assignmentRole === "VIDEO" ? "Video" : "Foto"}
+                      </Badge>
+                    </div>
                     <p className="mt-2 text-sm font-black text-[var(--foreground)]">
                       {match.homeTeam.name} <span className="text-[var(--muted)]">vs</span> {match.awayTeam.name}
                     </p>

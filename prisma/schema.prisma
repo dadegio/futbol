@@ -38,6 +38,17 @@ enum MediaItemStatus {
   REJECTED
 }
 
+enum CreatorCoverageRole {
+  PHOTO
+  VIDEO
+  BOTH
+}
+
+enum CreatorAssignmentRole {
+  PHOTO
+  VIDEO
+}
+
 enum MatchLifecycleStatus {
   SCHEDULED
   POSTPONED
@@ -83,6 +94,8 @@ model League {
   id        String   @id @default(cuid())
   name      String
   createdAt DateTime @default(now())
+
+  veoTeamId String?
 
   themeMode            String  @default("GENERIC")
   brandLogoUrl         String?
@@ -186,6 +199,8 @@ model CreatorProfile {
   websiteUrl      String?
   primaryColor    String?
   preferredTeamId String?
+  coverageRole    CreatorCoverageRole @default(PHOTO)
+  weeklyAssignmentLimit Int @default(1)
 
   showEmail     Boolean @default(false)
   showInstagram Boolean @default(true)
@@ -393,6 +408,7 @@ model CreatorMatchAssignment {
   id        String   @id @default(cuid())
   creatorId String
   matchId   String
+  role      CreatorAssignmentRole @default(PHOTO)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -402,6 +418,7 @@ model CreatorMatchAssignment {
   @@unique([creatorId, matchId])
   @@index([creatorId])
   @@index([matchId])
+  @@index([matchId, role])
 }
 
 model Field {
