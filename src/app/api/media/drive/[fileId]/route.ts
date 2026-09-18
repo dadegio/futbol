@@ -1,5 +1,9 @@
 import { apiErrorResponse } from "@/modules/core/api";
-import { fetchGoogleDriveMedia } from "@/modules/media/application/google-drive-storage";
+import {
+  fetchGoogleDriveMedia,
+  getGoogleDriveMediaAccess,
+} from "@/modules/media/application/google-drive-storage";
+import { getServerSession } from "@/modules/permissions/server-guards";
 
 export const runtime = "nodejs";
 
@@ -13,6 +17,8 @@ export async function GET(
       return new Response("File non valido", { status: 400 });
     }
 
+    const session = await getServerSession();
+    const access = await getGoogleDriveMediaAccess({ fileId, session });
     const upstream = await fetchGoogleDriveMedia(fileId, req.headers.get("range"));
     const headers = new Headers();
     for (const name of [
@@ -26,7 +32,12 @@ export async function GET(
       const value = upstream.headers.get(name);
       if (value) headers.set(name, value);
     }
-    headers.set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
+    headers.set(
+      "Cache-Control",
+      access.isPublic
+        ? "public, max-age=3600, stale-while-revalidate=86400"
+        : "private, no-store"
+    );
     headers.set("Content-Disposition", "inline");
 
     return new Response(upstream.body, {

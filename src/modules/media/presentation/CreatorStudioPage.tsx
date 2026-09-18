@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { CalendarDays, Camera, CheckCircle2, ExternalLink, Image as ImageIcon, Instagram, Mail, MapPin, Save, UploadCloud, UserRound, Video } from "lucide-react";
+import { CalendarDays, Camera, CheckCircle2, Clock3, ExternalLink, Image as ImageIcon, MapPin, Settings2, UploadCloud, Video } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
 import Card, { CardHeader } from "src/app/_components/ui/card";
 import Badge from "src/app/_components/ui/badge";
@@ -80,22 +80,15 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function normalizeSocialInput(value: string) {
-  return value.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "@").replace(/^https?:\/\/www\.tiktok\.com\/@?/i, "@");
-}
-
 export default function CreatorStudioPage() {
   const { leagueId } = useParams<{ leagueId: string }>();
   const { user, loading: authLoading } = useAuth();
   const canCreate = useCanCreateMedia(leagueId);
   const router = useRouter();
   const [data, setData] = useState<StudioData | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState("");
@@ -119,7 +112,6 @@ export default function CreatorStudioPage() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body?.error ?? "Errore caricamento studio creator");
       setData(body);
-      setProfile(body.profile ?? null);
     } catch (error) {
       setErr(getErrorMessage(error, "Errore caricamento studio creator"));
     } finally {
@@ -134,47 +126,26 @@ export default function CreatorStudioPage() {
   }, [authLoading, canCreate, leagueId, router]);
 
   const players = useMemo(() => data?.teams.flatMap((team) => team.players.map((player) => ({ ...player, teamName: team.name }))) ?? [], [data?.teams]);
-
-  async function uploadAvatar(event: ChangeEvent<HTMLInputElement>) {
-    const next = event.target.files?.[0];
-    if (!next) return;
-    setUploadingAvatar(true);
-    setErr(null);
-    try {
-      const form = new FormData();
-      form.append("file", next);
-      const res = await authFetch("/api/upload", { method: "POST", body: form });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.error ?? "Errore upload avatar");
-      setProfile((current) => current ? { ...current, avatarUrl: body.url } : current);
-    } catch (error) {
-      setErr(getErrorMessage(error, "Errore upload avatar"));
-    } finally {
-      setUploadingAvatar(false);
+  const profile = data?.profile ?? null;
+  const assignmentGroups = useMemo(() => {
+    const groups = new Map<string, { title: string; matches: CreatorAssignmentMatch[] }>();
+    for (const match of data?.assignments ?? []) {
+      const parsed = match.date ? new Date(match.date) : null;
+      const valid = parsed && !Number.isNaN(parsed.getTime());
+      const key = valid ? parsed.toISOString().slice(0, 10) : `round-${match.round}`;
+      const title = valid
+        ? new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "2-digit", month: "long" }).format(parsed)
+        : "Data da definire";
+      const existing = groups.get(key);
+      if (existing) existing.matches.push(match);
+      else groups.set(key, { title, matches: [match] });
     }
-  }
-
-  async function saveProfile() {
-    if (!profile) return;
-    setSavingProfile(true);
-    setErr(null);
-    setMsg(null);
-    try {
-      const res = await authFetch(`/api/leagues/${leagueId}/creator/me`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.error ?? "Errore salvataggio profilo");
-      setProfile(body);
-      setMsg("Profilo creator aggiornato");
-    } catch (error) {
-      setErr(getErrorMessage(error, "Errore salvataggio profilo"));
-    } finally {
-      setSavingProfile(false);
-    }
-  }
+    return [...groups.values()];
+  }, [data?.assignments]);
+  const upcomingAssignments = useMemo(
+    () => (data?.assignments ?? []).filter((match) => !match.date || new Date(match.slotEnd ?? match.date).getTime() >= Date.now()).length,
+    [data?.assignments]
+  );
 
   async function uploadMediaFile() {
     if (!file) return;
@@ -238,10 +209,27 @@ export default function CreatorStudioPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-5 pb-8">
-        <Card>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <CardHeader tag="Creator Studio" title="Carica contenuti del torneo" description="Foto, video, reel, highlights e backstage con credits e collegamenti ai social." level={1} />
-            <Link href={`/leagues/${leagueId}/media`}><Button type="button" variant="secondary"><Camera size={17} className="mr-2" /> Vai al Media Center</Button></Link>
+        <Card className="overflow-hidden">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">{data?.canAdmin ? "Media upload" : "Creator workspace"}</p>
+              <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-[var(--foreground)]">{data?.canAdmin ? "Carica contenuti" : "I miei incarichi"}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+                {data?.canAdmin
+                  ? "Carica o collega contenuti del torneo dal Media Center."
+                  : "Il calendario operativo mostra soltanto le partite che devi seguire. Da qui puoi vedere ruolo, orario, campo e caricare subito il materiale della gara."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {user?.role === "CREATOR" && (
+                <Link href={`/leagues/${leagueId}/creator/profile`}>
+                  <Button type="button" variant="secondary"><Settings2 size={16} className="mr-2" /> Il mio profilo</Button>
+                </Link>
+              )}
+              <Link href={`/leagues/${leagueId}/media`}>
+                <Button type="button" variant="secondary"><Camera size={16} className="mr-2" /> Media Center</Button>
+              </Link>
+            </div>
           </div>
         </Card>
 
@@ -249,98 +237,101 @@ export default function CreatorStudioPage() {
         {msg && <Badge variant="success"><CheckCircle2 size={16} /> {msg}</Badge>}
         {loading && <p className="text-sm text-[var(--muted)]">Caricamento…</p>}
 
-        {profile && (
-          <Card>
-            <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-              <div className="rounded-[28px] border border-[var(--border)] bg-[var(--card-2)] p-4 text-center" style={{ borderColor: profile.primaryColor || undefined }}>
-                {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" loading="lazy" decoding="async" className="mx-auto h-32 w-32 rounded-[32px] object-cover" /> : <div className="mx-auto grid h-32 w-32 place-items-center rounded-[32px] bg-[var(--accent-soft)] text-[var(--accent)]"><UserRound size={44} /></div>}
-                <label className="mt-4 inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-xs font-black text-[var(--foreground)]">
-                  {uploadingAvatar ? "Caricamento…" : "Cambia avatar"}
-                  <input type="file" accept="image/*" onChange={uploadAvatar} className="sr-only" />
-                </label>
-                <p className="mt-4 text-xl font-black text-[var(--foreground)]">{profile.displayName}</p>
-                <p className="text-sm text-[var(--muted)]">{profile.roleLabel || "Creator"}</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Input value={profile.displayName} onChange={(e) => setProfile({ ...profile, displayName: e.target.value })} placeholder="Nome pubblico" />
-                  <Input value={profile.roleLabel ?? ""} onChange={(e) => setProfile({ ...profile, roleLabel: e.target.value })} placeholder="Ruolo: fotografo, videomaker…" />
-                  <Input value={normalizeSocialInput(profile.instagramUrl ?? "")} onChange={(e) => setProfile({ ...profile, instagramUrl: e.target.value })} placeholder="Instagram, es. @nome" />
-                  <Input value={profile.tiktokUrl ?? ""} onChange={(e) => setProfile({ ...profile, tiktokUrl: e.target.value })} placeholder="TikTok / profilo" />
-                  <Input value={profile.youtubeUrl ?? ""} onChange={(e) => setProfile({ ...profile, youtubeUrl: e.target.value })} placeholder="YouTube / canale" />
-                  <Input value={profile.websiteUrl ?? ""} onChange={(e) => setProfile({ ...profile, websiteUrl: e.target.value })} placeholder="Portfolio / sito" />
-                  <Input value={profile.email ?? ""} onChange={(e) => setProfile({ ...profile, email: e.target.value })} placeholder="Email contatto" />
-                  <Input value={profile.primaryColor ?? ""} onChange={(e) => setProfile({ ...profile, primaryColor: e.target.value })} placeholder="Colore profilo #A855F7" />
-                </div>
-                <textarea value={profile.bio ?? ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} placeholder="Bio breve, stile contenuti, disponibilità…" className="min-h-24 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]" />
-                <div className="flex flex-wrap gap-3 text-xs font-bold text-[var(--foreground)]">
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={profile.showInstagram} onChange={(e) => setProfile({ ...profile, showInstagram: e.target.checked })} /> Mostra Instagram</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={profile.showTikTok} onChange={(e) => setProfile({ ...profile, showTikTok: e.target.checked })} /> Mostra TikTok</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={profile.showYoutube} onChange={(e) => setProfile({ ...profile, showYoutube: e.target.checked })} /> Mostra YouTube</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={profile.showEmail} onChange={(e) => setProfile({ ...profile, showEmail: e.target.checked })} /> Mostra email</label>
-                </div>
-                <Button type="button" onClick={saveProfile} disabled={savingProfile}><Save size={16} className="mr-2" /> {savingProfile ? "Salvataggio…" : "Salva profilo"}</Button>
-              </div>
+        {data?.assignments && data.assignments.length > 0 ? (
+          <div className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Card className="!p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">Incarichi totali</p>
+                <p className="mt-2 text-3xl font-black text-[var(--foreground)]">{data.assignments.length}</p>
+              </Card>
+              <Card className="!p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">Da svolgere</p>
+                <p className="mt-2 text-3xl font-black text-[var(--foreground)]">{upcomingAssignments}</p>
+              </Card>
+              <Card className="!p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">Il tuo ruolo</p>
+                <p className="mt-2 truncate text-lg font-black text-[var(--foreground)]">{profile?.roleLabel || "Creator"}</p>
+              </Card>
             </div>
-          </Card>
-        )}
 
-        {data?.assignments && data.assignments.length > 0 && (
-          <Card>
-            <div className="flex items-start gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <CalendarDays size={20} />
-              </div>
-              <CardHeader
-                tag="Copertura assegnata"
-                title="Il tuo calendario"
-                description="Qui trovi solo le partite che devi seguire, con ruolo, orario e campo. Non serve consultare il calendario generale del torneo."
-              />
-            </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {data.assignments.map((match) => {
-                const when = match.date
-                  ? new Intl.DateTimeFormat("it-IT", {
-                      weekday: "short",
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }).format(new Date(match.date))
-                  : "Data da definire";
-                return (
-                  <div
-                    key={match.id}
-                    className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
-                        Giornata {match.round}
-                      </p>
-                      <Badge variant={match.assignmentRole === "VIDEO" ? "default" : "success"}>
-                        {match.assignmentRole === "VIDEO" ? "Video" : "Foto"}
-                      </Badge>
-                    </div>
-                    <p className="mt-2 text-sm font-black text-[var(--foreground)]">
-                      {match.homeTeam.name} <span className="text-[var(--muted)]">vs</span> {match.awayTeam.name}
-                    </p>
-                    <p className="mt-2 text-xs font-bold text-[var(--muted)]">{when}</p>
-                    {(match.venueName || match.venueAddress) && (
-                      <p className="mt-2 flex items-start gap-1.5 text-xs text-[var(--muted)]">
-                        <MapPin size={13} className="mt-0.5 shrink-0" />
-                        <span>{match.venueName || match.venueAddress}</span>
-                      </p>
-                    )}
+            {assignmentGroups.map((group) => (
+              <section key={group.title}>
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <CalendarDays size={17} />
                   </div>
-                );
-              })}
-            </div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">Agenda</p>
+                    <h2 className="capitalize text-lg font-black text-[var(--foreground)]">{group.title}</h2>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {group.matches.map((match) => {
+                    const parsed = match.date ? new Date(match.date) : null;
+                    const time = parsed && !Number.isNaN(parsed.getTime())
+                      ? new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" }).format(parsed)
+                      : "Da definire";
+                    const roleIsVideo = match.assignmentRole === "VIDEO";
+                    return (
+                      <article key={match.id} className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--card)] shadow-[0_12px_34px_rgba(0,0,0,0.06)]">
+                        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--card-2)] px-5 py-3">
+                          <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">Giornata {match.round}</span>
+                          <span className={[
+                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em]",
+                            roleIsVideo ? "bg-violet-500/12 text-violet-300" : "bg-amber-500/12 text-amber-300",
+                          ].join(" ")}>
+                            {roleIsVideo ? <Video size={12} /> : <Camera size={12} />}
+                            {roleIsVideo ? "Video" : "Foto"}
+                          </span>
+                        </div>
+
+                        <div className="p-5">
+                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                            <CreatorTeam team={match.homeTeam} />
+                            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">vs</span>
+                            <CreatorTeam team={match.awayTeam} align="right" />
+                          </div>
+
+                          <div className="mt-5 grid gap-2 text-xs font-bold text-[var(--muted)] sm:grid-cols-2">
+                            <p className="flex items-center gap-2 rounded-2xl bg-[var(--card-2)] px-3 py-2.5">
+                              <Clock3 size={14} className="text-[var(--accent)]" /> {time}
+                            </p>
+                            <p className="flex min-w-0 items-center gap-2 rounded-2xl bg-[var(--card-2)] px-3 py-2.5">
+                              <MapPin size={14} className="shrink-0 text-[var(--accent)]" />
+                              <span className="truncate">{match.venueName || match.venueAddress || "Campo da definire"}</span>
+                            </p>
+                          </div>
+
+                          <div className="mt-4 flex justify-end">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                setMatchId(match.id);
+                                setRound(String(match.round));
+                                document.getElementById("creator-upload")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }}
+                            >
+                              <UploadCloud size={14} className="mr-2" /> Carica materiale
+                            </Button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : !loading && user?.role === "CREATOR" ? (
+          <Card>
+            <CardHeader tag="Agenda" title="Nessun incarico assegnato" description="Quando l'admin assegna una partita, comparirà qui con ruolo, ora e campo." />
           </Card>
-        )}
+        ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <Card>
+          <Card id="creator-upload">
             <CardHeader tag="Upload" title="Nuovo contenuto" description="Carica dal telefono oppure incolla un link già pubblicato su Instagram, TikTok o YouTube." />
             <div className="mt-5 space-y-3">
               <div className="rounded-3xl border border-dashed border-[var(--border-strong)] bg-[var(--card-2)] p-5 text-center">
@@ -401,5 +392,29 @@ export default function CreatorStudioPage() {
         </div>
       </div>
     </DashboardShell>
+  );
+}
+
+
+function CreatorTeam({
+  team,
+  align = "left",
+}: {
+  team: { id: string; name: string; badgeUrl: string | null };
+  align?: "left" | "right";
+}) {
+  return (
+    <div className={["min-w-0", align === "right" ? "text-right" : "text-left"].join(" ")}>
+      <div className={["flex items-center gap-2.5", align === "right" ? "flex-row-reverse" : ""].join(" ")}>
+        {team.badgeUrl ? (
+          <img src={team.badgeUrl} alt="" className="h-11 w-11 shrink-0 rounded-2xl object-contain" loading="lazy" decoding="async" />
+        ) : (
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-xs font-black text-[var(--accent)]">
+            {team.name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <span className="min-w-0 text-sm font-black leading-tight text-[var(--foreground)]">{team.name}</span>
+      </div>
+    </div>
   );
 }

@@ -145,3 +145,44 @@ export async function fetchGoogleDriveMedia(fileId: string, range?: string | nul
 
   return response;
 }
+
+export async function getGoogleDriveMediaAccess({
+  fileId,
+  session,
+}: {
+  fileId: string;
+  session: import("@/lib/session").SessionUser | null;
+}) {
+  const { prisma } = await import("@/lib/prisma");
+  const { isLeagueAdmin } = await import("@/modules/permissions/permissions");
+  const proxyUrl = `/api/media/drive/${fileId}`;
+  const media = await prisma.mediaItem.findFirst({
+    where: {
+      OR: [{ fileUrl: proxyUrl }, { thumbnailUrl: proxyUrl }],
+    },
+    select: {
+      status: true,
+      leagueId: true,
+      uploadedByUserId: true,
+      creator: { select: { userId: true } },
+    },
+  });
+
+  if (!media) {
+    throw new AppError(404, "File non trovato");
+  }
+
+  if (media.status !== "APPROVED") {
+    const canReadPrivate = Boolean(
+      session &&
+        (isLeagueAdmin(session, media.leagueId) ||
+          session.userId === media.uploadedByUserId ||
+          session.userId === media.creator?.userId)
+    );
+    if (!canReadPrivate) {
+      throw new AppError(403, "Non autorizzato");
+    }
+  }
+
+  return { isPublic: media.status === "APPROVED" };
+}

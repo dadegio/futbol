@@ -99,7 +99,10 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
   if (!open) return null;
 
   const tournamentLinks = creatorOnlyNav
-    ? [{ href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={18} /> }]
+    ? [
+        { href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={18} /> },
+        { href: `/leagues/${leagueId}/creator/profile`, label: "Il mio profilo", icon: <Settings size={18} /> },
+      ]
     : leagueId
     ? [
         { href: `/leagues/${leagueId}`, label: "Home", icon: <Home size={18} /> },

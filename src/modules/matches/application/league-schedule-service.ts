@@ -17,8 +17,9 @@ import { AppError } from "@/modules/core/errors";
 
 type SchedulePhase = "league" | "playoff" | "all";
 
-type RefereeVisibilityOptions = {
+type ScheduleVisibilityOptions = {
   canSeeRefereeName: boolean;
+  canSeeCreatorCrew?: boolean;
 };
 
 function phaseWhere(phase: string | null): { seriesId?: null | { not: string } } {
@@ -32,11 +33,13 @@ export async function getLeagueSchedule({
   leagueId,
   phase,
   canSeeRefereeName,
+  canSeeCreatorCrew = false,
 }: {
   leagueId: string;
   phase: string | null;
-} & RefereeVisibilityOptions) {
-  const matches = await prisma.match.findMany({
+} & ScheduleVisibilityOptions) {
+  const [matches, coverageLeague] = await Promise.all([
+    prisma.match.findMany({
     where: { leagueId, ...phaseWhere(phase) },
     orderBy: [{ round: "asc" }, { createdAt: "asc" }],
     select: {
@@ -80,10 +83,31 @@ export async function getLeagueSchedule({
           secondaryColorHex: true,
         },
       },
+      creatorAssignments: {
+        select: {
+          role: true,
+          creator: { select: { displayName: true } },
+        },
+      },
     },
-  });
+    }),
+    canSeeCreatorCrew
+      ? prisma.league.findUnique({
+          where: { id: leagueId },
+          select: { veoTeamId: true, vodTeamId: true },
+        })
+      : Promise.resolve(null),
+  ]);
 
-  return matches.map((match) => ({
+  return matches.map((match) => {
+    const teamIds = new Set([match.homeTeam.id, match.awayTeam.id]);
+    const photoCreator = match.creatorAssignments.find((assignment) => assignment.role === "PHOTO")?.creator.displayName ?? null;
+    const videoCreator = match.creatorAssignments.find((assignment) => assignment.role === "VIDEO")?.creator.displayName ?? null;
+    const hasVeo = Boolean(coverageLeague?.veoTeamId && teamIds.has(coverageLeague.veoTeamId));
+    const hasVod = Boolean(coverageLeague?.vodTeamId && teamIds.has(coverageLeague.vodTeamId));
+    const automaticVideo = hasVeo && hasVod ? "VEO + VOD live" : hasVeo ? "VEO" : hasVod ? "VOD live" : null;
+
+    return {
     ...match,
     homeGoals: match.resultStatus === "FINAL" ? match.homeGoals : null,
     awayGoals: match.resultStatus === "FINAL" ? match.awayGoals : null,
@@ -94,7 +118,15 @@ export async function getLeagueSchedule({
     referee: match.referee
       ? { id: match.referee.id, name: canSeeRefereeName ? match.referee.name : null }
       : null,
-  }));
+    creatorCrew: canSeeCreatorCrew
+      ? {
+          photo: photoCreator,
+          video: automaticVideo ?? videoCreator,
+        }
+      : null,
+    creatorAssignments: undefined,
+  };
+  });
 }
 
 export async function createLeagueSchedule({

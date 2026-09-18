@@ -15,15 +15,19 @@ export async function GET(
     const { leagueId } = await ctx.params;
     const session = await getServerSession();
     const canSeeRefereeName = isLeagueAdminSession(session, leagueId);
+    const canSeeCreatorCrew = canSeeRefereeName || Boolean(
+      session?.role === "CAPTAIN" && session.leagueId === leagueId
+    );
     const { searchParams } = new URL(req.url);
     const payload = await getLeagueSchedule({
       leagueId,
       phase: searchParams.get("phase"),
       canSeeRefereeName,
+      canSeeCreatorCrew,
     });
 
     return NextResponse.json(payload, {
-      headers: canSeeRefereeName ? NO_STORE_HEADERS : publicApiCacheHeaders(20, 60),
+      headers: canSeeCreatorCrew ? NO_STORE_HEADERS : publicApiCacheHeaders(20, 60),
     });
   } catch (error) {
     return apiErrorResponse(error, "Errore caricamento calendario");

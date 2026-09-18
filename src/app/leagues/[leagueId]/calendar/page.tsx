@@ -11,8 +11,11 @@ export default async function Page({
   const { leagueId } = await params;
   const session = await getServerSession();
   const canSeeRefereeName = isLeagueAdminSession(session, leagueId);
+  const canSeeCreatorCrew = canSeeRefereeName || Boolean(
+    session?.role === "CAPTAIN" && session.leagueId === leagueId
+  );
   const [matches, teams] = await Promise.all([
-    getLeagueSchedule({ leagueId, phase: "league", canSeeRefereeName }),
+    getLeagueSchedule({ leagueId, phase: "league", canSeeRefereeName, canSeeCreatorCrew }),
     listLeagueTeams(leagueId),
   ]);
 

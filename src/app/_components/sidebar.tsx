@@ -76,7 +76,10 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
 
 
   const links = creatorOnlyNav
-    ? [{ href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={17} /> }]
+    ? [
+        { href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={17} /> },
+        { href: `/leagues/${leagueId}/creator/profile`, label: "Il mio profilo", icon: <Settings size={17} /> },
+      ]
     : leagueId
     ? [
         { href: `/leagues/${leagueId}`,           label: "Home",    icon: <Home size={17} /> },

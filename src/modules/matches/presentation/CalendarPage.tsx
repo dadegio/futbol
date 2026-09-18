@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
+  Camera,
   ChevronLeft,
   ChevronRight,
   MapPin,
   RefreshCw,
   UsersRound,
+  Video,
   Wand2,
 } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
@@ -40,6 +42,10 @@ type Match = {
   referee: {
     id: string;
     name: string | null;
+  } | null;
+  creatorCrew?: {
+    photo: string | null;
+    video: string | null;
   } | null;
   homeGoals: number | null;
   awayGoals: number | null;
@@ -230,6 +236,7 @@ export default function CalendarPage({
 }) {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN" || (user?.role === "LEAGUE_ADMIN" && user.leagueId === leagueId);
+  const canSeeCreatorCrew = isAdmin || (user?.role === "CAPTAIN" && user.leagueId === leagueId);
 
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [teamCount, setTeamCount] = useState(initialTeamCount);
@@ -793,7 +800,13 @@ export default function CalendarPage({
 
                 <Card className="overflow-hidden !p-0">
                   {group.matches.map((match) => (
-                    <CalendarMatchRow key={match.id} leagueId={leagueId} match={match} isAdmin={isAdmin} />
+                    <CalendarMatchRow
+                      key={match.id}
+                      leagueId={leagueId}
+                      match={match}
+                      isAdmin={isAdmin}
+                      canSeeCreatorCrew={canSeeCreatorCrew}
+                    />
                   ))}
                 </Card>
               </section>
@@ -848,7 +861,17 @@ function CalendarSkeleton() {
   );
 }
 
-function CalendarMatchRow({ leagueId, match, isAdmin }: { leagueId: string; match: Match; isAdmin: boolean }) {
+function CalendarMatchRow({
+  leagueId,
+  match,
+  isAdmin,
+  canSeeCreatorCrew,
+}: {
+  leagueId: string;
+  match: Match;
+  isAdmin: boolean;
+  canSeeCreatorCrew: boolean;
+}) {
   const played = isPlayed(match);
   const postponed = match.lifecycleStatus === "POSTPONED";
   const cancelled = match.lifecycleStatus === "CANCELLED";
@@ -908,6 +931,18 @@ function CalendarMatchRow({ leagueId, match, isAdmin }: { leagueId: string; matc
                 Arbitro: {match.referee ? (match.referee.name || "assegnato") : "da assegnare"}
               </span>
             </span>
+          )}
+          {canSeeCreatorCrew && (
+            <>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <Camera size={12} className="shrink-0 text-[var(--accent)]" />
+                <span className="truncate">Foto: {match.creatorCrew?.photo || "da coprire"}</span>
+              </span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <Video size={12} className="shrink-0 text-[var(--accent)]" />
+                <span className="truncate">Video: {match.creatorCrew?.video || "da coprire"}</span>
+              </span>
+            </>
           )}
         </div>
       </div>
