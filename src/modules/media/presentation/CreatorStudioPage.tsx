@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CalendarDays, Camera, CheckCircle2, ExternalLink, Image as ImageIcon, Instagram, Mail, MapPin, Save, UploadCloud, UserRound, Video } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
