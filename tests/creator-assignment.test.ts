@@ -184,3 +184,29 @@ test("proposta non assegna lo stesso creator a due gare sovrapposte", () => {
   assert.equal(suggestion.photoAssigned, 1);
   assert.equal(suggestion.missingPhoto, 1);
 });
+
+test("due sorgenti video automatiche lasciano quattro gare a Rock e Andrei", () => {
+  const creators = [
+    { id: "leonardo", displayName: "Leonardo", coverageRole: "PHOTO" as const, weeklyAssignmentLimit: 1, preferredTeamId: null },
+    { id: "luca", displayName: "Luca", coverageRole: "PHOTO" as const, weeklyAssignmentLimit: 1, preferredTeamId: null },
+    { id: "matteo", displayName: "Matteo", coverageRole: "PHOTO" as const, weeklyAssignmentLimit: 2, preferredTeamId: null },
+    { id: "claudia", displayName: "Claudia", coverageRole: "PHOTO" as const, weeklyAssignmentLimit: 1, preferredTeamId: null },
+    { id: "rock", displayName: "Rock", coverageRole: "VIDEO" as const, weeklyAssignmentLimit: 2, preferredTeamId: null },
+    { id: "andrei", displayName: "Andrei", coverageRole: "VIDEO" as const, weeklyAssignmentLimit: 2, preferredTeamId: null },
+  ];
+  const matches = Array.from({ length: 6 }, (_, index) => ({
+    id: `dual-${index + 1}`,
+    homeTeamId: `home-${index}`,
+    awayTeamId: `away-${index}`,
+    startsAt: null,
+    endsAt: null,
+    videoRequired: index >= 2,
+  }));
+
+  const suggestion = suggestRoundCoverage({ creators, matches });
+  assert.equal(suggestion.photoAssigned, 5);
+  assert.equal(suggestion.missingPhoto, 1);
+  assert.equal(suggestion.videoRequired, 4);
+  assert.equal(suggestion.videoAssigned, 4);
+  assert.equal(suggestion.missingVideo, 0);
+});

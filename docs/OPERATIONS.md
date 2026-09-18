@@ -70,9 +70,21 @@ I test di integrazione richiedono `TEST_DATABASE_URL` e usano uno schema tempora
 
 ## Media
 
-In produzione gli upload devono utilizzare Vercel Blob. L'assenza di `BLOB_READ_WRITE_TOKEN` deve essere trattata come errore di configurazione, non come fallback verso il filesystem di Vercel.
+Gli upload generici (loghi, avatar e asset amministrativi) continuano a usare Vercel Blob in produzione tramite `BLOB_READ_WRITE_TOKEN`. I file del **Media Center** possono invece essere salvati direttamente in Google Drive impostando `MEDIA_STORAGE_PROVIDER=google_drive`. Prisma/PostgreSQL conserva soltanto URL e metadati: i byte di foto e video non vengono memorizzati nel database.
 
-I fallback locali scrivono in `public/uploads` e `public/media` soltanto in sviluppo: entrambe le cartelle sono ignorate da Git e la quality gate blocca eventuali file runtime già finiti nell’indice. Prima di cancellare un vecchio file già pubblicato, verificare che nessun record del database lo referenzi ancora.
+Per Google Drive configurare una cartella dedicata e un OAuth refresh token con accesso alla cartella:
+
+```env
+MEDIA_STORAGE_PROVIDER=google_drive
+GOOGLE_DRIVE_FOLDER_ID=...
+GOOGLE_DRIVE_CLIENT_ID=...
+GOOGLE_DRIVE_CLIENT_SECRET=...
+GOOGLE_DRIVE_REFRESH_TOKEN=...
+```
+
+L'app carica il file nella cartella Drive e salva nel record `MediaItem.fileUrl` una route proxy `/api/media/drive/<fileId>`. La route legge il file con le credenziali server e supporta anche richieste `Range` per i video. Non è necessario rendere pubblica l'intera cartella Drive.
+
+Se `MEDIA_STORAGE_PROVIDER` resta `vercel_blob`, il comportamento corrente non cambia. I fallback locali scrivono in `public/uploads` e `public/media` soltanto in sviluppo: entrambe le cartelle sono ignorate da Git e la quality gate blocca eventuali file runtime già finiti nell’indice. Prima di cancellare un vecchio file già pubblicato, verificare che nessun record del database lo referenzi ancora.
 
 
 ## Posticipo calendario senza rigenerazione

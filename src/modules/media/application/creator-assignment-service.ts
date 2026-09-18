@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/modules/core/errors";
-import { findCreatorAssignmentConflicts } from "@/modules/media/domain/creator-assignment";
+import {
+  findCreatorAssignmentConflicts,
+  suggestRoundCoverage,
+} from "@/modules/media/domain/creator-assignment";
 import type {
   CreatorAssignmentRole,
   CreatorCoverageRole,
@@ -24,7 +27,7 @@ export async function getCreatorAssignmentBoard(leagueId: string) {
   const [league, creators, teams, matches] = await Promise.all([
     prisma.league.findUnique({
       where: { id: leagueId },
-      select: { id: true, veoTeamId: true },
+      select: { id: true, veoTeamId: true, vodTeamId: true },
     }),
     prisma.creatorProfile.findMany({
       where: { leagueId },
@@ -69,7 +72,13 @@ export async function getCreatorAssignmentBoard(leagueId: string) {
   ]);
 
   if (!league) throw new AppError(404, "Torneo non trovato");
-  return { veoTeamId: league.veoTeamId, creators, teams, matches };
+  return {
+    veoTeamId: league.veoTeamId,
+    vodTeamId: league.vodTeamId,
+    creators,
+    teams,
+    matches,
+  };
 }
 
 export async function updateCreatorAssignmentSettings({
@@ -131,25 +140,43 @@ export async function updateCreatorAssignmentSettings({
   });
 }
 
-export async function updateLeagueVeoTeam({
+async function validateAutomaticVideoTeam(
+  leagueId: string,
+  teamId: string | null,
+  label: "VEO" | "VOD"
+) {
+  if (!teamId) return;
+  const team = await prisma.team.findFirst({
+    where: { id: teamId, leagueId, activeInLeague: true },
+    select: { id: true },
+  });
+  if (!team) {
+    throw new AppError(400, `La squadra ${label} non appartiene al torneo attivo`);
+  }
+}
+
+export async function updateLeagueAutomaticVideoTeams({
   leagueId,
   veoTeamId,
+  vodTeamId,
 }: {
   leagueId: string;
   veoTeamId: string | null;
+  vodTeamId: string | null;
 }) {
-  if (veoTeamId) {
-    const team = await prisma.team.findFirst({
-      where: { id: veoTeamId, leagueId, activeInLeague: true },
-      select: { id: true },
-    });
-    if (!team) throw new AppError(400, "La squadra VEO non appartiene al torneo attivo");
+  await Promise.all([
+    validateAutomaticVideoTeam(leagueId, veoTeamId, "VEO"),
+    validateAutomaticVideoTeam(leagueId, vodTeamId, "VOD"),
+  ]);
+
+  if (veoTeamId && vodTeamId && veoTeamId === vodTeamId) {
+    throw new AppError(400, "VEO e VOD devono essere associati a due squadre diverse");
   }
 
   return prisma.league.update({
     where: { id: leagueId },
-    data: { veoTeamId },
-    select: { id: true, veoTeamId: true },
+    data: { veoTeamId, vodTeamId },
+    select: { id: true, veoTeamId: true, vodTeamId: true },
   });
 }
 
@@ -175,7 +202,7 @@ export async function replaceRoundCreatorAssignments({
   const [league, matches] = await Promise.all([
     prisma.league.findUnique({
       where: { id: leagueId },
-      select: { veoTeamId: true },
+      select: { veoTeamId: true, vodTeamId: true },
     }),
     prisma.match.findMany({
       where: { leagueId, round },
@@ -371,19 +398,27 @@ export async function replaceRoundCreatorAssignments({
   });
 
   const matchById = new Map(matches.map((match) => [match.id, match]));
-  const isVeoMatch = (matchId: string) => {
+  const automaticVideoSource = (matchId: string) => {
     const match = matchById.get(matchId);
-    return Boolean(
-      match &&
-        league.veoTeamId &&
+    if (!match) return null;
+    const hasVeo = Boolean(
+      league.veoTeamId &&
         (match.homeTeam.id === league.veoTeamId || match.awayTeam.id === league.veoTeamId)
     );
+    const hasVod = Boolean(
+      league.vodTeamId &&
+        (match.homeTeam.id === league.vodTeamId || match.awayTeam.id === league.vodTeamId)
+    );
+    if (hasVeo && hasVod) return "VEO+VOD" as const;
+    if (hasVeo) return "VEO" as const;
+    if (hasVod) return "VOD" as const;
+    return null;
   };
   const photoAssignments = normalizedAssignments.filter(
     (assignment) => assignment.photoCreatorId
   ).length;
   const requiredVideoMatches = normalizedAssignments.filter(
-    (assignment) => !isVeoMatch(assignment.matchId)
+    (assignment) => !automaticVideoSource(assignment.matchId)
   );
   const videoAssignments = requiredVideoMatches.filter(
     (assignment) => assignment.videoCreatorId
@@ -395,8 +430,192 @@ export async function replaceRoundCreatorAssignments({
     assignments: rows.length,
     photoAssignments,
     videoAssignments,
-    veoMatches: normalizedAssignments.length - requiredVideoMatches.length,
+    veoMatches: normalizedAssignments.filter((assignment) =>
+      automaticVideoSource(assignment.matchId)?.includes("VEO")
+    ).length,
+    vodMatches: normalizedAssignments.filter((assignment) =>
+      automaticVideoSource(assignment.matchId)?.includes("VOD")
+    ).length,
+    automaticVideoMatches: normalizedAssignments.length - requiredVideoMatches.length,
     missingPhoto: matches.length - photoAssignments,
     missingVideo: requiredVideoMatches.length - videoAssignments,
+  };
+}
+
+function normalizedTeamName(value: string) {
+  return value.toLocaleLowerCase("it").replace(/\./g, "").replace(/\s+/g, " ").trim();
+}
+
+async function ensureKnownAutomaticVideoTeams(leagueId: string) {
+  const [league, teams] = await Promise.all([
+    prisma.league.findUnique({
+      where: { id: leagueId },
+      select: { id: true, veoTeamId: true, vodTeamId: true },
+    }),
+    prisma.team.findMany({
+      where: { leagueId, activeInLeague: true },
+      select: { id: true, name: true },
+    }),
+  ]);
+  if (!league) throw new AppError(404, "Torneo non trovato");
+
+  const clockwork = teams.find(
+    (team) => normalizedTeamName(team.name) === "clockwork orange"
+  );
+  const tikkiu = teams.find(
+    (team) => normalizedTeamName(team.name) === "us tikkiu"
+  );
+  const veoTeamId = league.veoTeamId ?? clockwork?.id ?? null;
+  const vodTeamId = league.vodTeamId ?? tikkiu?.id ?? null;
+
+  if (veoTeamId !== league.veoTeamId || vodTeamId !== league.vodTeamId) {
+    await prisma.league.update({
+      where: { id: leagueId },
+      data: { veoTeamId, vodTeamId },
+    });
+  }
+
+  return { veoTeamId, vodTeamId };
+}
+
+export async function generateSeasonCreatorAssignments(leagueId: string) {
+  const automaticTeams = await ensureKnownAutomaticVideoTeams(leagueId);
+  const [creators, matches] = await Promise.all([
+    prisma.creatorProfile.findMany({
+      where: { leagueId, active: true },
+      orderBy: { displayName: "asc" },
+      select: {
+        id: true,
+        displayName: true,
+        coverageRole: true,
+        weeklyAssignmentLimit: true,
+        preferredTeamId: true,
+      },
+    }),
+    prisma.match.findMany({
+      where: { leagueId },
+      orderBy: [{ round: "asc" }, { date: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        round: true,
+        date: true,
+        slotEnd: true,
+        homeTeamId: true,
+        awayTeamId: true,
+      },
+    }),
+  ]);
+
+  if (matches.length === 0) {
+    throw new AppError(404, "Il calendario non contiene partite");
+  }
+
+  const rounds = Array.from(new Set(matches.map((match) => match.round))).sort(
+    (first, second) => first - second
+  );
+  const seasonUsage = new Map(creators.map((creator) => [creator.id, 0]));
+  const rows: Array<{ creatorId: string; matchId: string; role: CreatorAssignmentRole }> = [];
+  const roundSummaries: Array<{
+    round: number;
+    matches: number;
+    photoAssigned: number;
+    videoAssigned: number;
+    automaticVideoMatches: number;
+    missingPhoto: number;
+    missingVideo: number;
+  }> = [];
+
+  for (let roundIndex = 0; roundIndex < rounds.length; roundIndex += 1) {
+    const round = rounds[roundIndex];
+    const roundMatches = matches.filter((match) => match.round === round);
+    if (roundMatches.length === 0) continue;
+
+    // Rotate processing order so the single weekly photo gap does not always
+    // fall on the same fixture position.
+    const offset = roundIndex % roundMatches.length;
+    const rotatedMatches = [
+      ...roundMatches.slice(offset),
+      ...roundMatches.slice(0, offset),
+    ];
+
+    const suggestion = suggestRoundCoverage({
+      creators: creators.map((creator) => ({
+        ...creator,
+        seasonAssignmentCount: seasonUsage.get(creator.id) ?? 0,
+      })),
+      matches: rotatedMatches.map((match) => {
+        const hasAutomaticVideo = Boolean(
+          (automaticTeams.veoTeamId &&
+            (match.homeTeamId === automaticTeams.veoTeamId ||
+              match.awayTeamId === automaticTeams.veoTeamId)) ||
+            (automaticTeams.vodTeamId &&
+              (match.homeTeamId === automaticTeams.vodTeamId ||
+                match.awayTeamId === automaticTeams.vodTeamId))
+        );
+        return {
+          id: match.id,
+          homeTeamId: match.homeTeamId,
+          awayTeamId: match.awayTeamId,
+          startsAt: match.date,
+          endsAt: match.slotEnd,
+          videoRequired: !hasAutomaticVideo,
+        };
+      }),
+    });
+
+    for (const assignment of suggestion.assignments) {
+      if (assignment.photoCreatorId) {
+        rows.push({
+          creatorId: assignment.photoCreatorId,
+          matchId: assignment.matchId,
+          role: "PHOTO",
+        });
+        seasonUsage.set(
+          assignment.photoCreatorId,
+          (seasonUsage.get(assignment.photoCreatorId) ?? 0) + 1
+        );
+      }
+      if (assignment.videoCreatorId) {
+        rows.push({
+          creatorId: assignment.videoCreatorId,
+          matchId: assignment.matchId,
+          role: "VIDEO",
+        });
+        seasonUsage.set(
+          assignment.videoCreatorId,
+          (seasonUsage.get(assignment.videoCreatorId) ?? 0) + 1
+        );
+      }
+    }
+
+    roundSummaries.push({
+      round,
+      matches: roundMatches.length,
+      photoAssigned: suggestion.photoAssigned,
+      videoAssigned: suggestion.videoAssigned,
+      automaticVideoMatches: suggestion.veoMatches,
+      missingPhoto: suggestion.missingPhoto,
+      missingVideo: suggestion.missingVideo,
+    });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.creatorMatchAssignment.deleteMany({
+      where: { match: { leagueId } },
+    });
+    if (rows.length > 0) {
+      await tx.creatorMatchAssignment.createMany({ data: rows });
+    }
+  });
+
+  return {
+    matches: matches.length,
+    rounds: roundSummaries.length,
+    assignments: rows.length,
+    veoTeamId: automaticTeams.veoTeamId,
+    vodTeamId: automaticTeams.vodTeamId,
+    missingPhoto: roundSummaries.reduce((sum, round) => sum + round.missingPhoto, 0),
+    missingVideo: roundSummaries.reduce((sum, round) => sum + round.missingVideo, 0),
+    roundSummaries,
   };
 }

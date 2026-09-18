@@ -96,6 +96,7 @@ model League {
   createdAt DateTime @default(now())
 
   veoTeamId String?
+  vodTeamId String?
 
   themeMode            String  @default("GENERIC")
   brandLogoUrl         String?

@@ -5,9 +5,10 @@ import {
   requireLeagueAdmin,
 } from "@/modules/permissions/server-guards";
 import {
+  generateSeasonCreatorAssignments,
   getCreatorAssignmentBoard,
   replaceRoundCreatorAssignments,
-  updateLeagueVeoTeam,
+  updateLeagueAutomaticVideoTeams,
 } from "@/modules/media/application/creator-assignment-service";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
 
@@ -36,23 +37,53 @@ export async function PATCH(
     const session = await getServerSession();
     const input = await readJsonBody<Record<string, unknown>>(req);
     const veoTeamId = String(input.veoTeamId ?? "").trim() || null;
-    const result = await updateLeagueVeoTeam({ leagueId, veoTeamId });
+    const vodTeamId = String(input.vodTeamId ?? "").trim() || null;
+    const result = await updateLeagueAutomaticVideoTeams({
+      leagueId,
+      veoTeamId,
+      vodTeamId,
+    });
 
     await writeAuditLog({
       leagueId,
       actor: session,
-      action: "creator.veo_team_updated",
+      action: "creator.automatic_video_teams_updated",
       entityType: "league",
       entityId: leagueId,
-      summary: veoTeamId
-        ? "Aggiornata la squadra coperta con VEO"
-        : "Rimossa la squadra coperta con VEO",
-      metadata: { veoTeamId },
+      summary: "Aggiornate le squadre con copertura video automatica",
+      metadata: { veoTeamId, vodTeamId },
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    return apiErrorResponse(error, "Errore aggiornamento squadra VEO");
+    return apiErrorResponse(error, "Errore aggiornamento coperture video automatiche");
+  }
+}
+
+export async function POST(
+  _: Request,
+  ctx: { params: Promise<{ leagueId: string }> }
+) {
+  try {
+    const { leagueId } = await ctx.params;
+    const authError = await requireLeagueAdmin(leagueId);
+    if (authError) return authError;
+    const session = await getServerSession();
+    const result = await generateSeasonCreatorAssignments(leagueId);
+
+    await writeAuditLog({
+      leagueId,
+      actor: session,
+      action: "creator.season_assignments_generated",
+      entityType: "creator_assignment",
+      entityId: `league:${leagueId}`,
+      summary: "Generate automaticamente le coppie foto/video per tutto il calendario",
+      metadata: result,
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    return apiErrorResponse(error, "Errore generazione automatica crew creator");
   }
 }
 

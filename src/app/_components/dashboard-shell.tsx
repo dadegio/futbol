@@ -58,6 +58,9 @@ export default function DashboardShell({
   }, [leagueId]);
 
   const resolvedBrand = resolveLeagueBranding(leagueBrand);
+  const creatorOnlyNav = Boolean(
+    leagueId && user?.role === "CREATOR" && user.leagueId === leagueId
+  );
 
 return (
     <div className="min-h-screen max-w-full overflow-x-hidden px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 lg:px-7 lg:py-7 xl:px-9 2xl:px-12">
@@ -111,7 +114,7 @@ return (
       </div>
 
       {/* Mobile bottom tab bar */}
-      {leagueId && <BottomTabs leagueId={leagueId} branding={leagueBrand} onMore={() => setMobileMenuOpen(true)} />}
+      {leagueId && !creatorOnlyNav && <BottomTabs leagueId={leagueId} branding={leagueBrand} onMore={() => setMobileMenuOpen(true)} />}
 
       <MobileMenu
         leagueId={leagueId}

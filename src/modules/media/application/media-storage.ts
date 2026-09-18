@@ -4,6 +4,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AppError } from "@/modules/core/errors";
 import {
+  hasGoogleDriveMediaStorage,
+  isGoogleDriveMediaEnabled,
+  uploadMediaToGoogleDrive,
+} from "@/modules/media/application/google-drive-storage";
+import {
   validateUploadFile,
   type UploadKind,
   type UploadValidationOptions,
@@ -18,7 +23,7 @@ type UploadTarget = {
 type StoredUpload = {
   url: string;
   mediaKind: UploadKind;
-  storageProvider: "vercel_blob" | "local_public";
+  storageProvider: "google_drive" | "vercel_blob" | "local_public";
   size: number;
   contentType: string;
 };
@@ -53,7 +58,8 @@ function publicPathForTarget(target: UploadTarget, kind: UploadKind, fileName: s
 }
 
 export function hasDurableMediaStorage() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN) ||
+    (isGoogleDriveMediaEnabled() && hasGoogleDriveMediaStorage());
 }
 
 export async function storeUploadFile({
@@ -73,7 +79,24 @@ export async function storeUploadFile({
   const fileName = makeFileName(file, validated.extension, validated.safeBaseName);
   const paths = publicPathForTarget(target, validated.kind, fileName);
 
-  if (hasDurableMediaStorage()) {
+  if (target.scope === "media" && isGoogleDriveMediaEnabled()) {
+    if (!hasGoogleDriveMediaStorage()) {
+      throw new AppError(
+        503,
+        "Google Drive selezionato ma configurazione incompleta"
+      );
+    }
+    const stored = await uploadMediaToGoogleDrive({ file, fileName });
+    return {
+      url: stored.url,
+      mediaKind: validated.kind,
+      storageProvider: "google_drive",
+      size: file.size,
+      contentType: file.type,
+    };
+  }
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
     const blob = await put(paths.blobPath, file, {
       access: "public",
       addRandomSuffix: false,

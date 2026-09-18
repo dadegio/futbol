@@ -66,13 +66,18 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
   const [leagueName, setLeagueName] = useState<string | null>(null);
   const hasPlayoffs = Boolean(branding?.playoffFormat);
   const resolvedBrand = resolveLeagueBranding(branding);
+  const creatorOnlyNav = Boolean(
+    leagueId && user?.role === "CREATOR" && user.leagueId === leagueId
+  );
 
   useEffect(() => {
     if (branding?.name) setLeagueName(branding.name);
   }, [branding?.name]);
 
 
-  const links = leagueId
+  const links = creatorOnlyNav
+    ? [{ href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={17} /> }]
+    : leagueId
     ? [
         { href: `/leagues/${leagueId}`,           label: "Home",    icon: <Home size={17} /> },
         { href: `/leagues/${leagueId}/table`,      label: "Classifica",  icon: <Trophy size={17} /> },
@@ -140,7 +145,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
       )}
 
       {/* Search */}
-      <form
+      {!creatorOnlyNav && <form
         onSubmit={submitSearch}
         className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2"
       >
@@ -159,7 +164,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
             Vai
           </button>
         )}
-      </form>
+      </form>}
 
       {/* Nav */}
       <nav aria-label="Navigazione principale" className="space-y-0.5">
@@ -188,7 +193,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
       )}
 
       {/* Creator section */}
-      {canCreateMedia && (
+      {canCreateMedia && !creatorOnlyNav && (
         <>
           <div className="my-3 border-t border-[var(--border)]" />
           <NavItem

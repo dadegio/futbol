@@ -153,7 +153,12 @@ export async function getCreatorWorkspace({
       },
     }),
     prisma.match.findMany({
-      where: { leagueId },
+      where: {
+        leagueId,
+        ...(access.profile
+          ? { creatorAssignments: { some: { creatorId: access.profile.id } } }
+          : {}),
+      },
       orderBy: [{ round: "asc" }, { date: "asc" }],
       select: {
         id: true,

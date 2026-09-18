@@ -72,6 +72,9 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
   const [search, setSearch] = useState("");
   const hasPlayoffs = Boolean(branding?.playoffFormat);
   const resolvedBrand = resolveLeagueBranding(branding);
+  const creatorOnlyNav = Boolean(
+    leagueId && user?.role === "CREATOR" && user.leagueId === leagueId
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +98,9 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
 
   if (!open) return null;
 
-  const tournamentLinks = leagueId
+  const tournamentLinks = creatorOnlyNav
+    ? [{ href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={18} /> }]
+    : leagueId
     ? [
         { href: `/leagues/${leagueId}`, label: "Home", icon: <Home size={18} /> },
         { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Table2 size={18} /> },
@@ -163,7 +168,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          {leagueId && (
+          {leagueId && !creatorOnlyNav && (
             <form onSubmit={submitSearch} className="mb-5">
               <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                 Cerca giocatore
@@ -215,7 +220,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
             </section>
           )}
 
-          {canCreateMedia && (
+          {canCreateMedia && !creatorOnlyNav && (
             <section className="mt-6 border-t border-[var(--border)] pt-5">
               <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--accent)]">Creator</p>
               <MenuLink

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CalendarDays, Camera, CheckCircle2, ExternalLink, Image as ImageIcon, Instagram, Mail, MapPin, Save, UploadCloud, UserRound, Video } from "lucide-react";
 import DashboardShell from "src/app/_components/dashboard-shell";
@@ -294,8 +293,8 @@ export default function CreatorStudioPage() {
               </div>
               <CardHeader
                 tag="Copertura assegnata"
-                title="Le tue prossime partite"
-                description="L'admin del torneo ti ha assegnato queste gare per foto, video o contenuti social."
+                title="Il tuo calendario"
+                description="Qui trovi solo le partite che devi seguire, con ruolo, orario e campo. Non serve consultare il calendario generale del torneo."
               />
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -310,10 +309,9 @@ export default function CreatorStudioPage() {
                     }).format(new Date(match.date))
                   : "Data da definire";
                 return (
-                  <Link
+                  <div
                     key={match.id}
-                    href={`/leagues/${leagueId}/matches/${match.id}`}
-                    className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4 transition hover:border-[var(--border-strong)]"
+                    className="rounded-3xl border border-[var(--border)] bg-[var(--card-2)] p-4"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--accent)]">
@@ -333,7 +331,7 @@ export default function CreatorStudioPage() {
                         <span>{match.venueName || match.venueAddress}</span>
                       </p>
                     )}
-                  </Link>
+                  </div>
                 );
               })}
             </div>

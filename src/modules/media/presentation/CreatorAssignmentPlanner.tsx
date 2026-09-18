@@ -60,6 +60,7 @@ type Match = {
 
 type AssignmentBoard = {
   veoTeamId: string | null;
+  vodTeamId: string | null;
   creators: Creator[];
   teams: Team[];
   matches: Match[];
@@ -124,6 +125,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingSeason, setGeneratingSeason] = useState(false);
   const [updatingKey, setUpdatingKey] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -191,17 +193,26 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
     [board?.creators]
   );
 
-  const isVeoMatch = (match: Match) =>
-    Boolean(
+  const automaticVideoSource = (match: Match) => {
+    const hasVeo = Boolean(
       board?.veoTeamId &&
         (match.homeTeam.id === board.veoTeamId || match.awayTeam.id === board.veoTeamId)
     );
+    const hasVod = Boolean(
+      board?.vodTeamId &&
+        (match.homeTeam.id === board.vodTeamId || match.awayTeam.id === board.vodTeamId)
+    );
+    if (hasVeo && hasVod) return "VEO + VOD";
+    if (hasVeo) return "VEO";
+    if (hasVod) return "VOD LIVE";
+    return null;
+  };
 
   const summary = useMemo(() => {
     const photoAssigned = matches.filter(
       (match) => Boolean(draft[match.id]?.photoCreatorId)
     ).length;
-    const videoRequiredMatches = matches.filter((match) => !isVeoMatch(match));
+    const videoRequiredMatches = matches.filter((match) => !automaticVideoSource(match));
     const videoAssigned = videoRequiredMatches.filter((match) =>
       Boolean(draft[match.id]?.videoCreatorId)
     ).length;
@@ -217,11 +228,13 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
       photoRequired: matches.length,
       videoAssigned,
       videoRequired: videoRequiredMatches.length,
-      veoMatches: matches.length - videoRequiredMatches.length,
+      veoMatches: matches.filter((match) => automaticVideoSource(match)?.includes("VEO")).length,
+      vodMatches: matches.filter((match) => automaticVideoSource(match)?.includes("VOD")).length,
+      automaticVideoMatches: matches.length - videoRequiredMatches.length,
       photoCapacity,
       videoCapacity,
     };
-  }, [activeCreators, board?.veoTeamId, draft, matches]);
+  }, [activeCreators, board?.veoTeamId, board?.vodTeamId, draft, matches]);
 
   const usageByCreator = useMemo(() => {
     const usage = new Map<string, number>();
@@ -231,12 +244,12 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
       if (row.photoCreatorId) {
         usage.set(row.photoCreatorId, (usage.get(row.photoCreatorId) ?? 0) + 1);
       }
-      if (!isVeoMatch(match) && row.videoCreatorId) {
+      if (!automaticVideoSource(match) && row.videoCreatorId) {
         usage.set(row.videoCreatorId, (usage.get(row.videoCreatorId) ?? 0) + 1);
       }
     }
     return usage;
-  }, [board?.veoTeamId, draft, matches]);
+  }, [board?.veoTeamId, board?.vodTeamId, draft, matches]);
 
   function setAssignment(
     matchId: string,
@@ -271,7 +284,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
         awayTeamId: match.awayTeam.id,
         startsAt: match.date ? new Date(match.date) : null,
         endsAt: match.slotEnd ? new Date(match.slotEnd) : null,
-        videoRequired: !isVeoMatch(match),
+        videoRequired: !automaticVideoSource(match),
       })),
     });
 
@@ -288,7 +301,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
       ),
     }));
     setMsg(
-      `Proposta generata: foto ${suggestion.photoAssigned}/${suggestion.photoRequired}, video ${suggestion.videoAssigned}/${suggestion.videoRequired}${suggestion.veoMatches ? ` · VEO ${suggestion.veoMatches}` : ""}`
+      `Proposta generata: foto ${suggestion.photoAssigned}/${suggestion.photoRequired}, video creator ${suggestion.videoAssigned}/${suggestion.videoRequired}`
     );
   }
 
@@ -306,7 +319,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
           assignments: matches.map((match) => ({
             matchId: match.id,
             photoCreatorId: draft[match.id]?.photoCreatorId || null,
-            videoCreatorId: isVeoMatch(match)
+            videoCreatorId: automaticVideoSource(match)
               ? null
               : draft[match.id]?.videoCreatorId || null,
           })),
@@ -317,7 +330,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
         throw new Error(body?.error ?? "Errore salvataggio assegnazioni");
       }
       setMsg(
-        `Giornata ${selectedRound} salvata · foto ${body.photoAssignments}/${body.matches} · video ${body.videoAssignments}/${body.matches - body.veoMatches}${body.veoMatches ? ` · VEO ${body.veoMatches}` : ""}`
+        `Giornata ${selectedRound} salvata · foto ${body.photoAssignments}/${body.matches} · video creator ${body.videoAssignments}/${body.matches - body.automaticVideoMatches} · automatiche ${body.automaticVideoMatches}`
       );
       await load();
     } catch (error) {
@@ -358,24 +371,58 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
     }
   }
 
-  async function updateVeoTeam(veoTeamId: string) {
-    setUpdatingKey("veo");
+  async function updateAutomaticVideoTeams(patch: {
+    veoTeamId?: string;
+    vodTeamId?: string;
+  }) {
+    const key = patch.veoTeamId !== undefined ? "veo" : "vod";
+    setUpdatingKey(key);
     setErr(null);
     setMsg(null);
     try {
       const res = await authFetch(`/api/leagues/${leagueId}/creator-assignments`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ veoTeamId: veoTeamId || null }),
+        body: JSON.stringify({
+          veoTeamId:
+            patch.veoTeamId !== undefined ? patch.veoTeamId || null : board?.veoTeamId ?? null,
+          vodTeamId:
+            patch.vodTeamId !== undefined ? patch.vodTeamId || null : board?.vodTeamId ?? null,
+        }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.error ?? "Errore aggiornamento VEO");
-      setMsg(veoTeamId ? "Squadra VEO aggiornata" : "Copertura VEO rimossa");
+      if (!res.ok) {
+        throw new Error(body?.error ?? "Errore aggiornamento coperture automatiche");
+      }
+      setMsg("Coperture video automatiche aggiornate");
       await load();
     } catch (error) {
-      setErr(getErrorMessage(error, "Errore aggiornamento VEO"));
+      setErr(getErrorMessage(error, "Errore aggiornamento coperture automatiche"));
     } finally {
       setUpdatingKey(null);
+    }
+  }
+
+  async function generateSeasonAssignments() {
+    setGeneratingSeason(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await authFetch(`/api/leagues/${leagueId}/creator-assignments`, {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.error ?? "Errore generazione calendario creator");
+      }
+      setMsg(
+        `Calendario creator generato: ${body.assignments} incarichi · ${body.missingPhoto} buchi foto · ${body.missingVideo} buchi video`
+      );
+      await load();
+    } catch (error) {
+      setErr(getErrorMessage(error, "Errore generazione calendario creator"));
+    } finally {
+      setGeneratingSeason(false);
     }
   }
 
@@ -385,7 +432,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
         <CardHeader
           tag="Copertura settimanale"
           title="Crew foto e video"
-          description="Ogni partita ha uno slot foto e uno video. Le gare della squadra VEO richiedono solo il fotografo. Genera una proposta usando disponibilità, limiti settimanali e preferenze di squadra."
+          description="Il calendario è già definito: genera una volta le coppie foto/video per tutta la stagione. Clockwork Orange usa VEO, U.S. Tikkiu usa il VOD delle live; l'admin può correggere ogni giornata su richiesta."
         />
         <div className="flex flex-wrap items-center gap-2">
           <Select
@@ -413,6 +460,15 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
             disabled={loading || matches.length === 0}
           >
             <Sparkles size={15} className="mr-1" /> Genera proposta
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={generateSeasonAssignments}
+            disabled={loading || generatingSeason || (board?.matches.length ?? 0) === 0}
+          >
+            <Sparkles size={15} className="mr-1" />
+            {generatingSeason ? "Smistamento…" : "Assegna tutto il calendario"}
           </Button>
           <Button type="button" size="sm" variant="secondary" onClick={load} disabled={loading}>
             <RefreshCw size={15} className="mr-1" /> Aggiorna
@@ -460,9 +516,9 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
           />
           <CoverageStat
             icon={<CheckCircle2 size={16} />}
-            label="VEO"
-            value={String(summary.veoMatches)}
-            note="video non richiesto"
+            label="Video automatici"
+            value={String(summary.automaticVideoMatches)}
+            note={`VEO ${summary.veoMatches} · VOD ${summary.vodMatches}`}
           />
           <CoverageStat
             icon={<AlertTriangle size={16} />}
@@ -494,25 +550,42 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
 
           <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-3">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
-              Squadra con VEO
+              Coperture video automatiche
             </p>
-            <Select
-              value={board?.veoTeamId ?? ""}
-              onChange={(event) => void updateVeoTeam(event.target.value)}
-              disabled={updatingKey === "veo"}
-              className="mt-2 w-full"
-            >
-              <option value="" className="text-black">
-                Nessuna squadra VEO
-              </option>
-              {board?.teams.map((team) => (
-                <option key={team.id} value={team.id} className="text-black">
-                  {team.name}
-                </option>
-              ))}
-            </Select>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <Select
+                value={board?.veoTeamId ?? ""}
+                onChange={(event) =>
+                  void updateAutomaticVideoTeams({ veoTeamId: event.target.value })
+                }
+                disabled={updatingKey === "veo"}
+                className="w-full"
+              >
+                <option value="" className="text-black">Nessuna squadra VEO</option>
+                {board?.teams.map((team) => (
+                  <option key={team.id} value={team.id} className="text-black">
+                    VEO · {team.name}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={board?.vodTeamId ?? ""}
+                onChange={(event) =>
+                  void updateAutomaticVideoTeams({ vodTeamId: event.target.value })
+                }
+                disabled={updatingKey === "vod"}
+                className="w-full"
+              >
+                <option value="" className="text-black">Nessuna squadra VOD</option>
+                {board?.teams.map((team) => (
+                  <option key={team.id} value={team.id} className="text-black">
+                    VOD live · {team.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
             <p className="mt-2 text-xs text-[var(--muted)]">
-              Le partite che coinvolgono questa squadra non richiedono un videomaker.
+              Default: Clockwork Orange → VEO; U.S. Tikkiu → VOD delle live. Queste gare non consumano Rock o Andrei.
             </p>
           </div>
 
@@ -624,7 +697,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
                   photoCreatorId: "",
                   videoCreatorId: "",
                 };
-                const veo = isVeoMatch(match);
+                const autoVideo = automaticVideoSource(match);
                 const photoCreators = activeCreators.filter((creator) =>
                   canCover(creator, "PHOTO")
                 );
@@ -648,7 +721,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
                           {matchDateLabel(match)}
                         </p>
                       </div>
-                      {veo && <Badge variant="success">VEO · video coperto</Badge>}
+                      {autoVideo && <Badge variant="success">{autoVideo} · video coperto</Badge>}
                     </div>
 
                     <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -677,9 +750,9 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
                         <span className="mb-1.5 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
                           <Video size={13} /> Video
                         </span>
-                        {veo ? (
+                        {autoVideo ? (
                           <div className="flex h-10 items-center rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-xs font-black text-[var(--muted)]">
-                            VEO · nessun videomaker necessario
+                            {autoVideo} · nessun videomaker necessario
                           </div>
                         ) : (
                           <Select
@@ -701,7 +774,7 @@ export default function CreatorAssignmentPlanner({ leagueId }: { leagueId: strin
                       </label>
                     </div>
 
-                    {(!row.photoCreatorId || (!veo && !row.videoCreatorId)) && (
+                    {(!row.photoCreatorId || (!autoVideo && !row.videoCreatorId)) && (
                       <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-amber-400">
                         <AlertTriangle size={13} /> Copertura incompleta
                       </p>

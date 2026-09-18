@@ -40,6 +40,8 @@ mustExist("src/app/api/leagues/[leagueId]/overview/route.ts");
 mustExist("src/modules/matches/application/league-schedule-service.ts");
 mustExist("src/modules/matches/application/calendar-reschedule-service.ts");
 mustExist("src/modules/media/application/media-storage.ts");
+mustExist("src/modules/media/application/google-drive-storage.ts");
+mustExist("src/app/api/media/drive/[fileId]/route.ts");
 mustExist("src/modules/auth/application/authenticate-user.ts");
 mustExist("src/modules/auth/application/bootstrap-service.ts");
 mustExist("src/modules/players/application/player-service.ts");
@@ -84,8 +86,17 @@ mustContain("src/modules/matches/application/calendar-reschedule-service.ts", [
 mustContain("src/modules/media/application/media-storage.ts", [
   "BLOB_READ_WRITE_TOKEN",
   "storeUploadFile",
+  "google_drive",
   "local_public",
   "vercel_blob",
+]);
+
+mustContain("src/modules/media/application/google-drive-storage.ts", [
+  "MEDIA_STORAGE_PROVIDER",
+  "GOOGLE_DRIVE_FOLDER_ID",
+  "GOOGLE_DRIVE_REFRESH_TOKEN",
+  "uploadMediaToGoogleDrive",
+  "fetchGoogleDriveMedia",
 ]);
 
 mustContain("src/modules/auth/server-session.ts", [
