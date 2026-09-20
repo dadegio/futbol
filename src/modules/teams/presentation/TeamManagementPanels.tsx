@@ -163,6 +163,7 @@ function ColorInput({
 
 export function AddPlayerPanel({
   visible,
+  allowPhoto,
   firstName,
   setFirstName,
   lastName,
@@ -177,6 +178,7 @@ export function AddPlayerPanel({
   close,
 }: {
   visible: boolean;
+  allowPhoto: boolean;
   firstName: string;
   setFirstName: (value: string) => void;
   lastName: string;
@@ -217,7 +219,11 @@ export function AddPlayerPanel({
         </Select>
       </div>
 
-      <Input aria-label="URL foto giocatore" value={photoUrl} onChange={(event) => setPhotoUrl(event.target.value)} placeholder="URL foto opzionale" />
+      {allowPhoto ? (
+        <Input aria-label="URL foto giocatore" value={photoUrl} onChange={(event) => setPhotoUrl(event.target.value)} placeholder="URL foto opzionale" />
+      ) : (
+        <p className="rounded-xl border border-[var(--border)] bg-white/[0.03] px-3 py-2 text-xs text-[var(--muted)]">La foto profilo verrà inserita dall&apos;admin.</p>
+      )}
 
       <div className="flex gap-2">
         <Button onClick={addPlayer}>Aggiungi</Button>

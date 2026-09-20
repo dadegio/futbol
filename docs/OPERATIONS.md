@@ -34,6 +34,10 @@ Variabili sensibili principali:
 - `AUTH_SECRET`
 - `SETUP_SECRET`
 - `BLOB_READ_WRITE_TOKEN`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `GOOGLE_DRIVE_CLIENT_SECRET`
+- `GOOGLE_DRIVE_REFRESH_TOKEN`
 - `TEST_DATABASE_URL`
 - `TEST_DIRECT_URL`
 
@@ -70,9 +74,25 @@ I test di integrazione richiedono `TEST_DATABASE_URL` e usano uno schema tempora
 
 ## Media
 
-Gli upload generici (loghi, avatar e asset amministrativi) continuano a usare Vercel Blob in produzione tramite `BLOB_READ_WRITE_TOKEN`. I file del **Media Center** possono invece essere salvati direttamente in Google Drive impostando `MEDIA_STORAGE_PROVIDER=google_drive`. Prisma/PostgreSQL conserva soltanto URL e metadati: i byte di foto e video non vengono memorizzati nel database.
+Lo storage è volutamente separato in due canali:
 
-Per Google Drive configurare una cartella dedicata e un OAuth refresh token con accesso alla cartella:
+- **immagini pubbliche dell'app** (foto profilo giocatori, loghi squadre, sponsor e upload generici) → Cloudinary;
+- **materiale dei creator** caricato dal Media Center → Google Drive, quando `MEDIA_STORAGE_PROVIDER=google_drive`.
+
+Prisma/PostgreSQL conserva solo URL e metadati: non contiene i byte delle immagini o dei video. Gli URL Vercel Blob già presenti nel database continuano a funzionare e non richiedono una migrazione immediata.
+
+Per le immagini pubbliche creare un account Cloudinary Free e configurare in Vercel:
+
+```env
+PUBLIC_IMAGE_STORAGE_PROVIDER=cloudinary
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
+Gli upload generici vengono ridimensionati entro 1600×1600 e convertiti in WebP qualità 82 prima del salvataggio, salvo SVG/GIF. Questo riduce molto il traffico rispetto alle foto originali da più MB. Se `PUBLIC_IMAGE_STORAGE_PROVIDER` non è `cloudinary`, Vercel Blob resta disponibile come fallback tramite `BLOB_READ_WRITE_TOKEN`. Le credenziali Cloudinary restano esclusivamente lato server.
+
+Per i soli contenuti creator configurare Google Drive:
 
 ```env
 MEDIA_STORAGE_PROVIDER=google_drive
@@ -82,9 +102,15 @@ GOOGLE_DRIVE_CLIENT_SECRET=...
 GOOGLE_DRIVE_REFRESH_TOKEN=...
 ```
 
-L'app carica il file nella cartella Drive e salva nel record `MediaItem.fileUrl` una route proxy `/api/media/drive/<fileId>`. La route legge il file con le credenziali server e supporta anche richieste `Range` per i video. Non è necessario rendere pubblica l'intera cartella Drive.
+La route Media Center usa Drive solo quando `target.scope=media`: le foto profilo giocatore e i loghi squadra non vengono mai reindirizzati su Drive. La route proxy `/api/media/drive/<fileId>` legge i file con credenziali server e supporta anche le richieste `Range` per i video.
 
-Se `MEDIA_STORAGE_PROVIDER` resta `vercel_blob`, il comportamento corrente non cambia. I fallback locali scrivono in `public/uploads` e `public/media` soltanto in sviluppo: entrambe le cartelle sono ignorate da Git e la quality gate blocca eventuali file runtime già finiti nell’indice. Prima di cancellare un vecchio file già pubblicato, verificare che nessun record del database lo referenzi ancora.
+In sviluppo, in assenza di storage remoto, i fallback locali scrivono in `public/uploads` e `public/media`; entrambe le cartelle sono ignorate da Git.
+
+## Blocco rosa e richieste capitano
+
+La rosa di una squadra viene bloccata automaticamente al calcio d'inizio della sua prima partita `SCHEDULED`, oppure non appena esiste una partita `FINAL`. Prima del lock il capitano può continuare a gestire normalmente squadra e rosa. Dopo il lock, salvataggi, aggiunte, rimozioni e cambi numero del capitano creano una `TeamChangeRequest` in stato `PENDING`; la modifica reale viene applicata solo dopo approvazione dell'admin.
+
+Le foto profilo dei giocatori fanno eccezione: upload, sostituzione, rimozione e inquadratura sono sempre riservati ad ADMIN/LEAGUE_ADMIN, anche prima dell'inizio del torneo. Le distinte partita restano indipendenti dal roster lock.
 
 
 ## Posticipo calendario senza rigenerazione

@@ -29,6 +29,7 @@ import {
   type Team,
 } from "./TeamDetailParts";
 import { AddPlayerPanel, TeamEditPanel } from "./TeamManagementPanels";
+import TeamChangeRequestsPanel from "./TeamChangeRequestsPanel";
 
 type RosterFilter = "all" | "eligible" | "attention";
 
@@ -133,6 +134,11 @@ export default function TeamPage({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Errore");
+      if (data?.requestCreated) {
+        setMsg("Rosa bloccata: richiesta di modifica inviata all'admin");
+        setEditingTeam(false);
+        return;
+      }
       setMsg("Squadra aggiornata");
       setEditingTeam(false);
       await load();
@@ -150,15 +156,22 @@ export default function TeamPage({
     if (!newFirstName.trim() || !newLastName.trim()) return setErr("Inserisci nome e cognome");
     if (!Number.isInteger(n) || n <= 0) return setErr("Numero non valido");
 
+    const playerInput: Record<string, unknown> = { firstName: newFirstName.trim(), lastName: newLastName.trim(), number: n, position: newPosition || null };
+    if (isAdmin) playerInput.photoUrl = newPhotoUrl.trim() || null;
     const res = await authFetch(`/api/teams/${teamId}/players`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ firstName: newFirstName.trim(), lastName: newLastName.trim(), number: n, position: newPosition || null, photoUrl: newPhotoUrl.trim() || null }),
+      body: JSON.stringify(playerInput),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(data?.error ?? "Errore aggiunta giocatore");
 
     setNewFirstName(""); setNewLastName(""); setNewNumber(""); setNewPosition(""); setNewPhotoUrl("");
+    if (data?.requestCreated) {
+      setMsg("Rosa bloccata: richiesta di aggiunta inviata all'admin");
+      setShowAddPlayer(false);
+      return;
+    }
     setMsg("Giocatore aggiunto");
     setShowAddPlayer(false);
     await load();
@@ -170,6 +183,10 @@ export default function TeamPage({
     const res = await authFetch(`/api/players/${playerId}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(data?.error ?? "Errore eliminazione giocatore");
+    if (data?.requestCreated) {
+      setMsg("Rosa bloccata: richiesta di rimozione inviata all'admin");
+      return;
+    }
     setMsg("Giocatore eliminato");
     await load();
   }
@@ -281,8 +298,10 @@ export default function TeamPage({
           </Link>
         )}
 
+        {canEdit && <TeamChangeRequestsPanel teamId={teamId} isAdmin={isAdmin} />}
+
         <TeamEditPanel visible={canEdit && editingTeam} name={name} setName={setName} badgePreview={badgePreview} setBadgeFile={setBadgeFile} setBadgeUrl={setBadgeUrl} setRemoveBadge={setRemoveBadge} colorHex={colorHex} setColorHex={setColorHex} secondaryColorHex={secondaryColorHex} setSecondaryColorHex={setSecondaryColorHex} description={description} setDescription={setDescription} saveTeam={saveTeam} savingTeam={savingTeam} close={() => setEditingTeam(false)} />
-        <AddPlayerPanel visible={canEdit && showAddPlayer} firstName={newFirstName} setFirstName={setNewFirstName} lastName={newLastName} setLastName={setNewLastName} number={newNumber} setNumber={setNewNumber} position={newPosition} setPosition={setNewPosition} photoUrl={newPhotoUrl} setPhotoUrl={setNewPhotoUrl} addPlayer={addPlayer} close={() => setShowAddPlayer(false)} />
+        <AddPlayerPanel visible={canEdit && showAddPlayer} allowPhoto={isAdmin} firstName={newFirstName} setFirstName={setNewFirstName} lastName={newLastName} setLastName={setNewLastName} number={newNumber} setNumber={setNewNumber} position={newPosition} setPosition={setNewPosition} photoUrl={newPhotoUrl} setPhotoUrl={setNewPhotoUrl} addPlayer={addPlayer} close={() => setShowAddPlayer(false)} />
 
         <Card className="!p-3 sm:!p-4">
           <div className="relative">

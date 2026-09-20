@@ -49,6 +49,20 @@ enum CreatorAssignmentRole {
   VIDEO
 }
 
+enum TeamChangeRequestType {
+  TEAM_UPDATE
+  PLAYER_ADD
+  PLAYER_UPDATE
+  PLAYER_REMOVE
+  PLAYER_NUMBER_SWAP
+}
+
+enum TeamChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum MatchLifecycleStatus {
   SCHEDULED
   POSTPONED
@@ -83,6 +97,8 @@ model User {
   creatorProfile CreatorProfile?
   uploadedMedia MediaItem[] @relation("MediaUploadedBy")
   auditLogs    AuditLog[] @relation("AuditLogActor")
+  requestedTeamChanges TeamChangeRequest[] @relation("TeamChangeRequestRequester")
+  reviewedTeamChanges  TeamChangeRequest[] @relation("TeamChangeRequestReviewer")
   createdAt    DateTime @default(now())
 
   bookedMatches Match[] @relation("MatchBookedBy")
@@ -129,6 +145,7 @@ model League {
   mediaItems    MediaItem[]
   auditLogs     AuditLog[]
   teamFeePayments TeamFeePayment[]
+  teamChangeRequests TeamChangeRequest[]
 }
 
 
@@ -295,9 +312,38 @@ model Team {
   captain             User?            @relation("TeamCaptain")
   affiliatedReferees  Referee[]        @relation("RefereeTeamAffiliation")
   preferredByCreators CreatorProfile[] @relation("CreatorPreferredTeam")
+  changeRequests TeamChangeRequest[]
 
   @@unique([leagueId, name])
   @@index([leagueId, activeInLeague])
+}
+
+
+model TeamChangeRequest {
+  id              String                  @id @default(cuid())
+  leagueId        String
+  teamId          String
+  requestedById   String
+  reviewedById    String?
+  targetPlayerId  String?
+  type            TeamChangeRequestType
+  status          TeamChangeRequestStatus @default(PENDING)
+  payload         Json
+  reason          String?
+  reviewNote      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  league      League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team        Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  requestedBy User   @relation("TeamChangeRequestRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy  User?  @relation("TeamChangeRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([leagueId, status, createdAt])
+  @@index([teamId, status, createdAt])
+  @@index([requestedById, createdAt])
+  @@index([targetPlayerId])
 }
 
 model Player {

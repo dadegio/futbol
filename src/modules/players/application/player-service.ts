@@ -199,6 +199,12 @@ export async function updatePlayer({
     existing.team.leagueId
   );
 
+  const attemptsPhotoChange = ["photoUrl", "photoZoom", "photoPositionX", "photoPositionY"]
+    .some((field) => Object.prototype.hasOwnProperty.call(input, field));
+  if (attemptsPhotoChange && !canEditAdminFields) {
+    throw new AppError(403, "Le foto profilo dei giocatori possono essere gestite solo dall'admin");
+  }
+
   const firstName =
     input.firstName !== undefined ? String(input.firstName).trim() : undefined;
   const lastName =
@@ -379,15 +385,27 @@ export async function deletePlayer(playerId: string) {
 export async function addPlayerToTeam({
   teamId,
   input,
+  session = null,
 }: {
   teamId: string;
   input: Record<string, unknown>;
+  session?: SessionUser | null;
 }) {
   const firstName = String(input.firstName ?? "").trim();
   const lastName = String(input.lastName ?? "").trim();
   const number = toNonNegativeInt(input.number);
   const position = input.position ? String(input.position).trim() : null;
-  const photoUrl = input.photoUrl ? String(input.photoUrl).trim() : null;
+
+  const teamAccess = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { leagueId: true },
+  });
+  if (!teamAccess) throw new AppError(400, "Squadra non valida");
+  const canEditAdminFields = canEditAdminPlayerDetails(session, teamAccess.leagueId);
+  if (Object.prototype.hasOwnProperty.call(input, "photoUrl") && !canEditAdminFields) {
+    throw new AppError(403, "La foto profilo del giocatore può essere inserita solo dall'admin");
+  }
+  const photoUrl = canEditAdminFields && input.photoUrl ? String(input.photoUrl).trim() : null;
 
   if (!teamId) throw new AppError(400, "teamId mancante nella route");
   if (!firstName || !lastName) {

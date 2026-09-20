@@ -7,6 +7,7 @@ import {
 } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
+import { createLockedTeamChangeRequest, getTeamRosterLockState } from "@/modules/teams/application/team-change-request-service";
 import {
   deletePlayer,
   getPlayerDetail,
@@ -34,6 +35,16 @@ export async function PATCH(req: Request, ctx: Ctx) {
   try {
     const session = await getServerSession();
     const input = await readJsonBody<Record<string, unknown>>(req);
+    if (session?.role === "CAPTAIN") {
+      const current = await getPlayerDetail({ playerId, session });
+      const teamId = current.teamId ?? current.team?.id;
+      if (!teamId) return NextResponse.json({ error: "Squadra giocatore mancante" }, { status: 400 });
+      const lock = await getTeamRosterLockState(teamId);
+      if (lock.locked) {
+        const request = await createLockedTeamChangeRequest({ teamId, actor: session, type: "PLAYER_UPDATE", input, targetPlayerId: playerId });
+        return NextResponse.json({ requestCreated: true, request, rosterLocked: true }, { status: 202 });
+      }
+    }
     const player = await updatePlayer({ playerId, input, session });
     await writeAuditLog({
       leagueId: player.team.leagueId, actor: session, action: "player.updated", entityType: "player", entityId: player.id,
@@ -53,6 +64,14 @@ export async function DELETE(_: Request, ctx: Ctx) {
   try {
     const session = await getServerSession();
     const player = await getPlayerDetail({ playerId, session });
+    const teamId = player.teamId ?? player.team?.id;
+    if (session?.role === "CAPTAIN" && teamId) {
+      const lock = await getTeamRosterLockState(teamId);
+      if (lock.locked) {
+        const request = await createLockedTeamChangeRequest({ teamId, actor: session, type: "PLAYER_REMOVE", input: {}, targetPlayerId: playerId });
+        return NextResponse.json({ requestCreated: true, request, rosterLocked: true }, { status: 202 });
+      }
+    }
     const result = await deletePlayer(playerId);
     await writeAuditLog({
       leagueId: player.team.leagueId, actor: session, action: "player.deleted", entityType: "player", entityId: playerId,

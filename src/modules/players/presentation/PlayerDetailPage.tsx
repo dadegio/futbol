@@ -213,7 +213,7 @@ export default function PlayerPage({
       setSaving(true);
       let finalPhotoUrl: string | null = removePhoto ? null : photoUrl.trim() || null;
 
-      if (photoFile) {
+      if (isAdmin && photoFile) {
         if (!photoFile.type.startsWith("image/")) throw new Error("Seleziona un'immagine valida");
         if (photoFile.size > 5 * 1024 * 1024) throw new Error("La foto deve essere massimo 5 MB");
         finalPhotoUrl = await uploadImage(photoFile);
@@ -224,14 +224,14 @@ export default function PlayerPage({
         lastName: lastName.trim(),
         number: n,
         position: position || null,
-        photoUrl: finalPhotoUrl,
-        photoZoom,
-        photoPositionX,
-        photoPositionY,
       };
 
       if (isAdmin) {
         Object.assign(body, {
+          photoUrl: finalPhotoUrl,
+          photoZoom,
+          photoPositionX,
+          photoPositionY,
           birthDate: birthDate || null,
           documentSigned,
           signedAt: signedAt || null,
@@ -251,6 +251,12 @@ export default function PlayerPage({
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((data as any)?.error ?? "Errore aggiornamento giocatore");
+
+      if ((data as any)?.requestCreated) {
+        setMsg("Rosa bloccata: richiesta di modifica inviata all'admin");
+        setEditing(false);
+        return;
+      }
 
       setMsg("Profilo aggiornato");
       setEditing(false);
@@ -373,6 +379,7 @@ export default function PlayerPage({
           <Card>
             <h2 className="mb-4 text-lg font-black text-[var(--foreground)]">Modifica giocatore</h2>
             <div className="grid gap-4">
+              {isAdmin ? (
               <div className="grid gap-4 lg:grid-cols-[190px_minmax(0,1fr)] lg:items-start">
                 <div className="space-y-2">
                   <div className="relative aspect-[4/5] w-full max-w-[190px] overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-black/20">
@@ -418,6 +425,9 @@ export default function PlayerPage({
                   </div>
                 </div>
               </div>
+              ) : (
+                <p className="rounded-2xl border border-[var(--border)] bg-white/[0.03] px-4 py-3 text-sm text-[var(--muted)]">La foto profilo e la sua inquadratura sono gestite esclusivamente dall&apos;admin.</p>
+              )}
 
               <div className="grid gap-3 lg:grid-cols-2">
                 <Input aria-label="Nome" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Nome" />

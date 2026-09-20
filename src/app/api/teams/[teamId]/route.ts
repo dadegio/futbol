@@ -8,6 +8,7 @@ import {
 } from "@/modules/permissions/server-guards";
 import { apiErrorResponse, readJsonBody } from "@/modules/core/api";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
+import { createLockedTeamChangeRequest, getTeamRosterLockState } from "@/modules/teams/application/team-change-request-service";
 import {
   getTeamDetail,
   removeTeamFromLeague,
@@ -34,6 +35,13 @@ export async function PATCH(req: Request, ctx: Ctx) {
   try {
     const input = await readJsonBody<Record<string, unknown>>(req);
     const actor = await getServerSession();
+    if (actor?.role === "CAPTAIN") {
+      const lock = await getTeamRosterLockState(teamId);
+      if (lock.locked) {
+        const request = await createLockedTeamChangeRequest({ teamId, actor, type: "TEAM_UPDATE", input });
+        return NextResponse.json({ requestCreated: true, request, rosterLocked: true }, { status: 202 });
+      }
+    }
     const team = await updateTeam({ teamId, input });
     await writeAuditLog({
       leagueId: team.league.id, actor, action: "team.updated", entityType: "team", entityId: team.id,

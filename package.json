@@ -25,7 +25,8 @@
     "quality:integration": "npm run test:integration && npm run quality",
     "ci": "npm run modernization && npm run test:integration && npm run build",
     "check:hygiene": "node scripts/check-repo-hygiene.mjs",
-    "cleanup:repo-index": "node scripts/cleanup-repo-index.mjs"
+    "cleanup:repo-index": "node scripts/cleanup-repo-index.mjs",
+    "storage:migrate:blob": "node scripts/migrate-vercel-blob.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
@@ -35,7 +36,8 @@
     "next": "16.1.6",
     "pg": "^8.20.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
