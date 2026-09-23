@@ -49,11 +49,22 @@ export function isCreator(
   return Boolean(user?.role === "CREATOR" && leagueId && user.leagueId === leagueId);
 }
 
+function captainAssignments(user: Pick<SessionUser, "teamId" | "leagueId" | "captainAssignments">) {
+  if (user.captainAssignments?.length) return user.captainAssignments;
+  return user.teamId && user.leagueId
+    ? [{ teamId: user.teamId, leagueId: user.leagueId }]
+    : [];
+}
+
 export function isCaptainOfTeam(
-  user: Pick<SessionUser, "role" | "teamId"> | null | undefined,
+  user: Pick<SessionUser, "role" | "teamId" | "leagueId" | "captainAssignments"> | null | undefined,
   teamId: string | null | undefined
 ) {
-  return Boolean(user?.role === "CAPTAIN" && teamId && user.teamId === teamId);
+  return Boolean(
+    user?.role === "CAPTAIN" &&
+      teamId &&
+      captainAssignments(user).some((assignment) => assignment.teamId === teamId)
+  );
 }
 
 export function isRefereeAssignedToMatch(
@@ -93,7 +104,12 @@ export function canPerform(
   if (!user) return false;
   if (user.role === "ADMIN") return true;
 
-  const leagueScoped = Boolean(context.leagueId && user.leagueId === context.leagueId);
+  const leagueScoped = Boolean(
+    context.leagueId &&
+      (user.leagueId === context.leagueId ||
+        (user.role === "CAPTAIN" &&
+          captainAssignments(user).some((assignment) => assignment.leagueId === context.leagueId)))
+  );
 
   if (user.role === "LEAGUE_ADMIN" && leagueScoped) {
     return [
@@ -113,15 +129,16 @@ export function canPerform(
   }
 
   if (user.role === "CAPTAIN") {
+    const teamIds = new Set(captainAssignments(user).map((assignment) => assignment.teamId));
     if (permission === "league:view") return leagueScoped;
     if (permission === "booking:create") {
       return Boolean(
-        context.matchTeamIds?.some((teamId) => teamId === user.teamId) ||
-          context.teamId === user.teamId
+        context.matchTeamIds?.some((teamId) => teamIds.has(teamId)) ||
+          (context.teamId && teamIds.has(context.teamId))
       );
     }
     if (permission === "team:manage" || permission === "player:manage") {
-      return Boolean(context.teamId && context.teamId === user.teamId);
+      return Boolean(context.teamId && teamIds.has(context.teamId));
     }
   }
 

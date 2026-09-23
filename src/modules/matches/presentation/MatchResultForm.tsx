@@ -46,9 +46,17 @@ import MatchLifecyclePanel from "./MatchLifecyclePanel";
 export default function MatchResultForm({ match }: { match: Match }) {
   const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.role === "ADMIN" || (user?.role === "LEAGUE_ADMIN" && user.leagueId === match.leagueId);
+  const captainTeamIds = new Set(
+    user?.role === "CAPTAIN"
+      ? [
+          ...(user.captainAssignments?.map((assignment) => assignment.teamId) ?? []),
+          ...(user.teamId ? [user.teamId] : []),
+        ]
+      : []
+  );
   const isCaptainOfMatch =
     user?.role === "CAPTAIN" &&
-    (user.teamId === match.homeTeam?.id || user.teamId === match.awayTeam?.id);
+    (captainTeamIds.has(match.homeTeam?.id) || captainTeamIds.has(match.awayTeam?.id));
   const isAssignedReferee =
     user?.role === "REFEREE" &&
     Boolean(user.refereeId) &&

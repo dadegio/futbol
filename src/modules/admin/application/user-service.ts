@@ -27,6 +27,16 @@ export async function listUsers() {
       leagueId: true,
       adminLeague: { select: { name: true } },
       team: { select: { name: true } },
+      captainAssignments: {
+        select: {
+          id: true,
+          leagueId: true,
+          teamId: true,
+          league: { select: { name: true } },
+          team: { select: { name: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
       referee: {
         select: { name: true, league: { select: { name: true } } },
       },
@@ -96,6 +106,18 @@ export async function createUser({
         leagueId: role === "LEAGUE_ADMIN" || role === "CREATOR" ? leagueId : null,
         teamId: role === "CAPTAIN" ? teamId : null,
         refereeId: role === "REFEREE" ? refereeId : null,
+        captainAssignments:
+          role === "CAPTAIN" && teamId
+            ? {
+                create: {
+                  teamId,
+                  leagueId: (await prisma.team.findUniqueOrThrow({
+                    where: { id: teamId },
+                    select: { leagueId: true },
+                  })).leagueId,
+                },
+              }
+            : undefined,
         creatorProfile:
           role === "CREATOR" && leagueId
             ? {
@@ -145,6 +167,98 @@ export async function createUser({
     }
     throw error;
   }
+}
+
+export async function addCaptainAssignment({
+  userId,
+  teamId,
+  actor,
+}: {
+  userId: string;
+  teamId: string;
+  actor: SessionUser | null;
+}) {
+  const [user, team] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, include: { captainAssignments: true } }),
+    prisma.team.findUnique({ where: { id: teamId }, select: { id: true, leagueId: true, name: true } }),
+  ]);
+  if (!user) throw new AppError(404, "Utente non trovato");
+  if (user.role !== "CAPTAIN") throw new AppError(400, "L'utente non è un capitano");
+  if (!team) throw new AppError(404, "Squadra non trovata");
+  if (user.captainAssignments.some((assignment) => assignment.leagueId === team.leagueId)) {
+    throw new AppError(409, "Il capitano ha già una squadra associata in questo torneo");
+  }
+
+  try {
+    const assignment = await prisma.$transaction(async (tx) => {
+      const created = await tx.captainAssignment.create({
+        data: { userId, teamId, leagueId: team.leagueId },
+        include: { team: { select: { name: true } }, league: { select: { name: true } } },
+      });
+      if (!user.teamId) {
+        await tx.user.update({ where: { id: userId }, data: { teamId } });
+      }
+      return created;
+    });
+
+    await writeAuditLog({
+      leagueId: team.leagueId,
+      actor,
+      action: "user.captain_assignment_added",
+      entityType: "user",
+      entityId: userId,
+      summary: `Associato capitano ${user.username} a ${team.name}`,
+      metadata: { teamId, leagueId: team.leagueId },
+    });
+    return assignment;
+  } catch (error) {
+    if ((error as { code?: string }).code === "P2002") {
+      throw new AppError(409, "Questa squadra ha già un account capitano");
+    }
+    throw error;
+  }
+}
+
+export async function removeCaptainAssignment({
+  userId,
+  assignmentId,
+  actor,
+}: {
+  userId: string;
+  assignmentId: string;
+  actor: SessionUser | null;
+}) {
+  const assignment = await prisma.captainAssignment.findFirst({
+    where: { id: assignmentId, userId },
+    include: { user: true, team: { select: { name: true } } },
+  });
+  if (!assignment) throw new AppError(404, "Associazione capitano non trovata");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.captainAssignment.delete({ where: { id: assignment.id } });
+    if (assignment.user.teamId === assignment.teamId) {
+      const next = await tx.captainAssignment.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: { teamId: true },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { teamId: next?.teamId ?? null },
+      });
+    }
+  });
+
+  await writeAuditLog({
+    leagueId: assignment.leagueId,
+    actor,
+    action: "user.captain_assignment_removed",
+    entityType: "user",
+    entityId: userId,
+    summary: `Rimossa associazione capitano ${assignment.user.username} da ${assignment.team.name}`,
+    metadata: { teamId: assignment.teamId, leagueId: assignment.leagueId },
+  });
+  return { ok: true };
 }
 
 export async function updateUserPassword({

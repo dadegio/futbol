@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Home, Menu, Table2, Users } from "lucide-react";
+import { CalendarDays, Home, Menu, ShieldCheck, Table2, Users } from "lucide-react";
 import type { LeagueBranding } from "@/modules/branding/domain/league-branding";
+import { useAuth } from "@/lib/client-auth";
 
 type BottomTabsProps = {
   leagueId: string;
@@ -13,16 +14,24 @@ type BottomTabsProps = {
 
 export default function BottomTabs({ leagueId, onMore }: BottomTabsProps) {
   const pathname = usePathname();
-  const tabs = [
-    { key: "home", path: "", label: "Home", icon: Home },
-    { key: "calendar", path: "/calendar", label: "Calendario", icon: CalendarDays },
-    { key: "table", path: "/table", label: "Classifica", icon: Table2 },
-    { key: "teams", path: "/teams", label: "Squadre", icon: Users },
-  ];
+  const { user } = useAuth();
+  const refereeOnlyNav = user?.role === "REFEREE" && user.leagueId === leagueId;
+  const tabs = refereeOnlyNav
+    ? [
+        { key: "referee", path: "/referee", label: "Le mie gare", icon: ShieldCheck },
+        { key: "table", path: "/table", label: "Classifica", icon: Table2 },
+        { key: "home", path: "", label: "Torneo", icon: Home },
+      ]
+    : [
+        { key: "home", path: "", label: "Home", icon: Home },
+        { key: "calendar", path: "/calendar", label: "Calendario", icon: CalendarDays },
+        { key: "table", path: "/table", label: "Classifica", icon: Table2 },
+        { key: "teams", path: "/teams", label: "Squadre", icon: Users },
+      ];
 
   return (
     <nav className="no-print fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-[var(--tabbar-bg)] backdrop-blur-xl lg:hidden">
-      <div className="mx-auto grid max-w-[560px] grid-cols-5 items-center px-1 py-1">
+      <div className={`mx-auto grid max-w-[560px] ${refereeOnlyNav ? "grid-cols-4" : "grid-cols-5"} items-center px-1 py-1`}>
         {tabs.map((tab) => {
           const href = `/leagues/${leagueId}${tab.path}`;
           const active = tab.key === "home" ? pathname === href : pathname.startsWith(href);

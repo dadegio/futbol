@@ -75,6 +75,9 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
   const creatorOnlyNav = Boolean(
     leagueId && user?.role === "CREATOR" && user.leagueId === leagueId
   );
+  const refereeOnlyNav = Boolean(
+    leagueId && user?.role === "REFEREE" && user.leagueId === leagueId
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -103,6 +106,11 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
         { href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={18} /> },
         { href: `/leagues/${leagueId}/creator/profile`, label: "Il mio profilo", icon: <Settings size={18} /> },
       ]
+    : refereeOnlyNav
+      ? [
+          { href: `/leagues/${leagueId}/referee`, label: "Il mio calendario", icon: <ShieldCheck size={18} /> },
+          { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Table2 size={18} /> },
+        ]
     : leagueId
     ? [
         { href: `/leagues/${leagueId}`, label: "Home", icon: <Home size={18} /> },
@@ -171,7 +179,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          {leagueId && !creatorOnlyNav && (
+          {leagueId && !creatorOnlyNav && !refereeOnlyNav && (
             <form onSubmit={submitSearch} className="mb-5">
               <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                 Cerca giocatore
@@ -207,19 +215,6 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
                   />
                 ))}
               </div>
-            </section>
-          )}
-
-          {leagueId && user?.role === "REFEREE" && user.leagueId === leagueId && (
-            <section className="mt-6 border-t border-[var(--border)] pt-5">
-              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--accent)]">Arbitro</p>
-              <MenuLink
-                href={`/leagues/${leagueId}/my-match`}
-                label="La mia partita"
-                icon={<ShieldCheck size={18} />}
-                active={pathname === `/leagues/${leagueId}/my-match`}
-                onClick={onClose}
-              />
             </section>
           )}
 

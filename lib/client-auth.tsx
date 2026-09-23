@@ -116,9 +116,15 @@ export function useCanAdminLeague(leagueId: string | undefined): boolean {
     (user.role === "LEAGUE_ADMIN" && user.leagueId === leagueId);
 }
 
+function captainHasTeam(user: SessionUser | null, teamId: string | undefined): boolean {
+  if (!user || user.role !== "CAPTAIN" || !teamId) return false;
+  if (user.captainAssignments?.some((assignment) => assignment.teamId === teamId)) return true;
+  return user.teamId === teamId;
+}
+
 export function useIsCaptainOfTeam(teamId: string | undefined): boolean {
   const { user } = useAuth();
-  return user?.role === "CAPTAIN" && user.teamId === teamId;
+  return captainHasTeam(user, teamId);
 }
 
 export function useCanEditTeam(teamId: string | undefined, leagueId?: string): boolean {
@@ -126,7 +132,7 @@ export function useCanEditTeam(teamId: string | undefined, leagueId?: string): b
   if (!user) return false;
   if (user.role === "ADMIN") return true;
   if (user.role === "LEAGUE_ADMIN" && leagueId && user.leagueId === leagueId) return true;
-  return user.role === "CAPTAIN" && user.teamId === teamId;
+  return captainHasTeam(user, teamId);
 }
 
 export function useCanCreateMedia(leagueId: string | undefined): boolean {

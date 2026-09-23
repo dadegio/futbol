@@ -19,6 +19,13 @@ type UserRow = {
   teamId: string | null;
   refereeId: string | null;
   leagueId: string | null;
+  captainAssignments?: Array<{
+    id: string;
+    leagueId: string;
+    teamId: string;
+    league: { name: string };
+    team: { name: string };
+  }>;
   adminLeague?: { name: string } | null;
   team: { name: string } | null;
   referee: {
@@ -33,7 +40,7 @@ type UserRow = {
   createdAt: string;
 };
 
-type Team = { id: string; name: string };
+type Team = { id: string; name: string; leagueId: string; leagueName: string };
 type Referee = { id: string; name: string };
 type LeagueApiRow = { id: string; name: string };
 type TeamApiRow = { id: string; name: string };
@@ -55,6 +62,8 @@ export default function AdminUsersPage() {
   const [pwdSaving, setPwdSaving] = useState(false);
   const [pwdErr, setPwdErr] = useState<string | null>(null);
   const [pwdMsg, setPwdMsg] = useState<string | null>(null);
+  const [assignmentTeamByUser, setAssignmentTeamByUser] = useState<Record<string, string>>({});
+  const [assignmentBusyId, setAssignmentBusyId] = useState<string | null>(null);
 
   // New user form
   const [showForm, setShowForm] = useState(false);
@@ -95,6 +104,8 @@ export default function AdminUsersPage() {
               ? (data as TeamApiRow[]).map((team) => ({
                   id: team.id,
                   name: `${team.name} (${league.name})`,
+                  leagueId: league.id,
+                  leagueName: league.name,
                 }))
               : [];
           })
@@ -150,6 +161,47 @@ export default function AdminUsersPage() {
       setErr(e instanceof Error ? e.message : "Errore eliminazione");
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleAddAssignment(user: UserRow) {
+    const teamId = assignmentTeamByUser[user.id];
+    if (!teamId) return;
+    setAssignmentBusyId(user.id);
+    setErr(null);
+    try {
+      const res = await authFetch(`/api/users/${user.id}/captain-assignments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(data, "Errore associazione squadra"));
+      setAssignmentTeamByUser((current) => ({ ...current, [user.id]: "" }));
+      await load();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Errore associazione squadra");
+    } finally {
+      setAssignmentBusyId(null);
+    }
+  }
+
+  async function handleRemoveAssignment(user: UserRow, assignmentId: string) {
+    if (!confirm("Rimuovere questa squadra dall'account capitano?")) return;
+    setAssignmentBusyId(user.id);
+    setErr(null);
+    try {
+      const res = await authFetch(
+        `/api/users/${user.id}/captain-assignments?assignmentId=${encodeURIComponent(assignmentId)}`,
+        { method: "DELETE" }
+      );
+      const data: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(data, "Errore rimozione associazione"));
+      await load();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Errore rimozione associazione");
+    } finally {
+      setAssignmentBusyId(null);
     }
   }
 
@@ -369,9 +421,11 @@ export default function AdminUsersPage() {
                             ? `Torneo amministrato: ${u.adminLeague.name}`
                             : u.role === "CREATOR" && u.creatorProfile
                               ? `Creator: ${u.creatorProfile.displayName} (${u.creatorProfile.league.name})`
-                              : u.team
-                                ? `Squadra: ${u.team.name}`
-                                : u.referee
+                              : u.role === "CAPTAIN"
+                                ? `${u.captainAssignments?.length ?? (u.team ? 1 : 0)} squadre associate`
+                                : u.team
+                                  ? `Squadra: ${u.team.name}`
+                                  : u.referee
                                   ? `Arbitro: ${u.referee.name} (${u.referee.league.name})`
                                   : u.role === "ADMIN"
                                     ? "Accesso globale"
@@ -399,6 +453,46 @@ export default function AdminUsersPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {u.role === "CAPTAIN" && (
+                      <div className="mt-4 border-t border-[var(--border)] pt-4">
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">
+                          Squadre e tornei
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {(u.captainAssignments ?? []).length === 0 ? (
+                            <span className="text-sm text-[var(--muted)]">Nessuna squadra associata.</span>
+                          ) : (
+                            u.captainAssignments?.map((assignment) => (
+                              <div key={assignment.id} className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs">
+                                <span className="font-bold text-[var(--foreground)]">{assignment.team.name}</span>
+                                <span className="text-[var(--muted)]">· {assignment.league.name}</span>
+                                <button type="button" onClick={() => handleRemoveAssignment(u, assignment.id)} disabled={assignmentBusyId === u.id} className="ml-1 rounded-lg px-1.5 py-0.5 font-black text-red-400 hover:bg-red-500/10">×</button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                          <Select
+                            value={assignmentTeamByUser[u.id] ?? ""}
+                            onChange={(e) => setAssignmentTeamByUser((current) => ({ ...current, [u.id]: e.target.value }))}
+                          >
+                            <option value="" className="text-black">Aggiungi squadra…</option>
+                            {teams
+                              .filter((team) => !(u.captainAssignments ?? []).some((assignment) => assignment.leagueId === team.leagueId))
+                              .map((team) => (
+                                <option key={team.id} value={team.id} className="text-black">{team.name}</option>
+                              ))}
+                          </Select>
+                          <Button size="sm" onClick={() => handleAddAssignment(u)} disabled={!assignmentTeamByUser[u.id] || assignmentBusyId === u.id}>
+                            {assignmentBusyId === u.id ? "…" : "Aggiungi"}
+                          </Button>
+                        </div>
+                        <p className="mt-2 text-[11px] text-[var(--muted)]">
+                          Lo stesso account può gestire una squadra diversa in più tornei; una sola squadra per torneo.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Row 2: inline change-password form */}
                     {changingPwdId === u.id && (

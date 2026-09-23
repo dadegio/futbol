@@ -92,6 +92,7 @@ model User {
   refereeId    String?  @unique
   leagueId     String?
   team         Team?    @relation("TeamCaptain", fields: [teamId], references: [id], onDelete: SetNull)
+  captainAssignments CaptainAssignment[]
   referee      Referee? @relation("RefereeAccount", fields: [refereeId], references: [id], onDelete: SetNull)
   adminLeague  League?  @relation("LeagueAdmins", fields: [leagueId], references: [id], onDelete: SetNull)
   creatorProfile CreatorProfile?
@@ -146,6 +147,7 @@ model League {
   auditLogs     AuditLog[]
   teamFeePayments TeamFeePayment[]
   teamChangeRequests TeamChangeRequest[]
+  captainAssignments CaptainAssignment[]
 }
 
 
@@ -310,6 +312,7 @@ model Team {
   wonSeries  PlayoffSeries[] @relation("SeriesWinner")
 
   captain             User?            @relation("TeamCaptain")
+  captainAssignment   CaptainAssignment?
   affiliatedReferees  Referee[]        @relation("RefereeTeamAffiliation")
   preferredByCreators CreatorProfile[] @relation("CreatorPreferredTeam")
   changeRequests TeamChangeRequest[]
@@ -318,6 +321,22 @@ model Team {
   @@index([leagueId, activeInLeague])
 }
 
+
+model CaptainAssignment {
+  id        String   @id @default(cuid())
+  userId    String
+  leagueId  String
+  teamId    String   @unique
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leagueId])
+  @@index([userId])
+  @@index([leagueId])
+}
 
 model TeamChangeRequest {
   id              String                  @id @default(cuid())

@@ -69,6 +69,9 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
   const creatorOnlyNav = Boolean(
     leagueId && user?.role === "CREATOR" && user.leagueId === leagueId
   );
+  const refereeOnlyNav = Boolean(
+    leagueId && user?.role === "REFEREE" && user.leagueId === leagueId
+  );
 
   useEffect(() => {
     if (branding?.name) setLeagueName(branding.name);
@@ -80,6 +83,11 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
         { href: `/leagues/${leagueId}/creator`, label: "I miei incarichi", icon: <Camera size={17} /> },
         { href: `/leagues/${leagueId}/creator/profile`, label: "Il mio profilo", icon: <Settings size={17} /> },
       ]
+    : refereeOnlyNav
+      ? [
+          { href: `/leagues/${leagueId}/referee`, label: "Il mio calendario", icon: <ShieldCheck size={17} /> },
+          { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Trophy size={17} /> },
+        ]
     : leagueId
     ? [
         { href: `/leagues/${leagueId}`,           label: "Home",    icon: <Home size={17} /> },
@@ -148,7 +156,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
       )}
 
       {/* Search */}
-      {!creatorOnlyNav && <form
+      {!creatorOnlyNav && !refereeOnlyNav && <form
         onSubmit={submitSearch}
         className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2"
       >
@@ -181,19 +189,6 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
           />
         ))}
       </nav>
-
-      {leagueId && user?.role === "REFEREE" && user.leagueId === leagueId && (
-        <>
-          <div className="my-3 border-t border-[var(--border)]" />
-          <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-widest text-[var(--foreground)]/30">Arbitro</p>
-          <NavItem
-            href={`/leagues/${leagueId}/my-match`}
-            icon={<ShieldCheck size={17} />}
-            label="La mia partita"
-            active={pathname === `/leagues/${leagueId}/my-match`}
-          />
-        </>
-      )}
 
       {/* Creator section */}
       {canCreateMedia && !creatorOnlyNav && (

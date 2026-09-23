@@ -30,7 +30,15 @@ export async function authenticateUser(input: {
     throw new AppError(401, "Credenziali non valide");
   }
 
-  const user = await prisma.user.findUnique({ where: { username } });
+  const user = await prisma.user.findUnique({
+    where: { username },
+    include: {
+      captainAssignments: {
+        select: { leagueId: true, teamId: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
     throw new AppError(401, "Credenziali non valide");
@@ -43,6 +51,14 @@ export async function authenticateUser(input: {
     teamId: user.teamId ?? null,
     refereeId: user.refereeId ?? null,
     leagueId: user.leagueId ?? null,
+    captainAssignments:
+      user.role === "CAPTAIN"
+        ? user.captainAssignments.length
+          ? user.captainAssignments
+          : user.teamId && user.leagueId
+            ? [{ leagueId: user.leagueId, teamId: user.teamId }]
+            : []
+        : [],
   };
 
   return {

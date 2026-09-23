@@ -17,6 +17,11 @@ function getSecret(): string {
 // ── types ──────────────────────────────────────────────────────────────────
 export type Role = "ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "REFEREE" | "CREATOR";
 
+export type CaptainAssignmentSession = {
+  leagueId: string;
+  teamId: string;
+};
+
 export type SessionUser = {
   userId: string;
   username: string;
@@ -24,6 +29,7 @@ export type SessionUser = {
   teamId: string | null;
   refereeId: string | null;
   leagueId: string | null;
+  captainAssignments?: CaptainAssignmentSession[];
 };
 
 // ── password hashing ───────────────────────────────────────────────────────
@@ -81,6 +87,18 @@ export function parseToken(token: string): SessionUser | null {
       teamId: data.teamId ?? null,
       refereeId: data.refereeId ?? null,
       leagueId: data.leagueId ?? null,
+      captainAssignments: Array.isArray(data.captainAssignments)
+        ? data.captainAssignments
+            .filter((entry: unknown) => {
+              if (!entry || typeof entry !== "object") return false;
+              const value = entry as { leagueId?: unknown; teamId?: unknown };
+              return typeof value.leagueId === "string" && typeof value.teamId === "string";
+            })
+            .map((entry: { leagueId: string; teamId: string }) => ({
+              leagueId: entry.leagueId,
+              teamId: entry.teamId,
+            }))
+        : [],
     };
   } catch {
     return null;

@@ -11,6 +11,7 @@ function user(overrides: Partial<SessionUser>): SessionUser {
     teamId: null,
     refereeId: null,
     leagueId: null,
+    captainAssignments: [],
     ...overrides,
   };
 }
@@ -56,6 +57,23 @@ test("capitano può gestire e prenotare solo per la propria squadra", () => {
     false,
     "la permission di booking non deve concedere modifica risultato"
   );
+});
+
+test("capitano può appartenere a squadre di tornei diversi", () => {
+  const captain = user({
+    role: "CAPTAIN",
+    teamId: "team-a",
+    leagueId: "league-1",
+    captainAssignments: [
+      { leagueId: "league-1", teamId: "team-a" },
+      { leagueId: "league-2", teamId: "team-b" },
+    ],
+  });
+
+  assert.equal(canPerform(captain, "league:view", { leagueId: "league-2" }), true);
+  assert.equal(canPerform(captain, "team:manage", { leagueId: "league-2", teamId: "team-b" }), true);
+  assert.equal(canPerform(captain, "player:manage", { leagueId: "league-2", teamId: "team-b" }), true);
+  assert.equal(canPerform(captain, "team:manage", { leagueId: "league-2", teamId: "team-c" }), false);
 });
 
 test("arbitro può modificare solo la partita assegnata", () => {
