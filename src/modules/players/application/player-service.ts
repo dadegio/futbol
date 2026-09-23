@@ -518,7 +518,7 @@ export async function getPlayerStats({
     player.team.leagueId
   );
 
-  const [aggregate, sheetEntries, recentStats, appearances] = await Promise.all([
+  const [aggregate, sheetEntries, recentStats, appearances, mvpAwards] = await Promise.all([
     prisma.matchPlayerStat.aggregate({
       where: { playerId, match: { resultStatus: "FINAL" } },
       _sum: { goals: true, assists: true },
@@ -546,6 +546,7 @@ export async function getPlayerStats({
       select: { matchId: true, goals: true, assists: true },
     }),
     prisma.matchSheetPlayer.count({ where: { playerId, match: { resultStatus: "FINAL" } } }),
+    prisma.match.count({ where: { mvpPlayerId: playerId, resultStatus: "FINAL" } }),
   ]);
 
   const statsByMatch = new Map<string, { goals: number; assists: number }>(
@@ -559,6 +560,7 @@ export async function getPlayerStats({
     goals: aggregate._sum.goals ?? 0,
     assists: aggregate._sum.assists ?? 0,
     appearances,
+    mvpAwards,
     ...(showAdminDetails
       ? { feeCents: appearances * FUTPOLI_RULES.playerFeeCentsPerAppearance }
       : {}),

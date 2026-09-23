@@ -26,6 +26,7 @@ export async function finalizeMatchResult(matchId: string) {
       awayGoals: true,
       homeSheetConfirmed: true,
       awaySheetConfirmed: true,
+      mvpPlayerId: true,
       lifecycleStatus: true,
       resultStatus: true,
       seriesId: true,
@@ -44,6 +45,9 @@ export async function finalizeMatchResult(matchId: string) {
   }
   if (!match.homeSheetConfirmed || !match.awaySheetConfirmed) {
     throw new AppError(400, "Conferma entrambe le distinte prima di finalizzare", "SHEETS_NOT_CONFIRMED");
+  }
+  if (!match.mvpPlayerId) {
+    throw new AppError(400, "Seleziona l'MVP della partita prima di finalizzare", "MVP_MISSING");
   }
 
   let winnerId: string | null = null;
@@ -220,7 +224,7 @@ export async function updateMatchExtras(
   if (input.mvpPlayerId !== undefined) {
     const candidate = String(input.mvpPlayerId ?? "").trim();
     if (!candidate) {
-      mvpPlayerId = null;
+      throw new AppError(400, "Un risultato definitivo deve avere un MVP", "MVP_REQUIRED");
     } else {
       const player = await prisma.player.findUnique({
         where: { id: candidate },

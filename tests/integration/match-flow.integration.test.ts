@@ -76,6 +76,7 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
         { playerId: home.playerIds[1], goals: 1, assists: 1 },
         { playerId: away.playerIds[0], goals: 1, assists: 0 },
       ],
+      mvpPlayerId: home.playerIds[0],
     },
   });
 
@@ -111,6 +112,7 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
   assert.equal(stats.overview.completedMatches, 1);
   assert.equal(stats.overview.totalGoals, 4);
   assert.equal(stats.leaders.topScorer?.playerId, home.playerIds[0]);
+  assert.equal(stats.playerStats.find((player) => player.playerId === home.playerIds[0])?.mvpAwards, 1);
   assert.equal(
     stats.playerStats.find((player) => player.playerId === home.playerIds[0])?.appearances,
     1
@@ -270,11 +272,11 @@ test("lifecycle: riapertura, MVP e rinvio mantengono coerenti dati e booking", a
     data: { leagueId: league.id, round: 3, homeTeamId: home.id, awayTeamId: away.id, date, slotEnd: new Date("2026-11-04T20:00:00.000Z"), venueKey: "life-field", venueName: "Campo Lifecycle", refereeId: referee.id },
   });
 
-  await saveMatchResult({ matchId: match.id, input: { homeGoals: 1, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }] } });
+  await saveMatchResult({ matchId: match.id, input: { homeGoals: 1, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }], mvpPlayerId: home.playerIds[0] } });
   await setMatchSheetConfirmation(match.id, "home", true);
   await setMatchSheetConfirmation(match.id, "away", true);
   await finalizeMatchResult(match.id);
-  await updateMatchExtras(match.id, { mvpPlayerId: home.playerIds[0], replayUrl: "https://example.com/replay", highlightsUrl: "https://example.com/highlights" });
+  await updateMatchExtras(match.id, { replayUrl: "https://example.com/replay", highlightsUrl: "https://example.com/highlights" });
 
   let stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
   assert.equal(stored.resultStatus, "FINAL");
@@ -302,13 +304,34 @@ test("lifecycle: riapertura, MVP e rinvio mantengono coerenti dati e booking", a
   assert.equal(stored.date?.toISOString(), date.toISOString());
 });
 
+test("la finalizzazione richiede un MVP presente in distinta", async () => {
+  const league = await createLeague("mvp-required");
+  const home = await createTeamWithEligiblePlayers(league.id, "MvpHome");
+  const away = await createTeamWithEligiblePlayers(league.id, "MvpAway");
+  const match = await prisma.match.create({ data: { leagueId: league.id, round: 1, homeTeamId: home.id, awayTeamId: away.id } });
+
+  await saveMatchResult({ matchId: match.id, input: { homeGoals: 0, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [] } });
+  await setMatchSheetConfirmation(match.id, "home", true);
+  await setMatchSheetConfirmation(match.id, "away", true);
+  await assert.rejects(() => finalizeMatchResult(match.id));
+
+  await saveMatchResult({ matchId: match.id, input: { homeGoals: 0, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [], mvpPlayerId: home.playerIds[0] } });
+  await setMatchSheetConfirmation(match.id, "home", true);
+  await setMatchSheetConfirmation(match.id, "away", true);
+  await finalizeMatchResult(match.id);
+
+  const stored = await prisma.match.findUniqueOrThrow({ where: { id: match.id } });
+  assert.equal(stored.resultStatus, "FINAL");
+  assert.equal(stored.mvpPlayerId, home.playerIds[0]);
+});
+
 test("quote presenza: maturano solo su gare definitive e non si può pagare oltre il residuo", async () => {
   const league = await createLeague("fees");
   const home = await createTeamWithEligiblePlayers(league.id, "FeeHome");
   const away = await createTeamWithEligiblePlayers(league.id, "FeeAway");
   const match = await prisma.match.create({ data: { leagueId: league.id, round: 1, homeTeamId: home.id, awayTeamId: away.id } });
 
-  await saveMatchResult({ matchId: match.id, input: { homeGoals: 1, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }] } });
+  await saveMatchResult({ matchId: match.id, input: { homeGoals: 1, awayGoals: 0, sheetPlayerIds: [...home.playerIds, ...away.playerIds], playerStats: [{ playerId: home.playerIds[0], goals: 1, assists: 0 }], mvpPlayerId: home.playerIds[0] } });
   await assert.rejects(() => recordTeamFeePayment(league.id, { teamId: home.id, amountCents: 1 }));
 
   await setMatchSheetConfirmation(match.id, "home", true);

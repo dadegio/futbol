@@ -155,9 +155,9 @@ export default function MatchLifecyclePanel({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-black text-[var(--foreground)]">Conferma risultato definitivo</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">Dopo la conferma il risultato diventa pubblico e non è più modificabile finché un admin non lo riapre.</p>
+                <p className="mt-1 text-xs text-[var(--muted)]">Dopo la conferma il risultato diventa pubblico e non è più modificabile finché un admin non lo riapre.{!mvpPlayerId ? " Prima di finalizzare salva anche l'MVP scelto in campo." : ""}</p>
               </div>
-              <Button onClick={() => lifecycle({ action: "finalize" }, "Risultato finalizzato")} disabled={Boolean(busy) || !homeSheetConfirmed || !awaySheetConfirmed}>
+              <Button onClick={() => lifecycle({ action: "finalize" }, "Risultato finalizzato")} disabled={Boolean(busy) || !homeSheetConfirmed || !awaySheetConfirmed || !mvpPlayerId}>
                 <ShieldCheck size={15} /> Finalizza
               </Button>
             </div>
@@ -201,7 +201,7 @@ export default function MatchLifecyclePanel({
               <div className="mt-4 grid gap-3 lg:grid-cols-3">
                 <label className="text-xs font-bold text-[var(--muted)]">MVP
                   <select value={mvp} onChange={(e) => setMvp(e.target.value)} className="mt-1 h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm text-[var(--foreground)]">
-                    <option value="">Nessun MVP</option>
+                    <option value="">Seleziona MVP</option>
                     {players.map((player) => <option key={player.id} value={player.id}>#{player.number} {player.firstName} {player.lastName}</option>)}
                   </select>
                 </label>

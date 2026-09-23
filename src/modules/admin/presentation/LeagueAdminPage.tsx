@@ -173,13 +173,13 @@ export default function LeagueAdminPage() {
             <div>
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
                 <Settings2 size={15} />
-                Amministrazione
+                Impostazioni torneo
               </div>
               <h1 className="mt-2 text-[31px] font-black tracking-[-0.06em] text-[var(--foreground)] sm:text-[36px]">
-                Centro di controllo
+                Impostazioni
               </h1>
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-                Configura il torneo per area, controlla le criticità e apri solo gli strumenti che ti servono.
+                Ogni area è separata e immediata: niente menu annidati, apri solo la configurazione che ti serve.
               </p>
             </div>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">

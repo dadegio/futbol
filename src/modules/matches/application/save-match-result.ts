@@ -10,6 +10,7 @@ type SaveMatchResultBody = {
   awayGoals?: number;
   playerStats?: Array<{ playerId: string; goals: number; assists: number }>;
   sheetPlayerIds?: string[];
+  mvpPlayerId?: string | null;
 };
 
 type EligiblePlayer = {
@@ -63,7 +64,9 @@ function normalizeResultBody(body: SaveMatchResultBody) {
     throw new AppError(400, "Distinta gara mancante: seleziona i giocatori presenti", "MATCH_SHEET_MISSING");
   }
 
-  return { homeGoals, awayGoals, rows, requestedSheetIds };
+  const mvpPlayerId = body.mvpPlayerId == null ? null : String(body.mvpPlayerId).trim() || null;
+
+  return { homeGoals, awayGoals, rows, requestedSheetIds, mvpPlayerId };
 }
 
 export async function saveMatchResult({
@@ -73,7 +76,7 @@ export async function saveMatchResult({
   matchId: string;
   input: SaveMatchResultBody;
 }) {
-  const { homeGoals, awayGoals, rows, requestedSheetIds } = normalizeResultBody(input);
+  const { homeGoals, awayGoals, rows, requestedSheetIds, mvpPlayerId } = normalizeResultBody(input);
 
   const match = await prisma.match.findUnique({
     where: { id: matchId },
@@ -92,7 +95,7 @@ export async function saveMatchResult({
   if (match.resultStatus === "FINAL") throw new AppError(409, "Risultato definitivo: riapri prima la partita", "RESULT_FINAL");
   if (match.lifecycleStatus === "CANCELLED") throw new AppError(409, "Partita annullata", "MATCH_CANCELLED");
 
-  const playerIds = [...new Set([...rows.map((row) => row.playerId), ...requestedSheetIds])];
+  const playerIds = [...new Set([...rows.map((row) => row.playerId), ...requestedSheetIds, ...(mvpPlayerId ? [mvpPlayerId] : [])])];
 
   const players: EligiblePlayer[] = playerIds.length
     ? await prisma.player.findMany({
@@ -173,6 +176,10 @@ export async function saveMatchResult({
   const sheetSet = new Set(requestedSheetIds);
   const statOutsideSheet = rows.find((row) => !sheetSet.has(row.playerId));
 
+  if (mvpPlayerId && !sheetSet.has(mvpPlayerId)) {
+    throw new AppError(400, "L'MVP deve essere un giocatore presente in distinta", "MVP_NOT_IN_SHEET");
+  }
+
   if (statOutsideSheet) {
     throw new AppError(
       400,
@@ -191,6 +198,7 @@ export async function saveMatchResult({
         finalizedAt: null,
         homeSheetConfirmed: false,
         awaySheetConfirmed: false,
+        mvpPlayerId,
       },
     });
 

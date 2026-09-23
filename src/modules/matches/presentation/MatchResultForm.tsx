@@ -107,6 +107,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
     for (const p of [...match.homeTeam.players, ...match.awayTeam.players]) out[p.id] = selected.has(p.id);
     return out;
   });
+  const [mvpPlayerId, setMvpPlayerId] = useState(match.mvpPlayerId ?? "");
 
   const homePlayers = useMemo(() => match.homeTeam.players.slice().sort((a, b) => a.number - b.number), [match.homeTeam.players]);
   const awayPlayers = useMemo(() => match.awayTeam.players.slice().sort((a, b) => a.number - b.number), [match.awayTeam.players]);
@@ -148,6 +149,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
   function toggleSheet(playerId: string, checked: boolean) {
     setSheet((prev) => ({ ...prev, [playerId]: checked }));
+    if (!checked && mvpPlayerId === playerId) setMvpPlayerId("");
   }
 
   function setEligibleTeamSheet(players: Player[], checked: boolean) {
@@ -296,6 +298,11 @@ export default function MatchResultForm({ match }: { match: Match }) {
     }
 
     const sheetPlayerIds = [...homePlayers, ...awayPlayers].filter((p) => sheet[p.id]).map((p) => p.id);
+    if (mvpPlayerId && !sheetPlayerIds.includes(mvpPlayerId)) {
+      setErr("L'MVP deve essere un giocatore presente in distinta.");
+      return;
+    }
+
     const playerStats = [...homePlayers, ...awayPlayers]
       .map((p) => ({ playerId: p.id, goals: Number(stats[p.id]?.goals || 0), assists: Number(stats[p.id]?.assists || 0) }))
       .filter((s) => s.goals > 0 || s.assists > 0);
@@ -305,7 +312,13 @@ export default function MatchResultForm({ match }: { match: Match }) {
       const res = await authFetch(`/api/matches/${match.id}/result`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeGoals: hg === null ? undefined : hg, awayGoals: ag === null ? undefined : ag, playerStats, sheetPlayerIds }),
+        body: JSON.stringify({
+          homeGoals: hg === null ? undefined : hg,
+          awayGoals: ag === null ? undefined : ag,
+          playerStats,
+          sheetPlayerIds,
+          mvpPlayerId: mvpPlayerId || null,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(readApiError(data, "Errore salvataggio"));
@@ -348,6 +361,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
         for (const player of [...homePlayers, ...awayPlayers]) next[player.id] = false;
         return next;
       });
+      setMvpPlayerId("");
       setMsg("Dati partita resettati");
       router.refresh();
     } catch (error) {
@@ -638,6 +652,24 @@ export default function MatchResultForm({ match }: { match: Match }) {
           <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
           <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
         </div>
+
+        {canEditResult && (
+          <Card id="match-mvp" className="scroll-mt-20 border-amber-400/20 bg-amber-400/[0.04]">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-400/10 text-amber-300"><Star size={19} /></span>
+              <div className="min-w-0 flex-1">
+                <p className="font-black text-[var(--foreground)]">MVP della partita</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">Seleziona il giocatore premiato in campo. Puoi salvare la bozza senza MVP, ma sarà obbligatorio prima della finalizzazione.</p>
+                <select value={mvpPlayerId} onChange={(event) => setMvpPlayerId(event.target.value)} className="mt-3 h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm font-bold text-[var(--foreground)]">
+                  <option value="">Da scegliere</option>
+                  {[...homePlayers, ...awayPlayers].filter((player) => sheet[player.id]).map((player) => (
+                    <option key={player.id} value={player.id}>#{player.number} {player.firstName} {player.lastName} · {player.teamId === match.homeTeam.id ? match.homeTeam.name : match.awayTeam.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {canEditResult && (
           <div id="match-save" className="sticky bottom-20 z-20 scroll-mt-20 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--tabbar-bg)] px-4 py-3 shadow-[0_20px_70px_rgba(0,0,0,0.38)] backdrop-blur-xl lg:bottom-4 lg:flex-row lg:items-center lg:justify-between">

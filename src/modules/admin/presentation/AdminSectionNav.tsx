@@ -25,7 +25,7 @@ type SectionDefinition = {
   shortLabel: string;
   description: string;
   icon: LucideIcon;
-  group: "Torneo" | "Operatività" | "Contenuti" | "Controllo";
+  group: "Generali" | "Competizione" | "Organizzazione" | "Contenuti" | "Amministrazione";
 };
 
 export const ADMIN_SECTIONS: SectionDefinition[] = [
@@ -35,7 +35,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Home",
     description: "Stato del torneo, rose e quote",
     icon: Home,
-    group: "Torneo",
+    group: "Generali",
   },
   {
     id: "operations",
@@ -43,7 +43,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Partite",
     description: "Criticità, slot, arbitri e risultati",
     icon: CalendarCheck2,
-    group: "Operatività",
+    group: "Organizzazione",
   },
   {
     id: "finance",
@@ -51,7 +51,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Quote",
     description: "Presenze e quote per squadra",
     icon: WalletCards,
-    group: "Controllo",
+    group: "Amministrazione",
   },
   {
     id: "branding",
@@ -59,7 +59,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Identità",
     description: "Nome, logo, copertina e colori",
     icon: Palette,
-    group: "Torneo",
+    group: "Generali",
   },
   {
     id: "privacy",
@@ -67,7 +67,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Privacy",
     description: "Cookie, policy e spazi pubblicitari",
     icon: Shield,
-    group: "Torneo",
+    group: "Amministrazione",
   },
   {
     id: "competition",
@@ -75,7 +75,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Playoff",
     description: "Formato e accesso alla fase finale",
     icon: Trophy,
-    group: "Torneo",
+    group: "Competizione",
   },
   {
     id: "fields",
@@ -83,7 +83,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Campi",
     description: "Impianti, giorni e orari disponibili",
     icon: MapPin,
-    group: "Operatività",
+    group: "Organizzazione",
   },
   {
     id: "referees",
@@ -91,7 +91,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Arbitri",
     description: "Disponibilità, account e assegnazioni",
     icon: ShieldCheck,
-    group: "Operatività",
+    group: "Organizzazione",
   },
   {
     id: "sponsors",
@@ -115,7 +115,7 @@ export const ADMIN_SECTIONS: SectionDefinition[] = [
     shortLabel: "Audit",
     description: "Modifiche e operazioni amministrative",
     icon: Activity,
-    group: "Controllo",
+    group: "Amministrazione",
   },
 ];
 
@@ -134,39 +134,34 @@ export default function AdminSectionNav({
   summary: AdminSummary | null;
   isSuperAdmin: boolean;
 }) {
-  const groups = ["Torneo", "Operatività", "Contenuti", "Controllo"] as const;
+  const groups = ["Generali", "Competizione", "Organizzazione", "Contenuti", "Amministrazione"] as const;
 
   return (
     <>
-      <div className="sticky top-2 z-20 -mx-1 overflow-x-auto rounded-2xl bg-[var(--background)]/90 py-2 [scrollbar-width:none] backdrop-blur-xl [&::-webkit-scrollbar]:hidden xl:hidden">
-        <div className="flex min-w-max gap-2 px-1">
-          {ADMIN_SECTIONS.map((section) => {
-            const Icon = section.icon;
-            const selected = active === section.id;
-            return (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => onSelect(section.id)}
-                className={[
-                  "inline-flex h-10 items-center gap-2 rounded-2xl border px-3 text-xs font-black transition",
-                  selected
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                    : "border-[var(--border)] bg-[var(--card)] text-[var(--muted)]",
-                ].join(" ")}
-              >
-                <Icon size={15} />
-                {section.shortLabel}
-                {((section.id === "overview" && (summary?.totals.blocked ?? 0) > 0) ||
-                  (section.id === "operations" && (summary?.totals.operationalAttention ?? 0) > 0)) && (
-                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-amber-500/15 px-1 text-[10px] text-amber-500">
-                    {section.id === "operations" ? summary?.totals.operationalAttention : summary?.totals.blocked}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <div className="space-y-3 xl:hidden">
+        {groups.map((group) => (
+          <Card key={group} className="!p-3">
+            <p className="mb-2 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--foreground)]/45">{group}</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {ADMIN_SECTIONS.filter((section) => section.group === group).map((section) => {
+                const Icon = section.icon;
+                const selected = active === section.id;
+                return (
+                  <button key={section.id} type="button" onClick={() => onSelect(section.id)} className={[
+                    "flex min-h-20 flex-col items-start justify-between rounded-2xl border p-3 text-left transition",
+                    selected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--card-2)]",
+                  ].join(" ")}>
+                    <Icon size={17} className={selected ? "text-[var(--accent)]" : "text-[var(--muted)]"} />
+                    <span>
+                      <span className="block text-xs font-black text-[var(--foreground)]">{section.shortLabel}</span>
+                      <span className="mt-0.5 line-clamp-2 block text-[10px] leading-snug text-[var(--muted)]">{section.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        ))}
       </div>
 
       <Card className="hidden h-fit !p-3 xl:sticky xl:top-5 xl:block">

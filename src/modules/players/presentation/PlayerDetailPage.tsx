@@ -47,6 +47,7 @@ type PlayerStatsResponse = {
   goals?: number;
   assists?: number;
   appearances?: number;
+  mvpAwards?: number;
   feeCents?: number;
   recentMatches?: Array<{
     matchId: string;
@@ -113,6 +114,7 @@ export default function PlayerPage({
   const [goals, setGoals] = useState(initialStats.goals ?? 0);
   const [assists, setAssists] = useState(initialStats.assists ?? 0);
   const [appearances, setAppearances] = useState(initialStats.appearances ?? 0);
+  const [mvpAwards, setMvpAwards] = useState(initialStats.mvpAwards ?? 0);
   const [feeCents, setFeeCents] = useState<number | null>(
     typeof initialStats.feeCents === "number" ? initialStats.feeCents : null
   );
@@ -169,6 +171,7 @@ export default function PlayerPage({
       setGoals(statsRes.ok ? (statsData.goals ?? 0) : 0);
       setAssists(statsRes.ok ? (statsData.assists ?? 0) : 0);
       setAppearances(statsRes.ok ? (statsData.appearances ?? 0) : 0);
+      setMvpAwards(statsRes.ok ? (statsData.mvpAwards ?? 0) : 0);
       setFeeCents(statsRes.ok && typeof statsData.feeCents === "number" ? statsData.feeCents : null);
       setRecentMatches(statsRes.ok ? (statsData.recentMatches ?? []) : []);
 
@@ -327,10 +330,11 @@ export default function PlayerPage({
                   </div>
                 )}
 
-                <div className={isAdmin ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "grid grid-cols-3 gap-2"}>
+                <div className={isAdmin ? "grid grid-cols-2 gap-2 sm:grid-cols-5" : "grid grid-cols-2 gap-2 sm:grid-cols-4"}>
                   <HeroStat label="Gol" value={goals} icon={<Goal size={15} />} />
                   <HeroStat label="Assist" value={assists} icon={<Handshake size={15} />} />
                   <HeroStat label="Presenze" value={appearances} icon={<CalendarDays size={15} />} />
+                  <HeroStat label="MVP" value={mvpAwards} icon={<Crown size={15} />} />
                   {isAdmin && <HeroStat label="Quote" value={formatEuro(feeCents ?? appearances * 50)} icon={<WalletCards size={15} />} />}
                 </div>
               </div>
