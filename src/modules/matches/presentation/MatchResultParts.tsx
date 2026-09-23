@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleDot, ShieldCheck, ZoomIn } from "lucide-react";
+import { CircleDot, ShieldCheck, Star, ZoomIn } from "lucide-react";
 import Card from "src/app/_components/ui/card";
 import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 
@@ -203,6 +203,9 @@ export function TeamStatsCard({
   players,
   stats,
   sheet,
+  mvpPlayerId,
+  setMvpPlayerId,
+  showMvpSelection = false,
   toggleSheet,
   setPlayerStat,
   readOnly,
@@ -217,6 +220,9 @@ export function TeamStatsCard({
   players: Player[];
   stats: Record<string, { goals: string; assists: string }>;
   sheet: Record<string, boolean>;
+  mvpPlayerId?: string;
+  setMvpPlayerId?: (playerId: string) => void;
+  showMvpSelection?: boolean;
   toggleSheet: (playerId: string, checked: boolean) => void;
   setPlayerStat: (playerId: string, key: "goals" | "assists", value: string) => void;
   readOnly?: boolean;
@@ -273,7 +279,11 @@ export function TeamStatsCard({
                 className={[
                   "grid items-center gap-3 px-4 py-3",
                   i < displayedPlayers.length - 1 ? "border-b border-[var(--border)]" : "",
-                  hasStats ? "bg-[var(--accent-soft)]" : "",
+                  mvpPlayerId === p.id
+                    ? "bg-amber-400/[0.07]"
+                    : hasStats
+                      ? "bg-[var(--accent-soft)]"
+                      : "",
                 ].join(" ")}
                 style={{ gridTemplateColumns: "32px 48px minmax(0,1fr) auto" }}
               >
@@ -293,10 +303,38 @@ export function TeamStatsCard({
 
                 <div className="flex flex-col items-end gap-2">
                   {showEligibility ? (
-                    <label className="flex min-h-8 items-center gap-1 text-[10px] font-black text-[var(--muted)]">
-                      <input type="checkbox" checked={sheet[p.id] ?? false} disabled={readOnly || !eligible} onChange={(event) => toggleSheet(p.id, event.target.checked)} />
-                      Distinta
-                    </label>
+                    <div className="flex min-h-8 flex-wrap items-center justify-end gap-2">
+                      <label className="flex items-center gap-1 text-[10px] font-black text-[var(--muted)]">
+                        <input
+                          type="checkbox"
+                          checked={sheet[p.id] ?? false}
+                          disabled={readOnly || !eligible}
+                          onChange={(event) => toggleSheet(p.id, event.target.checked)}
+                        />
+                        Distinta
+                      </label>
+                      {showMvpSelection && setMvpPlayerId && (
+                        <label
+                          className={[
+                            "flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black transition",
+                            mvpPlayerId === p.id
+                              ? "bg-amber-400/15 text-amber-300"
+                              : "text-[var(--muted)]",
+                            !sheet[p.id] ? "opacity-45" : "",
+                          ].join(" ")}
+                          title={sheet[p.id] ? "Seleziona come MVP" : "Inserisci prima il giocatore in distinta"}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={mvpPlayerId === p.id}
+                            disabled={readOnly || !eligible || !sheet[p.id]}
+                            onChange={() => setMvpPlayerId(mvpPlayerId === p.id ? "" : p.id)}
+                          />
+                          <Star size={11} />
+                          MVP
+                        </label>
+                      )}
+                    </div>
                   ) : sheet[p.id] ? (
                     <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">In distinta</span>
                   ) : null}

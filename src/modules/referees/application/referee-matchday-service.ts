@@ -26,8 +26,8 @@ export async function getRefereeSchedule(refereeId: string, leagueId: string) {
       awayGoals: true,
       homeSheetConfirmed: true,
       awaySheetConfirmed: true,
-      homeTeam: { select: { id: true, name: true, badgeUrl: true } },
-      awayTeam: { select: { id: true, name: true, badgeUrl: true } },
+      homeTeam: { select: { id: true, name: true, badgeUrl: true, colorHex: true, secondaryColorHex: true } },
+      awayTeam: { select: { id: true, name: true, badgeUrl: true, colorHex: true, secondaryColorHex: true } },
     },
   });
 
