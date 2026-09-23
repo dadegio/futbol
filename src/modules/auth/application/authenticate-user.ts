@@ -37,6 +37,7 @@ export async function authenticateUser(input: {
         select: { leagueId: true, teamId: true },
         orderBy: { createdAt: "asc" },
       },
+      referee: { select: { leagueId: true } },
     },
   });
 
@@ -50,7 +51,10 @@ export async function authenticateUser(input: {
     role: user.role as SessionUser["role"],
     teamId: user.teamId ?? null,
     refereeId: user.refereeId ?? null,
-    leagueId: user.leagueId ?? null,
+    leagueId:
+      user.role === "REFEREE"
+        ? user.referee?.leagueId ?? user.leagueId ?? null
+        : user.leagueId ?? null,
     captainAssignments:
       user.role === "CAPTAIN"
         ? user.captainAssignments.length

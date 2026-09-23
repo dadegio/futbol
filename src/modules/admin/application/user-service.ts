@@ -92,6 +92,17 @@ export async function createUser({
     throw new AppError(400, "Seleziona l'arbitro da collegare all'account");
   }
 
+  const refereeLeague =
+    role === "REFEREE" && refereeId
+      ? await prisma.referee.findUnique({
+          where: { id: refereeId },
+          select: { leagueId: true },
+        })
+      : null;
+  if (role === "REFEREE" && !refereeLeague) {
+    throw new AppError(400, "Arbitro non valido");
+  }
+
   const existing = await prisma.user.findUnique({
     where: { username: normalizedUsername },
   });
@@ -103,7 +114,12 @@ export async function createUser({
         username: normalizedUsername,
         passwordHash: hashPassword(password),
         role: role as SessionUser["role"],
-        leagueId: role === "LEAGUE_ADMIN" || role === "CREATOR" ? leagueId : null,
+        leagueId:
+          role === "LEAGUE_ADMIN" || role === "CREATOR"
+            ? leagueId
+            : role === "REFEREE"
+              ? refereeLeague?.leagueId ?? null
+              : null,
         teamId: role === "CAPTAIN" ? teamId : null,
         refereeId: role === "REFEREE" ? refereeId : null,
         captainAssignments:

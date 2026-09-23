@@ -12,7 +12,19 @@ import { prisma } from "@/lib/prisma";
  * an abrupt logout.
  */
 async function hydrateSession(session: SessionUser | null): Promise<SessionUser | null> {
-  if (!session || session.role !== "CAPTAIN") return session;
+  if (!session) return null;
+
+  if (session.role === "REFEREE" && session.refereeId) {
+    const referee = await prisma.referee.findUnique({
+      where: { id: session.refereeId },
+      select: { leagueId: true },
+    });
+    return referee
+      ? { ...session, leagueId: referee.leagueId }
+      : session;
+  }
+
+  if (session.role !== "CAPTAIN") return session;
 
   const assignments = await prisma.captainAssignment.findMany({
     where: { userId: session.userId },

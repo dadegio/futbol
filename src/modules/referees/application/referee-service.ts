@@ -411,6 +411,7 @@ export async function createRefereeCredentials({
       passwordHash: hashPassword(password),
       role: "REFEREE",
       refereeId: referee.id,
+      leagueId,
     },
     select: { id: true, username: true },
   });
