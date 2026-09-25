@@ -16,6 +16,9 @@ import {
   ExternalLink,
   Lock,
   MapPin,
+  Copy,
+  Plus,
+  Trash2,
   Save,
   ShieldAlert,
   Shirt,
@@ -94,6 +97,13 @@ type InitialData = {
   maxStarters: number;
   maxCalled: number;
   players: Player[];
+  drafts: Array<{
+    id: string;
+    name: string;
+    formation: string;
+    updatedAt: string;
+    players: Entry[];
+  }>;
   lineup: {
     id: string | null;
     formation: string;
@@ -171,7 +181,7 @@ function TeamKit({
 }) {
   if (url) {
     return (
-      <div className="relative mx-auto h-14 w-14">
+      <div className="relative mx-auto h-16 w-16">
         <img
           src={url}
           alt=""
@@ -189,7 +199,7 @@ function TeamKit({
   const second = goalkeeper ? primary : secondary;
 
   return (
-    <div className="relative mx-auto h-14 w-14 drop-shadow-[0_8px_7px_rgba(0,0,0,.3)]">
+    <div className="relative mx-auto h-16 w-16 drop-shadow-[0_8px_7px_rgba(0,0,0,.3)]">
       <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
         <defs>
           <linearGradient id={`kit-${number}-${goalkeeper ? "gk" : "out"}`} x1="0" x2="1">
@@ -252,6 +262,9 @@ export default function CoachLineupEditor({
     initialData.lineup.players[0]?.playerId ?? initialData.players[0]?.id ?? null
   );
   const [saving, setSaving] = useState(false);
+  const [drafts, setDrafts] = useState(initialData.drafts ?? []);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+  const [activeDraftName, setActiveDraftName] = useState("Formazione di prova");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const fieldRef = useRef<HTMLDivElement | null>(null);
@@ -494,6 +507,28 @@ export default function CoachLineupEditor({
     setStatus(player, "BENCH");
   }
 
+  function dropOnStarter(event: DragEvent<HTMLElement>, target: Player) {
+    event.preventDefault(); event.stopPropagation();
+    const source = draggedPlayer(event);
+    if (!source || source.id === target.id || !source.eligible) return;
+    const targetEntry = entries[target.id];
+    if (!targetEntry || targetEntry.status !== "STARTER") return;
+    setEntries((current) => {
+      const sourceEntry = current[source.id];
+      const next = { ...current };
+      next[source.id] = { ...targetEntry, playerId: source.id };
+      if (sourceEntry?.status === "STARTER") {
+        next[target.id] = { ...sourceEntry, playerId: target.id };
+      } else if (sourceEntry?.status === "BENCH") {
+        next[target.id] = { playerId: target.id, status: "BENCH", positionX: null, positionY: null, sortOrder: sourceEntry.sortOrder };
+      } else {
+        delete next[target.id];
+      }
+      return next;
+    });
+    setSelectedPlayerId(source.id);
+  }
+
   function roleForEntry(entry: Entry): CoachSlotRole {
     if (formation === "MANUAL") {
       return fieldZoneRole(entry.positionY ?? 50);
@@ -511,7 +546,66 @@ export default function CoachLineupEditor({
     return !isCoachRoleCompatible(player.position, roleForEntry(entry));
   }
 
+  function loadOfficial() {
+    setActiveDraftId(null);
+    setActiveDraftName("Formazione di prova");
+    setFormation(initialFormation);
+    setEntries(Object.fromEntries(initialData.lineup.players.map((entry) => [entry.playerId, entry])));
+    setMsg(null); setErr(null);
+  }
+
+  function loadDraft(draft: InitialData["drafts"][number]) {
+    setActiveDraftId(draft.id);
+    setActiveDraftName(draft.name);
+    setFormation(COACH_FORMATION_OPTIONS.includes(draft.formation as CoachFormation) ? draft.formation as CoachFormation : "MANUAL");
+    setEntries(Object.fromEntries(draft.players.map((entry) => [entry.playerId, entry])));
+    setMsg(null); setErr(null);
+  }
+
+  function newDraft() {
+    setActiveDraftId("");
+    setActiveDraftName(`Prova ${drafts.length + 1}`);
+    setMsg("Stai lavorando su una copia: la formazione ufficiale non verrà modificata.");
+  }
+
+  function useDraftAsOfficial() {
+    setActiveDraftId(null);
+    setMsg("Bozza caricata come formazione ufficiale: premi Salva piano partita per confermare.");
+    setErr(null);
+  }
+
+  async function saveDraft() {
+    setSaving(true); setErr(null); setMsg(null);
+    try {
+      const res = await authFetch(`/api/leagues/${leagueId}/coach/lineups/${initialData.match.id}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: activeDraftId || undefined, name: activeDraftName, formation, players: Object.values(entries) }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(body, "Errore salvataggio bozza"));
+      const normalized = { ...body, updatedAt: String(body.updatedAt) } as InitialData["drafts"][number];
+      setDrafts((current) => [normalized, ...current.filter((draft) => draft.id !== normalized.id)]);
+      setActiveDraftId(normalized.id); setActiveDraftName(normalized.name);
+      setMsg("Formazione di prova salvata. La formazione ufficiale non è stata modificata.");
+    } catch (error) { setErr(error instanceof Error ? error.message : "Errore salvataggio bozza"); }
+    finally { setSaving(false); }
+  }
+
+  async function deleteDraft() {
+    if (!activeDraftId) return;
+    setSaving(true); setErr(null);
+    try {
+      const res = await authFetch(`/api/leagues/${leagueId}/coach/lineups/${initialData.match.id}?draftId=${encodeURIComponent(activeDraftId)}`, { method: "DELETE" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(readApiError(body, "Errore eliminazione bozza"));
+      setDrafts((current) => current.filter((draft) => draft.id !== activeDraftId));
+      loadOfficial();
+    } catch (error) { setErr(error instanceof Error ? error.message : "Errore eliminazione bozza"); }
+    finally { setSaving(false); }
+  }
+
   async function save() {
+    if (activeDraftId !== null) { await saveDraft(); return; }
     if (!initialData.editable) return;
     setSaving(true);
     setErr(null);
@@ -679,6 +773,26 @@ export default function CoachLineupEditor({
         )}
 
         <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-black text-[var(--foreground)]">Formazioni</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">L'ufficiale resta separata dalle prove tattiche.</p>
+            </div>
+            <Button onClick={newDraft} disabled={!initialData.editable}><Plus size={15} /> Nuova prova</Button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="button" onClick={loadOfficial} className={`rounded-xl border px-3 py-2 text-xs font-black ${activeDraftId === null ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--muted)]"}`}>★ Ufficiale</button>
+            {drafts.map((draft) => <button key={draft.id} type="button" onClick={() => loadDraft(draft)} className={`rounded-xl border px-3 py-2 text-xs font-black ${activeDraftId === draft.id ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--muted)]"}`}>{draft.name}</button>)}
+          </div>
+          {activeDraftId !== null && <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input value={activeDraftName} onChange={(e) => setActiveDraftName(e.target.value)} maxLength={60} className="min-h-10 flex-1 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm font-bold text-[var(--foreground)]" aria-label="Nome formazione di prova" />
+            <button type="button" onClick={newDraft} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] px-3 text-xs font-black text-[var(--muted)]"><Copy size={14}/> Duplica</button>
+            <button type="button" onClick={useDraftAsOfficial} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-3 text-xs font-black text-black"><CheckCircle2 size={14}/> Usa come ufficiale</button>
+            {activeDraftId && <button type="button" onClick={deleteDraft} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-500/30 px-3 text-xs font-black text-red-300"><Trash2 size={14}/> Elimina</button>}
+          </div>}
+        </Card>
+
+        <Card>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="font-black text-[var(--foreground)]">Modulo</p>
@@ -785,6 +899,10 @@ export default function CoachLineupEditor({
                     <button
                       key={player.id}
                       type="button"
+                      draggable={initialData.editable && player.eligible}
+                      onDragStart={(event) => beginRosterDrag(event, player)}
+                      onDragOver={(event) => { if (initialData.editable) event.preventDefault(); }}
+                      onDrop={(event) => dropOnStarter(event, player)}
                       onClick={(event) => {
                         event.stopPropagation();
                         setSelectedPlayerId(player.id);
@@ -806,11 +924,11 @@ export default function CoachLineupEditor({
                         }
                       }}
                       className={[
-                        "absolute w-[92px] -translate-x-1/2 -translate-y-1/2 select-none rounded-2xl border p-1.5 text-center text-white shadow-2xl backdrop-blur-md",
+                        "absolute w-[104px] -translate-x-1/2 -translate-y-1/2 select-none rounded-2xl p-1 text-center text-white transition",
                         selected
-                          ? "z-20 border-[var(--accent)] bg-black/82 ring-2 ring-[var(--accent)]/30"
-                          : "z-10 border-white/20 bg-black/68",
-                        outOfRole ? "border-amber-300/80" : "",
+                          ? "z-20 bg-black/15 ring-2 ring-[var(--accent)]/70"
+                          : "z-10 hover:bg-black/10",
+                        outOfRole ? "ring-1 ring-amber-300/80" : "",
                       ].join(" ")}
                       style={{
                         left: `${entry.positionX ?? 50}%`,
@@ -1013,7 +1131,7 @@ export default function CoachLineupEditor({
                 "Salvataggio…"
               ) : (
                 <>
-                  <Save size={16} /> Salva piano partita
+                  <Save size={16} /> {activeDraftId !== null ? "Salva prova" : "Salva piano partita"}
                 </>
               )}
             </Button>
