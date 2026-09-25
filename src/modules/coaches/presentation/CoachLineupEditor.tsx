@@ -120,6 +120,37 @@ function formatDate(value: string | null) {
   });
 }
 
+function primaryRoleLabel(position: string | null) {
+  const [role] = coachRolePreferences(position);
+  return role ? ROLE_LABEL[role] : "CC";
+}
+
+function BenchPlayerPhoto({ player }: { player: Player }) {
+  if (!player.photoUrl) {
+    return (
+      <div className="grid h-24 w-full place-items-center text-2xl font-black text-white/35 sm:h-28 lg:h-32">
+        {player.firstName[0]}{player.lastName[0]}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-24 w-full overflow-hidden sm:h-28 lg:h-32">
+      <img
+        src={player.photoUrl}
+        alt={`${player.firstName} ${player.lastName}`}
+        draggable={false}
+        className="h-full w-full object-contain object-bottom drop-shadow-[0_8px_8px_rgba(0,0,0,.45)]"
+        style={{
+          objectPosition: `${player.photoPositionX}% ${player.photoPositionY}%`,
+          transform: `scale(${player.photoZoom})`,
+          transformOrigin: `${player.photoPositionX}% ${player.photoPositionY}%`,
+        }}
+      />
+    </div>
+  );
+}
+
 function PlayerPhoto({
   player,
   compact = false,
@@ -932,39 +963,41 @@ export default function CoachLineupEditor({
                   Trascina qui per mettere in panchina
                 </span>
               </div>
-              <div className="mt-3 flex min-h-28 gap-3 overflow-x-auto rounded-2xl border border-dashed border-[var(--border)] bg-black/10 p-3 [scrollbar-width:thin] sm:min-h-32">
+              <div className="mt-3 min-h-28 rounded-2xl border border-dashed border-[var(--border)] bg-black/10 p-3 sm:min-h-32">
                 {bench.length ? (
-                  bench.map((player) => (
-                    <button
-                      key={player.id}
-                      type="button"
-                      draggable={initialData.editable && player.eligible}
-                      onDragStart={(event) => beginRosterDrag(event, player)}
-                      onDragEnd={() => setDragOverSlot(null)}
-                      onClick={() => setSelectedPlayerId(player.id)}
-                      className={[
-                        "flex min-w-[205px] shrink-0 items-center gap-3 rounded-2xl border bg-[var(--card-2)] px-3 py-3 text-left sm:min-w-[225px]",
-                        selectedPlayerId === player.id
-                          ? "border-[var(--accent)]"
-                          : "border-[var(--border)]",
-                      ].join(" ")}
-                    >
-                      <PlayerPhoto player={player} />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-black text-[var(--foreground)]">
-                          #{player.number} {player.lastName}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {bench.map((player) => (
+                      <button
+                        key={player.id}
+                        type="button"
+                        draggable={initialData.editable && player.eligible}
+                        onDragStart={(event) => beginRosterDrag(event, player)}
+                        onDragEnd={() => setDragOverSlot(null)}
+                        onClick={() => setSelectedPlayerId(player.id)}
+                        className={[
+                          "group min-w-0 overflow-hidden rounded-xl border bg-[#080b09] text-left transition hover:-translate-y-0.5",
+                          selectedPlayerId === player.id
+                            ? "border-[var(--accent)] shadow-[0_0_0_1px_var(--accent)]"
+                            : "border-white/10 hover:border-white/25",
+                        ].join(" ")}
+                      >
+                        <span className="block bg-[linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,0))] px-2 pt-2">
+                          <BenchPlayerPhoto player={player} />
                         </span>
-                        <span className="mt-1 block text-[10px] font-bold uppercase text-[var(--muted)]">
-                          {player.position ?? "Giocatore"}
+                        <span className="block border-t border-white/10 bg-black/35 px-2.5 py-2">
+                          <span className="flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.08em] sm:text-[11px]">
+                            <span className="text-emerald-400">{primaryRoleLabel(player.position)}</span>
+                            <span className="text-white/55">#{player.number}</span>
+                          </span>
+                          <span className="mt-1 block truncate text-center text-xs font-black text-white sm:text-sm">
+                            {player.lastName}
+                          </span>
                         </span>
-                        <span className="mt-1 block text-[9px] font-bold text-[var(--muted)]">
-                          {player.stats.goals}G · {player.stats.assists}A
-                        </span>
-                      </span>
-                    </button>
-                  ))
+                      </button>
+                    ))}
+                  </div>
                 ) : (
-                  <span className="self-center px-2 text-xs text-[var(--muted)]">
+                  <span className="block px-2 py-8 text-center text-xs text-[var(--muted)]">
                     Nessun giocatore in panchina.
                   </span>
                 )}
