@@ -5,11 +5,11 @@ import type { SessionUser } from "@/lib/session";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
 import { AppError } from "@/modules/core/errors";
 import {
+  COACH_FORMATIONS,
   COACH_LINEUP_LOCK_MINUTES,
   assignPlayersToFormation,
   isCoachFormation,
   lineupDeadline,
-  type CoachFormation,
 } from "@/modules/coaches/domain/coach-formations";
 import {
   FUTPOLI_RULES,
@@ -364,43 +364,71 @@ export async function saveCoachLineup({
   }
 
   const playerById = new Map(validPlayers.map((player) => [player.id, player]));
+  const formationSlots = COACH_FORMATIONS[formation];
+  const usedSlots = new Set<number>();
+  const submittedAssignments: Record<
+    string,
+    { x: number; y: number; role: (typeof formationSlots)[number]["role"] }
+  > = {};
+  let submittedLayoutValid = true;
 
-  const automaticAssignments =
-    formation === "MANUAL"
-      ? null
-      : assignPlayersToFormation(
-          starters.map((starter) => ({
-            playerId: starter.playerId,
-            position: playerById.get(starter.playerId)?.position ?? null,
-          })),
-          formation as Exclude<CoachFormation, "MANUAL">
-        );
+  for (const starter of starters) {
+    if (starter.positionX === null || starter.positionY === null) {
+      submittedLayoutValid = false;
+      break;
+    }
 
-  if (formation !== "MANUAL" && !automaticAssignments) {
+    let bestIndex = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    formationSlots.forEach((slot, index) => {
+      const distance = Math.hypot(slot.x - starter.positionX!, slot.y - starter.positionY!);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+
+    if (bestIndex < 0 || bestDistance > 4 || usedSlots.has(bestIndex)) {
+      submittedLayoutValid = false;
+      break;
+    }
+
+    usedSlots.add(bestIndex);
+    const slot = formationSlots[bestIndex];
+    submittedAssignments[starter.playerId] = {
+      x: slot.x,
+      y: slot.y,
+      role: slot.role,
+    };
+  }
+
+  // Il client lavora a slot fissi: se le coordinate inviate corrispondono al
+  // modulo, le preserviamo. In questo modo uno scambio drag & drop non viene
+  // annullato dal backend in base al ruolo anagrafico del giocatore.
+  const formationAssignments = submittedLayoutValid
+    ? submittedAssignments
+    : assignPlayersToFormation(
+        starters.map((starter) => ({
+          playerId: starter.playerId,
+          position: playerById.get(starter.playerId)?.position ?? null,
+        })),
+        formation
+      );
+
+  if (!formationAssignments) {
     throw new AppError(
       400,
-      "Il modulo scelto non ha abbastanza slot compatibili con i ruoli dei titolari. Usa Libero per forzare una disposizione fuori ruolo."
+      "La disposizione non corrisponde agli slot del modulo selezionato. Riapri il piano partita e riposiziona i titolari."
     );
   }
 
   const withPositions = normalized.map((entry, index) => {
     if (entry.status !== "STARTER") return entry;
-
-    const point =
-      formation === "MANUAL"
-        ? null
-        : automaticAssignments?.[entry.playerId] ?? null;
-
+    const point = formationAssignments[entry.playerId];
     return {
       ...entry,
-      positionX:
-        formation === "MANUAL"
-          ? entry.positionX ?? 50
-          : point?.x ?? 50,
-      positionY:
-        formation === "MANUAL"
-          ? entry.positionY ?? 50
-          : point?.y ?? 50,
+      positionX: point?.x ?? 50,
+      positionY: point?.y ?? 50,
       sortOrder: index,
     };
   });

@@ -3,11 +3,8 @@
 import Link from "next/link";
 import {
   useMemo,
-  useRef,
   useState,
   type DragEvent,
-  type MouseEvent,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
   ArrowLeft,
@@ -32,7 +29,6 @@ import {
   COACH_FORMATION_OPTIONS,
   assignPlayersToFormation,
   coachRolePreferences,
-  fieldZoneRole,
   isCoachRoleCompatible,
   type CoachFormation,
   type CoachSlotRole,
@@ -169,16 +165,21 @@ function TeamKit({
   secondary: string;
   goalkeeper?: boolean;
 }) {
-  if (url) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const normalizedUrl = url?.trim() || null;
+  const showUploadedKit = Boolean(normalizedUrl && failedUrl !== normalizedUrl);
+
+  if (showUploadedKit && normalizedUrl) {
     return (
-      <div className="relative mx-auto h-16 w-16">
+      <div className="relative mx-auto h-[74px] w-[74px] sm:h-[82px] sm:w-[82px]">
         <img
-          src={url}
-          alt=""
+          src={normalizedUrl}
+          alt="Divisa squadra"
           draggable={false}
-          className="h-full w-full object-contain drop-shadow-[0_8px_7px_rgba(0,0,0,.35)]"
+          onError={() => setFailedUrl(normalizedUrl)}
+          className="h-full w-full object-contain drop-shadow-[0_9px_8px_rgba(0,0,0,.42)]"
         />
-        <span className="absolute left-1/2 top-[45%] -translate-x-1/2 -translate-y-1/2 rounded bg-black/35 px-1 text-[9px] font-black text-white shadow">
+        <span className="absolute left-1/2 top-[47%] -translate-x-1/2 -translate-y-1/2 rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-black text-white shadow">
           {number}
         </span>
       </div>
@@ -189,7 +190,7 @@ function TeamKit({
   const second = goalkeeper ? primary : secondary;
 
   return (
-    <div className="relative mx-auto h-16 w-16 drop-shadow-[0_8px_7px_rgba(0,0,0,.3)]">
+    <div className="relative mx-auto h-[74px] w-[74px] drop-shadow-[0_9px_8px_rgba(0,0,0,.35)] sm:h-[82px] sm:w-[82px]">
       <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
         <defs>
           <linearGradient id={`kit-${number}-${goalkeeper ? "gk" : "out"}`} x1="0" x2="1">
@@ -200,10 +201,10 @@ function TeamKit({
         <path
           d="M29 18 42 11h16l13 7 20 14-12 18-10-7v45H31V43l-10 7L9 32l20-14Z"
           fill={`url(#kit-${number}-${goalkeeper ? "gk" : "out"})`}
-          stroke="rgba(255,255,255,.45)"
+          stroke="rgba(255,255,255,.55)"
           strokeWidth="2"
         />
-        <path d="M42 11c1 10 15 10 16 0" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth="2" />
+        <path d="M42 11c1 10 15 10 16 0" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="2" />
       </svg>
       <span className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 text-[11px] font-black text-white drop-shadow">
         {number}
@@ -213,7 +214,7 @@ function TeamKit({
 }
 
 function closestPresetRole(
-  formation: Exclude<CoachFormation, "MANUAL">,
+  formation: CoachFormation,
   x: number,
   y: number
 ): CoachSlotRole {
@@ -231,6 +232,89 @@ function closestPresetRole(
   return bestRole;
 }
 
+function entryMatchesSlot(
+  entry: Entry | undefined,
+  slot: { x: number; y: number },
+  tolerance = 1
+) {
+  return Boolean(
+    entry?.status === "STARTER" &&
+      entry.positionX !== null &&
+      entry.positionY !== null &&
+      Math.abs(entry.positionX - slot.x) <= tolerance &&
+      Math.abs(entry.positionY - slot.y) <= tolerance
+  );
+}
+
+function entriesFitFormation(
+  source: Record<string, Entry>,
+  formation: CoachFormation
+) {
+  const used = new Set<number>();
+  for (const entry of Object.values(source)) {
+    if (entry.status !== "STARTER") continue;
+    const slotIndex = COACH_FORMATIONS[formation].findIndex(
+      (slot, index) => !used.has(index) && entryMatchesSlot(entry, slot, 4)
+    );
+    if (slotIndex < 0) return false;
+    used.add(slotIndex);
+  }
+  return true;
+}
+
+function layoutEntriesForFormation(
+  source: Record<string, Entry>,
+  players: Player[],
+  formation: CoachFormation
+) {
+  const starterPlayers = players
+    .filter((player) => source[player.id]?.status === "STARTER")
+    .map((player) => ({ playerId: player.id, position: player.position }));
+
+  const preferred = assignPlayersToFormation(starterPlayers, formation);
+  const assigned: Record<string, { x: number; y: number; role: CoachSlotRole }> =
+    preferred ? { ...preferred } : {};
+
+  if (!preferred) {
+    const slots = COACH_FORMATIONS[formation].map((slot, index) => ({ ...slot, index }));
+    const used = new Set<number>();
+    const ordered = [...starterPlayers].sort((a, b) => {
+      const aPrefs = coachRolePreferences(a.position).length;
+      const bPrefs = coachRolePreferences(b.position).length;
+      if (aPrefs !== bPrefs) return aPrefs - bPrefs;
+      return a.playerId.localeCompare(b.playerId);
+    });
+
+    for (const player of ordered) {
+      const preferences = coachRolePreferences(player.position);
+      let selected = slots.find(
+        (slot) => !used.has(slot.index) && preferences.includes(slot.role)
+      );
+      selected ??= slots.find((slot) => !used.has(slot.index));
+      if (!selected) break;
+      used.add(selected.index);
+      assigned[player.playerId] = {
+        x: selected.x,
+        y: selected.y,
+        role: selected.role,
+      };
+    }
+  }
+
+  const next = { ...source };
+  starterPlayers.forEach((player, index) => {
+    const point = assigned[player.playerId];
+    if (!point) return;
+    next[player.playerId] = {
+      ...next[player.playerId],
+      positionX: point.x,
+      positionY: point.y,
+      sortOrder: index,
+    };
+  });
+  return next;
+}
+
 export default function CoachLineupEditor({
   leagueId,
   initialData,
@@ -242,19 +326,24 @@ export default function CoachLineupEditor({
     initialData.lineup.formation as CoachFormation
   )
     ? (initialData.lineup.formation as CoachFormation)
-    : "MANUAL";
+    : "3-3-1";
 
   const [formation, setFormation] = useState<CoachFormation>(initialFormation);
-  const [entries, setEntries] = useState<Record<string, Entry>>(
-    Object.fromEntries(initialData.lineup.players.map((entry) => [entry.playerId, entry]))
-  );
+  const [entries, setEntries] = useState<Record<string, Entry>>(() => {
+    const source = Object.fromEntries(
+      initialData.lineup.players.map((entry) => [entry.playerId, entry])
+    );
+    return entriesFitFormation(source, initialFormation)
+      ? source
+      : layoutEntriesForFormation(source, initialData.players, initialFormation);
+  });
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(
     initialData.lineup.players[0]?.playerId ?? initialData.players[0]?.id ?? null
   );
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const fieldRef = useRef<HTMLDivElement | null>(null);
 
   const playerById = useMemo(
     () => new Map(initialData.players.map((player) => [player.id, player])),
@@ -277,57 +366,31 @@ export default function CoachLineupEditor({
   const called = starters.length + bench.length;
 
   function automaticLayout(
-    nextFormation: Exclude<CoachFormation, "MANUAL">,
+    nextFormation: CoachFormation,
     source: Record<string, Entry>
   ) {
-    const starterPlayers = initialData.players
-      .filter((player) => source[player.id]?.status === "STARTER")
-      .map((player) => ({
-        playerId: player.id,
-        position: player.position,
-      }));
-
-    const assigned = assignPlayersToFormation(starterPlayers, nextFormation);
-    if (!assigned) return null;
-
-    const next = { ...source };
-    starterPlayers.forEach((player, index) => {
-      const point = assigned[player.playerId];
-      next[player.playerId] = {
-        ...next[player.playerId],
-        positionX: point.x,
-        positionY: point.y,
-        sortOrder: index,
-      };
-    });
-    return next;
+    return layoutEntriesForFormation(source, initialData.players, nextFormation);
   }
 
   function chooseFormation(value: CoachFormation) {
     if (!initialData.editable) return;
     setErr(null);
-
-    if (value === "MANUAL") {
-      setFormation("MANUAL");
-      return;
-    }
-
-    const next = automaticLayout(value, entries);
-    if (!next) {
-      setErr(
-        "I titolari attuali non entrano tutti nei ruoli previsti da questo modulo. Sposta qualcuno in panchina oppure usa Libero."
-      );
-      return;
-    }
-
     setFormation(value);
-    setEntries(next);
+    setEntries((current) => automaticLayout(value, current));
+  }
+
+  function playerIdAtSlot(
+    source: Record<string, Entry>,
+    slot: { x: number; y: number }
+  ) {
+    return Object.values(source).find(
+      (entry) => entryMatchesSlot(entry, slot, 1)
+    )?.playerId ?? null;
   }
 
   function setStatus(
     player: Player,
-    status: "STARTER" | "BENCH" | "OUT",
-    manualPoint?: { x: number; y: number }
+    status: "STARTER" | "BENCH" | "OUT"
   ) {
     if (!initialData.editable) return;
     setErr(null);
@@ -347,10 +410,6 @@ export default function CoachLineupEditor({
       if (status === "OUT") {
         const next = { ...current };
         delete next[player.id];
-
-        if (formation !== "MANUAL") {
-          return automaticLayout(formation, next) ?? next;
-        }
         return next;
       }
 
@@ -359,99 +418,50 @@ export default function CoachLineupEditor({
         return current;
       }
 
-      if (
-        status === "STARTER" &&
-        existing?.status !== "STARTER" &&
-        totalStarters >= initialData.maxStarters
-      ) {
+      if (status === "BENCH") {
+        return {
+          ...current,
+          [player.id]: {
+            playerId: player.id,
+            status: "BENCH",
+            positionX: null,
+            positionY: null,
+            sortOrder: existing?.sortOrder ?? totalCalled,
+          },
+        };
+      }
+
+      if (existing?.status === "STARTER") return current;
+      if (totalStarters >= initialData.maxStarters) {
         setErr(`Puoi schierare al massimo ${initialData.maxStarters} titolari.`);
         return current;
       }
 
-      let next: Record<string, Entry> = {
+      const preferences = coachRolePreferences(player.position);
+      const freeSlots = COACH_FORMATIONS[formation].filter(
+        (slot) => !playerIdAtSlot(current, slot)
+      );
+      const selectedSlot =
+        freeSlots.find((slot) => preferences.includes(slot.role)) ?? freeSlots[0];
+
+      if (!selectedSlot) {
+        setErr("Non ci sono slot liberi nel modulo selezionato.");
+        return current;
+      }
+
+      return {
         ...current,
         [player.id]: {
           playerId: player.id,
-          status,
-          positionX:
-            status === "STARTER"
-              ? manualPoint?.x ?? existing?.positionX ?? 50
-              : null,
-          positionY:
-            status === "STARTER"
-              ? manualPoint?.y ?? existing?.positionY ?? 50
-              : null,
+          status: "STARTER",
+          positionX: selectedSlot.x,
+          positionY: selectedSlot.y,
           sortOrder: existing?.sortOrder ?? totalCalled,
         },
       };
-
-      if (status === "STARTER" && formation !== "MANUAL") {
-        const laidOut = automaticLayout(formation, next);
-        if (!laidOut) {
-          setErr(
-            `${player.firstName} ${player.lastName} non trova uno slot compatibile nel ${formation}. Usa Libero per forzare il ruolo oppure cambia modulo.`
-          );
-          return current;
-        }
-        next = laidOut;
-      }
-
-      return next;
     });
 
     setSelectedPlayerId(player.id);
-  }
-
-  function pointFromClient(clientX: number, clientY: number) {
-    if (!fieldRef.current) return null;
-    const rect = fieldRef.current.getBoundingClientRect();
-    return {
-      x: Math.round(
-        Math.max(4, Math.min(96, ((clientX - rect.left) / rect.width) * 100))
-      ),
-      y: Math.round(
-        Math.max(5, Math.min(95, ((clientY - rect.top) / rect.height) * 100))
-      ),
-    };
-  }
-
-  function moveStarter(
-    clientX: number,
-    clientY: number,
-    playerId: string
-  ) {
-    if (!initialData.editable || entries[playerId]?.status !== "STARTER") return;
-    const point = pointFromClient(clientX, clientY);
-    if (!point) return;
-
-    setFormation("MANUAL");
-    setEntries((current) => ({
-      ...current,
-      [playerId]: {
-        ...current[playerId],
-        positionX: point.x,
-        positionY: point.y,
-      },
-    }));
-  }
-
-  function placeSelected(event: MouseEvent<HTMLDivElement>) {
-    if (
-      formation !== "MANUAL" ||
-      !selectedPlayerId ||
-      entries[selectedPlayerId]?.status !== "STARTER"
-    ) {
-      return;
-    }
-    moveStarter(event.clientX, event.clientY, selectedPlayerId);
-  }
-
-  function dragFieldPlayer(
-    event: ReactPointerEvent<HTMLButtonElement>,
-    playerId: string
-  ) {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
-    moveStarter(event.clientX, event.clientY, playerId);
   }
 
   function beginRosterDrag(event: DragEvent<HTMLElement>, player: Player) {
@@ -472,63 +482,85 @@ export default function CoachLineupEditor({
     return playerById.get(id) ?? null;
   }
 
-  function dropOnField(event: DragEvent<HTMLDivElement>) {
+  function dropOnSlot(
+    event: DragEvent<HTMLDivElement>,
+    slot: { x: number; y: number },
+    slotIndex: number
+  ) {
     event.preventDefault();
-    const player = draggedPlayer(event);
-    if (!player) return;
+    event.stopPropagation();
+    setDragOverSlot(null);
 
-    if (formation === "MANUAL") {
-      const point = pointFromClient(event.clientX, event.clientY);
-      if (!point) return;
-      setStatus(player, "STARTER", point);
-      return;
-    }
+    const source = draggedPlayer(event);
+    if (!source || !source.eligible || !initialData.editable) return;
 
-    setStatus(player, "STARTER");
+    setEntries((current) => {
+      const sourceEntry = current[source.id];
+      const targetPlayerId = playerIdAtSlot(current, slot);
+      if (targetPlayerId === source.id) return current;
+
+      const targetEntry = targetPlayerId ? current[targetPlayerId] : null;
+      const totalCalled = Object.keys(current).length;
+      const totalStarters = Object.values(current).filter(
+        (entry) => entry.status === "STARTER"
+      ).length;
+
+      if (!sourceEntry && !targetEntry && totalCalled >= initialData.maxCalled) {
+        setErr(`Puoi convocare al massimo ${initialData.maxCalled} giocatori.`);
+        return current;
+      }
+      if (sourceEntry?.status !== "STARTER" && !targetEntry && totalStarters >= initialData.maxStarters) {
+        setErr(`Puoi schierare al massimo ${initialData.maxStarters} titolari.`);
+        return current;
+      }
+
+      const next = { ...current };
+      next[source.id] = {
+        playerId: source.id,
+        status: "STARTER",
+        positionX: slot.x,
+        positionY: slot.y,
+        sortOrder: targetEntry?.sortOrder ?? sourceEntry?.sortOrder ?? slotIndex,
+      };
+
+      if (targetPlayerId && targetEntry) {
+        if (sourceEntry?.status === "STARTER") {
+          next[targetPlayerId] = {
+            ...targetEntry,
+            playerId: targetPlayerId,
+            positionX: sourceEntry.positionX,
+            positionY: sourceEntry.positionY,
+            sortOrder: sourceEntry.sortOrder,
+          };
+        } else if (sourceEntry?.status === "BENCH") {
+          next[targetPlayerId] = {
+            playerId: targetPlayerId,
+            status: "BENCH",
+            positionX: null,
+            positionY: null,
+            sortOrder: sourceEntry.sortOrder,
+          };
+        } else {
+          delete next[targetPlayerId];
+        }
+      }
+
+      return next;
+    });
+
+    setErr(null);
+    setSelectedPlayerId(source.id);
   }
 
   function dropOnBench(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
+    setDragOverSlot(null);
     const player = draggedPlayer(event);
     if (!player) return;
     setStatus(player, "BENCH");
   }
 
-  function dropOnStarter(event: DragEvent<HTMLElement>, target: Player) {
-    event.preventDefault();
-    event.stopPropagation();
-    const source = draggedPlayer(event);
-    if (!source || source.id === target.id || !source.eligible) return;
-    const targetEntry = entries[target.id];
-    if (!targetEntry || targetEntry.status !== "STARTER") return;
-
-    setEntries((current) => {
-      const sourceEntry = current[source.id];
-      const next = { ...current };
-      next[source.id] = { ...targetEntry, playerId: source.id };
-
-      if (sourceEntry?.status === "STARTER") {
-        next[target.id] = { ...sourceEntry, playerId: target.id };
-      } else if (sourceEntry?.status === "BENCH") {
-        next[target.id] = {
-          playerId: target.id,
-          status: "BENCH",
-          positionX: null,
-          positionY: null,
-          sortOrder: sourceEntry.sortOrder,
-        };
-      } else {
-        delete next[target.id];
-      }
-      return next;
-    });
-    setSelectedPlayerId(source.id);
-  }
-
   function roleForEntry(entry: Entry): CoachSlotRole {
-    if (formation === "MANUAL") {
-      return fieldZoneRole(entry.positionY ?? 50);
-    }
     return closestPresetRole(
       formation,
       entry.positionX ?? 50,
@@ -714,9 +746,9 @@ export default function CoachLineupEditor({
             <div>
               <p className="font-black text-[var(--foreground)]">Modulo</p>
               <p className="mt-1 max-w-2xl text-xs text-[var(--muted)]">
-                Nei moduli standard il sistema assegna automaticamente POR, difensori,
-                centrocampisti ed attaccanti agli slot compatibili. Libero permette di
-                forzare qualunque disposizione.
+                Scegli un modulo: i giocatori restano agganciati agli otto slot.
+                Trascina una maglia sopra un'altra per scambiarle oppure trascina
+                un giocatore dalla rosa o dalla panchina direttamente nello slot desiderato.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -733,7 +765,7 @@ export default function CoachLineupEditor({
                       : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)]",
                   ].join(" ")}
                 >
-                  {option === "MANUAL" ? "LIBERO" : option}
+                  {option}
                 </button>
               ))}
             </div>
@@ -743,7 +775,7 @@ export default function CoachLineupEditor({
         {err && <Badge variant="error">{err}</Badge>}
         {msg && <Badge variant="success">{msg}</Badge>}
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.28fr)_minmax(330px,.72fr)]">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.48fr)_minmax(360px,.52fr)]">
           <Card className="overflow-hidden !p-0">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
               <div className="flex items-center gap-3">
@@ -761,119 +793,119 @@ export default function CoachLineupEditor({
             </div>
 
             <div className="p-3 sm:p-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Divisa {initialData.match.isHome ? "casa" : "trasferta"}
+                </span>
+                {!outfieldKitUrl && (
+                  <span className="text-[10px] font-bold text-amber-300">
+                    Nessuna immagine divisa salvata: uso i colori squadra
+                  </span>
+                )}
+              </div>
+
               <div
-                ref={fieldRef}
-                onClick={placeSelected}
-                onDragOver={(event) => {
-                  if (!initialData.editable) return;
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={dropOnField}
-                className={[
-                  "relative mx-auto aspect-[0.72] w-full max-w-[640px] overflow-hidden rounded-[28px] border-2 border-white/20 bg-[#1d7136]",
-                  formation === "MANUAL" && selectedPlayerId ? "cursor-crosshair" : "",
-                ].join(" ")}
+                className="relative mx-auto aspect-[6/5] w-full max-w-[860px] overflow-hidden rounded-[24px] border-2 border-white/20 bg-[#1d7136]"
                 style={{
                   backgroundImage:
-                    "radial-gradient(circle at 50% 50%, rgba(255,255,255,.045), transparent 28%), repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 12.5%, rgba(0,0,0,.025) 12.5% 25%)",
+                    "radial-gradient(circle at 50% 50%, rgba(255,255,255,.045), transparent 28%), repeating-linear-gradient(0deg, rgba(255,255,255,.045) 0 12.5%, rgba(0,0,0,.025) 12.5% 25%)",
                   boxShadow: "inset 0 0 70px rgba(0,0,0,.28)",
                 }}
               >
-                <div className="pointer-events-none absolute inset-[3%] rounded-[20px] border border-white/30" />
-                <div className="pointer-events-none absolute left-1/2 top-[3%] bottom-[3%] w-px -translate-x-1/2 bg-white/25" />
-                <div className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30" />
-                <div className="pointer-events-none absolute inset-x-[18%] top-[3%] h-[15%] border border-white/30" />
-                <div className="pointer-events-none absolute inset-x-[18%] bottom-[3%] h-[15%] border border-white/30" />
+                <div className="pointer-events-none absolute inset-[3%] rounded-[18px] border border-white/35" />
+                <div className="pointer-events-none absolute left-1/2 top-[3%] bottom-[3%] w-px -translate-x-1/2 bg-white/30" />
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/35 sm:h-28 sm:w-28" />
+                <div className="pointer-events-none absolute inset-x-[25%] top-[3%] h-[18%] border border-white/35" />
+                <div className="pointer-events-none absolute inset-x-[25%] bottom-[3%] h-[18%] border border-white/35" />
+                <div className="pointer-events-none absolute left-1/2 top-[21%] h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/35" />
+                <div className="pointer-events-none absolute bottom-[21%] left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white/35" />
 
-                {formation !== "MANUAL" &&
-                  COACH_FORMATIONS[formation].map((slot, index) => {
-                    const occupied = starters.some((player) => {
-                      const entry = entries[player.id];
-                      return (
-                        Math.abs((entry?.positionX ?? -100) - slot.x) < 1 &&
-                        Math.abs((entry?.positionY ?? -100) - slot.y) < 1
-                      );
-                    });
-                    if (occupied) return null;
-                    return (
-                      <div
-                        key={`${slot.role}-${index}`}
-                        className="pointer-events-none absolute grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-dashed border-white/35 bg-black/10 text-[9px] font-black text-white/45"
-                        style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                      >
-                        {ROLE_LABEL[slot.role]}
-                      </div>
-                    );
-                  })}
-
-                {starters.map((player) => {
-                  const entry = entries[player.id];
-                  const selected = selectedPlayerId === player.id;
-                  const outOfRole = playerOutOfRole(player);
+                {COACH_FORMATIONS[formation].map((slot, index) => {
+                  const playerId = playerIdAtSlot(entries, slot);
+                  const player = playerId ? playerById.get(playerId) ?? null : null;
+                  const entry = player ? entries[player.id] : null;
+                  const selected = Boolean(player && selectedPlayerId === player.id);
+                  const outOfRole = Boolean(player && playerOutOfRole(player));
+                  const isDropTarget = dragOverSlot === index;
 
                   return (
-                    <button
-                      key={player.id}
-                      type="button"
-                      draggable={initialData.editable && player.eligible}
-                      onDragStart={(event) => beginRosterDrag(event, player)}
+                    <div
+                      key={`${slot.role}-${index}`}
                       onDragOver={(event) => {
-                        if (initialData.editable) event.preventDefault();
-                      }}
-                      onDrop={(event) => dropOnStarter(event, player)}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedPlayerId(player.id);
-                      }}
-                      onPointerDown={(event) => {
                         if (!initialData.editable) return;
-                        event.stopPropagation();
-                        setSelectedPlayerId(player.id);
-                        event.currentTarget.setPointerCapture(event.pointerId);
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        setDragOverSlot(index);
                       }}
-                      onPointerMove={(event) => {
-                        event.stopPropagation();
-                        dragFieldPlayer(event, player.id);
-                      }}
-                      onPointerUp={(event) => {
-                        event.stopPropagation();
-                        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                          event.currentTarget.releasePointerCapture(event.pointerId);
-                        }
-                      }}
+                      onDrop={(event) => dropOnSlot(event, slot, index)}
                       className={[
-                        "absolute w-[104px] -translate-x-1/2 -translate-y-1/2 select-none rounded-2xl p-1 text-center text-white transition",
-                        selected
-                          ? "z-20 bg-black/15 ring-2 ring-[var(--accent)]/70"
-                          : "z-10 hover:bg-black/10",
-                        outOfRole ? "ring-1 ring-amber-300/80" : "",
+                        "absolute z-10 flex h-[112px] w-[112px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl transition sm:h-[124px] sm:w-[124px]",
+                        isDropTarget ? "bg-white/10 ring-2 ring-white/60" : "",
                       ].join(" ")}
-                      style={{
-                        left: `${entry.positionX ?? 50}%`,
-                        top: `${entry.positionY ?? 50}%`,
-                        touchAction: "none",
-                      }}
+                      style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
                     >
-                      <TeamKit
-                        url={
-                          roleForEntry(entry) === "GK"
-                            ? initialData.team.kitGoalkeeperUrl ?? outfieldKitUrl
-                            : outfieldKitUrl
-                        }
-                        number={player.number}
-                        primary={primary}
-                        secondary={secondary}
-                        goalkeeper={roleForEntry(entry) === "GK"}
-                      />
-                      <span className="mt-0.5 block truncate text-[10px] font-black">
-                        {player.lastName}
-                      </span>
-                      <span className="block truncate text-[8px] text-white/55">
-                        {ROLE_LABEL[roleForEntry(entry)]}
-                        {outOfRole ? " · FUORI RUOLO" : ""}
-                      </span>
-                    </button>
+                      {player && entry ? (
+                        <button
+                          type="button"
+                          draggable={initialData.editable && player.eligible}
+                          onDragStart={(event) => beginRosterDrag(event, player)}
+                          onDragEnd={() => setDragOverSlot(null)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedPlayerId(player.id);
+                          }}
+                          className={[
+                            "group w-[108px] select-none text-center text-white transition sm:w-[118px]",
+                            initialData.editable && player.eligible
+                              ? "cursor-grab active:cursor-grabbing"
+                              : "",
+                            selected ? "scale-[1.04]" : "hover:scale-[1.03]",
+                          ].join(" ")}
+                        >
+                          <div
+                            className={[
+                              "mx-auto w-fit rounded-2xl transition",
+                              selected ? "ring-2 ring-[var(--accent)]/80 ring-offset-2 ring-offset-transparent" : "",
+                              outOfRole ? "drop-shadow-[0_0_7px_rgba(252,211,77,.7)]" : "",
+                            ].join(" ")}
+                          >
+                            <TeamKit
+                              url={
+                                slot.role === "GK"
+                                  ? initialData.team.kitGoalkeeperUrl ?? outfieldKitUrl
+                                  : outfieldKitUrl
+                              }
+                              number={player.number}
+                              primary={primary}
+                              secondary={secondary}
+                              goalkeeper={slot.role === "GK"}
+                            />
+                          </div>
+                          <span className="mx-auto -mt-1 block max-w-[108px] truncate rounded bg-black/65 px-2 py-1 text-[10px] font-black leading-none shadow sm:text-[11px]">
+                            {player.lastName}
+                          </span>
+                          <span
+                            className={[
+                              "mt-1 block text-[8px] font-black uppercase tracking-[0.08em]",
+                              outOfRole ? "text-amber-200" : "text-white/65",
+                            ].join(" ")}
+                          >
+                            {ROLE_LABEL[slot.role]}{outOfRole ? " · fuori ruolo" : ""}
+                          </span>
+                        </button>
+                      ) : (
+                        <div
+                          className={[
+                            "grid h-11 w-11 place-items-center rounded-full border border-dashed text-[9px] font-black transition sm:h-12 sm:w-12",
+                            isDropTarget
+                              ? "border-white bg-white/15 text-white"
+                              : "border-white/40 bg-black/10 text-white/55",
+                          ].join(" ")}
+                        >
+                          {ROLE_LABEL[slot.role]}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -896,7 +928,7 @@ export default function CoachLineupEditor({
                   Trascina qui per mettere in panchina
                 </span>
               </div>
-              <div className="mt-2 flex min-h-20 flex-wrap gap-2 rounded-2xl border border-dashed border-[var(--border)] p-2">
+              <div className="mt-2 flex min-h-24 gap-2 overflow-x-auto rounded-2xl border border-dashed border-[var(--border)] bg-black/10 p-2 [scrollbar-width:thin]">
                 {bench.length ? (
                   bench.map((player) => (
                     <button
@@ -904,9 +936,10 @@ export default function CoachLineupEditor({
                       type="button"
                       draggable={initialData.editable && player.eligible}
                       onDragStart={(event) => beginRosterDrag(event, player)}
+                      onDragEnd={() => setDragOverSlot(null)}
                       onClick={() => setSelectedPlayerId(player.id)}
                       className={[
-                        "flex items-center gap-2 rounded-xl border bg-[var(--card-2)] px-2.5 py-2 text-left",
+                        "flex min-w-[150px] shrink-0 items-center gap-2 rounded-xl border bg-[var(--card-2)] px-2.5 py-2 text-left",
                         selectedPlayerId === player.id
                           ? "border-[var(--accent)]"
                           : "border-[var(--border)]",
@@ -938,7 +971,7 @@ export default function CoachLineupEditor({
               <div>
                 <p className="font-black text-[var(--foreground)]">Rosa</p>
                 <p className="text-xs text-[var(--muted)]">
-                  Trascina un giocatore sul campo: verrà schierato automaticamente nel suo ruolo.
+                  Trascina un giocatore direttamente sullo slot desiderato; sopra un titolare lo sostituisce o lo scambia.
                 </p>
               </div>
             </div>
@@ -953,6 +986,7 @@ export default function CoachLineupEditor({
                     key={player.id}
                     draggable={initialData.editable && player.eligible}
                     onDragStart={(event) => beginRosterDrag(event, player)}
+                    onDragEnd={() => setDragOverSlot(null)}
                     className={[
                       "rounded-2xl border bg-[var(--card-2)] p-3 transition",
                       selectedPlayerId === player.id
@@ -1061,8 +1095,9 @@ export default function CoachLineupEditor({
           <div className="flex items-start gap-3">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-sky-300" />
             <p className="text-xs leading-relaxed text-[var(--muted)]">
-              I moduli standard rispettano i ruoli. Per una scelta volutamente fuori ruolo
-              passa a Libero o trascina direttamente un titolare già in campo.
+              I giocatori sono sempre agganciati agli slot del modulo selezionato.
+              Il drag & drop può anche creare scelte fuori ruolo, segnalate in giallo,
+              senza spostare liberamente le maglie fuori dalla struttura del modulo.
               La formazione resta una proposta tecnica e non sostituisce la distinta ufficiale.
             </p>
           </div>

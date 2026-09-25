@@ -8,7 +8,6 @@ import {
 
 test("tutti i moduli automatici a 8 definiscono otto posizioni valide", () => {
   for (const formation of COACH_FORMATION_OPTIONS) {
-    if (formation === "MANUAL") continue;
     const points = COACH_FORMATIONS[formation];
     assert.equal(points.length, 8);
     for (const point of points) {

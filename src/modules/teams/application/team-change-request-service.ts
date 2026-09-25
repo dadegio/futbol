@@ -11,7 +11,16 @@ type RequestType =
   | "PLAYER_REMOVE"
   | "PLAYER_NUMBER_SWAP";
 
-const TEAM_FIELDS = ["name", "badgeUrl", "description", "colorHex", "secondaryColorHex"] as const;
+const TEAM_FIELDS = [
+  "name",
+  "badgeUrl",
+  "description",
+  "colorHex",
+  "secondaryColorHex",
+  "kitHomeUrl",
+  "kitAwayUrl",
+  "kitGoalkeeperUrl",
+] as const;
 const PLAYER_FIELDS = ["firstName", "lastName", "number", "position"] as const;
 const PLAYER_PHOTO_FIELDS = ["photoUrl", "photoZoom", "photoPositionX", "photoPositionY"] as const;
 

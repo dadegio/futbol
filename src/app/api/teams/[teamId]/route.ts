@@ -17,6 +17,17 @@ import {
 
 type Ctx = { params: Promise<{ teamId: string }> };
 
+const KIT_ONLY_TEAM_FIELDS = new Set([
+  "kitHomeUrl",
+  "kitAwayUrl",
+  "kitGoalkeeperUrl",
+]);
+
+function isKitOnlyTeamUpdate(input: Record<string, unknown>) {
+  const keys = Object.keys(input);
+  return keys.length > 0 && keys.every((key) => KIT_ONLY_TEAM_FIELDS.has(key));
+}
+
 export async function GET(_: Request, ctx: Ctx) {
   try {
     const { teamId } = await ctx.params;
@@ -37,7 +48,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const actor = await getServerSession();
     if (actor?.role === "CAPTAIN") {
       const lock = await getTeamRosterLockState(teamId);
-      if (lock.locked) {
+      // Il blocco rosa riguarda giocatori e modifiche strutturali della squadra.
+      // Le sole immagini delle divise possono essere aggiornate direttamente:
+      // non cambiano l'eleggibilità o la distinta e devono essere subito disponibili
+      // nel Coach Mode.
+      if (lock.locked && !isKitOnlyTeamUpdate(input)) {
         const request = await createLockedTeamChangeRequest({ teamId, actor, type: "TEAM_UPDATE", input });
         return NextResponse.json({ requestCreated: true, request, rosterLocked: true }, { status: 202 });
       }

@@ -188,19 +188,37 @@ export default function TeamPage({
         finalKitGoalkeeperUrl = await uploadTeamAsset(kitGoalkeeperFile, "Divisa portiere");
       }
 
+      const payload: Record<string, unknown> = {};
+      const finalDescription = description.trim() || null;
+      const currentBadgeUrl = team.badgeUrl ?? null;
+      const currentDescription = team.description ?? null;
+      const currentColorHex = team.colorHex ?? null;
+      const currentSecondaryColorHex = team.secondaryColorHex ?? null;
+      const currentKitHomeUrl = team.kitHomeUrl ?? null;
+      const currentKitAwayUrl = team.kitAwayUrl ?? null;
+      const currentKitGoalkeeperUrl = team.kitGoalkeeperUrl ?? null;
+
+      if (trimmedName !== team.name) payload.name = trimmedName;
+      if (finalBadgeUrl !== currentBadgeUrl) payload.badgeUrl = finalBadgeUrl;
+      if (finalDescription !== currentDescription) payload.description = finalDescription;
+      if (colorHex !== currentColorHex) payload.colorHex = colorHex;
+      if (secondaryColorHex !== currentSecondaryColorHex) payload.secondaryColorHex = secondaryColorHex;
+      if (finalKitHomeUrl !== currentKitHomeUrl) payload.kitHomeUrl = finalKitHomeUrl;
+      if (finalKitAwayUrl !== currentKitAwayUrl) payload.kitAwayUrl = finalKitAwayUrl;
+      if (finalKitGoalkeeperUrl !== currentKitGoalkeeperUrl) {
+        payload.kitGoalkeeperUrl = finalKitGoalkeeperUrl;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        setMsg("Nessuna modifica da salvare");
+        setEditingTeam(false);
+        return;
+      }
+
       const res = await authFetch(`/api/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: trimmedName,
-          badgeUrl: finalBadgeUrl,
-          description: description.trim() || null,
-          colorHex,
-          secondaryColorHex,
-          kitHomeUrl: finalKitHomeUrl,
-          kitAwayUrl: finalKitAwayUrl,
-          kitGoalkeeperUrl: finalKitGoalkeeperUrl,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Errore");

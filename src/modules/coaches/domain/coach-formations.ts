@@ -51,7 +51,7 @@ export const COACH_FORMATIONS = {
   ],
 } as const satisfies Record<string, readonly FormationPoint[]>;
 
-export type CoachFormation = keyof typeof COACH_FORMATIONS | "MANUAL";
+export type CoachFormation = keyof typeof COACH_FORMATIONS;
 
 export const COACH_FORMATION_OPTIONS: CoachFormation[] = [
   "3-3-1",
@@ -61,7 +61,6 @@ export const COACH_FORMATION_OPTIONS: CoachFormation[] = [
   "4-2-1",
   "3-1-3",
   "2-2-3",
-  "MANUAL",
 ];
 
 export const COACH_LINEUP_LOCK_MINUTES = 30;
@@ -144,12 +143,6 @@ export function isCoachRoleCompatible(
   return coachRolePreferences(position).includes(role);
 }
 
-export function fieldZoneRole(y: number): CoachSlotRole {
-  if (y >= 82) return "GK";
-  if (y >= 57) return "DEF";
-  if (y >= 31) return "MID";
-  return "ATT";
-}
 
 export type AutoFormationPlayer = {
   playerId: string;
@@ -158,7 +151,7 @@ export type AutoFormationPlayer = {
 
 export function assignPlayersToFormation(
   players: AutoFormationPlayer[],
-  formation: Exclude<CoachFormation, "MANUAL">
+  formation: CoachFormation
 ): Record<string, FormationPoint> | null {
   const slots = COACH_FORMATIONS[formation].map((slot, index) => ({
     ...slot,
