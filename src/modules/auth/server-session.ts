@@ -24,6 +24,15 @@ async function hydrateSession(session: SessionUser | null): Promise<SessionUser 
       : session;
   }
 
+  if (session.role === "COACH") {
+    const assignments = await prisma.coachAssignment.findMany({
+      where: { userId: session.userId },
+      select: { leagueId: true, teamId: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return { ...session, coachAssignments: assignments };
+  }
+
   if (session.role !== "CAPTAIN") return session;
 
   const assignments = await prisma.captainAssignment.findMany({

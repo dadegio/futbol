@@ -29,6 +29,7 @@ test("token sessione preserva identità e ruoli e rifiuta manomissioni", () => {
       { leagueId: "league-1", teamId: "team-1" },
       { leagueId: "league-2", teamId: "team-2" },
     ],
+    coachAssignments: [],
   };
   const token = createToken(session);
   assert.deepEqual(parseToken(token), session);

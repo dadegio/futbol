@@ -16,6 +16,7 @@ enum Role {
   ADMIN
   LEAGUE_ADMIN
   CAPTAIN
+  COACH
   REFEREE
   CREATOR
 }
@@ -63,6 +64,11 @@ enum TeamChangeRequestStatus {
   REJECTED
 }
 
+enum LineupPlayerStatus {
+  STARTER
+  BENCH
+}
+
 enum MatchLifecycleStatus {
   SCHEDULED
   POSTPONED
@@ -93,6 +99,7 @@ model User {
   leagueId     String?
   team         Team?    @relation("TeamCaptain", fields: [teamId], references: [id], onDelete: SetNull)
   captainAssignments CaptainAssignment[]
+  coachAssignments   CoachAssignment[]
   referee      Referee? @relation("RefereeAccount", fields: [refereeId], references: [id], onDelete: SetNull)
   adminLeague  League?  @relation("LeagueAdmins", fields: [leagueId], references: [id], onDelete: SetNull)
   creatorProfile CreatorProfile?
@@ -148,6 +155,7 @@ model League {
   teamFeePayments TeamFeePayment[]
   teamChangeRequests TeamChangeRequest[]
   captainAssignments CaptainAssignment[]
+  coachAssignments CoachAssignment[]
 }
 
 
@@ -313,6 +321,8 @@ model Team {
 
   captain             User?            @relation("TeamCaptain")
   captainAssignment   CaptainAssignment?
+  coachAssignment     CoachAssignment?
+  matchLineups        MatchLineup[]
   affiliatedReferees  Referee[]        @relation("RefereeTeamAffiliation")
   preferredByCreators CreatorProfile[] @relation("CreatorPreferredTeam")
   changeRequests TeamChangeRequest[]
@@ -323,6 +333,22 @@ model Team {
 
 
 model CaptainAssignment {
+  id        String   @id @default(cuid())
+  userId    String
+  leagueId  String
+  teamId    String   @unique
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leagueId])
+  @@index([userId])
+  @@index([leagueId])
+}
+
+model CoachAssignment {
   id        String   @id @default(cuid())
   userId    String
   leagueId  String
@@ -396,9 +422,10 @@ model Player {
   teamId String
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  stats        MatchPlayerStat[]
-  sheetEntries MatchSheetPlayer[]
-  mvpMatches   Match[]            @relation("MatchMvp")
+  stats         MatchPlayerStat[]
+  sheetEntries  MatchSheetPlayer[]
+  lineupEntries MatchLineupPlayer[]
+  mvpMatches    Match[]            @relation("MatchMvp")
 
   @@unique([teamId, number])
   @@index([teamId])
@@ -453,6 +480,7 @@ model Match {
 
   stats              MatchPlayerStat[]
   sheetPlayers       MatchSheetPlayer[]
+  lineups            MatchLineup[]
   creatorAssignments CreatorMatchAssignment[]
 
   @@unique([venueKey, date])
@@ -468,6 +496,40 @@ model Match {
   @@index([resultStatus])
   @@index([lifecycleStatus])
   @@index([mvpPlayerId])
+}
+
+model MatchLineup {
+  id        String   @id @default(cuid())
+  matchId   String
+  teamId    String
+  formation String   @default("3-3-1")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  match   Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team    Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  players MatchLineupPlayer[]
+
+  @@unique([matchId, teamId])
+  @@index([teamId])
+  @@index([matchId])
+}
+
+model MatchLineupPlayer {
+  id        String             @id @default(cuid())
+  lineupId  String
+  playerId  String
+  status    LineupPlayerStatus
+  positionX Int?
+  positionY Int?
+  sortOrder Int                @default(0)
+
+  lineup MatchLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  player Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([lineupId, playerId])
+  @@index([playerId])
+  @@index([lineupId, status])
 }
 
 model CreatorMatchAssignment {

@@ -25,6 +25,17 @@ export async function getMatchPageData(
       stats: true,
       mvpPlayer: { select: { id: true, firstName: true, lastName: true, number: true } },
       sheetPlayers: { select: { playerId: true, teamId: true } },
+      lineups: {
+        select: {
+          teamId: true,
+          players: {
+            select: {
+              playerId: true,
+              status: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -35,14 +46,35 @@ export async function getMatchPageData(
     isRefereeAssignedToMatch(session, match.refereeId);
   const canViewRecordedData = match.resultStatus === "FINAL" || canViewDraft;
   const canViewFinalExtras = match.resultStatus === "FINAL" || isLeagueAdmin(session, match.leagueId);
-  const { refereeCostCents: _legacyRefereeCostCents, ...visibleMatch } = match;
+
+  const coachSuggestedLineup =
+    canViewDraft && match.sheetPlayers.length === 0
+      ? match.lineups.flatMap((lineup) =>
+          lineup.players.map((player) => ({
+            teamId: lineup.teamId,
+            playerId: player.playerId,
+            status: player.status,
+          }))
+        )
+      : [];
+
+  const effectiveSheetPlayers =
+    match.sheetPlayers.length > 0
+      ? match.sheetPlayers
+      : coachSuggestedLineup.map((player) => ({
+          teamId: player.teamId,
+          playerId: player.playerId,
+        }));
+
+  const { refereeCostCents: _legacyRefereeCostCents, lineups: _lineups, ...visibleMatch } = match;
 
   return {
     ...visibleMatch,
     homeGoals: canViewRecordedData ? match.homeGoals : null,
     awayGoals: canViewRecordedData ? match.awayGoals : null,
     stats: canViewRecordedData ? match.stats : [],
-    sheetPlayers: canViewRecordedData ? match.sheetPlayers : [],
+    sheetPlayers: canViewRecordedData ? effectiveSheetPlayers : [],
+    coachSuggestedLineup,
     homeSheetConfirmed: canViewRecordedData ? match.homeSheetConfirmed : false,
     awaySheetConfirmed: canViewRecordedData ? match.awaySheetConfirmed : false,
     finalizedAt: match.resultStatus === "FINAL" || canViewDraft ? match.finalizedAt : null,

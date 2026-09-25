@@ -117,6 +117,14 @@ export default function MatchResultForm({ match }: { match: Match }) {
   });
   const [mvpPlayerId, setMvpPlayerId] = useState(match.mvpPlayerId ?? "");
 
+  const coachSuggestedStatuses = useMemo(
+    () =>
+      Object.fromEntries(
+        (match.coachSuggestedLineup ?? []).map((player) => [player.playerId, player.status])
+      ) as Record<string, "STARTER" | "BENCH">,
+    [match.coachSuggestedLineup]
+  );
+
   const homePlayers = useMemo(() => match.homeTeam.players.slice().sort((a, b) => a.number - b.number), [match.homeTeam.players]);
   const awayPlayers = useMemo(() => match.awayTeam.players.slice().sort((a, b) => a.number - b.number), [match.awayTeam.players]);
 
@@ -657,8 +665,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
         )}
 
         <div id="match-sheets" className="scroll-mt-20 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
-          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
+          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
+          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
         </div>
 
         {canEditResult && (

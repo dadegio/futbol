@@ -16,6 +16,7 @@ import {
   Handshake,
   Youtube,
   Camera,
+  ClipboardCheck,
   UploadCloud,
 } from "lucide-react";
 import AuthButton from "./auth-button";
@@ -72,6 +73,11 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
   const refereeOnlyNav = Boolean(
     leagueId && user?.role === "REFEREE" && user.leagueId === leagueId
   );
+  const coachOnlyNav = Boolean(
+    leagueId &&
+      user?.role === "COACH" &&
+      user.coachAssignments?.some((assignment) => assignment.leagueId === leagueId)
+  );
 
   useEffect(() => {
     if (branding?.name) setLeagueName(branding.name);
@@ -86,6 +92,12 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
     : refereeOnlyNav
       ? [
           { href: `/leagues/${leagueId}/referee`, label: "Il mio calendario", icon: <ShieldCheck size={17} /> },
+          { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Trophy size={17} /> },
+        ]
+    : coachOnlyNav
+      ? [
+          { href: `/leagues/${leagueId}/coach`, label: "Coach Center", icon: <ClipboardCheck size={17} /> },
+          { href: `/leagues/${leagueId}/calendar`, label: "Partite", icon: <CalendarDays size={17} /> },
           { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Trophy size={17} /> },
         ]
     : leagueId
@@ -156,7 +168,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
       )}
 
       {/* Search */}
-      {!creatorOnlyNav && !refereeOnlyNav && <form
+      {!creatorOnlyNav && !refereeOnlyNav && !coachOnlyNav && <form
         onSubmit={submitSearch}
         className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2"
       >

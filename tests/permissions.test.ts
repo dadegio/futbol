@@ -12,6 +12,7 @@ function user(overrides: Partial<SessionUser>): SessionUser {
     refereeId: null,
     leagueId: null,
     captainAssignments: [],
+    coachAssignments: [],
     ...overrides,
   };
 }
@@ -74,6 +75,18 @@ test("capitano può appartenere a squadre di tornei diversi", () => {
   assert.equal(canPerform(captain, "team:manage", { leagueId: "league-2", teamId: "team-b" }), true);
   assert.equal(canPerform(captain, "player:manage", { leagueId: "league-2", teamId: "team-b" }), true);
   assert.equal(canPerform(captain, "team:manage", { leagueId: "league-2", teamId: "team-c" }), false);
+});
+
+test("allenatore vede solo il torneo a cui è associato", () => {
+  const coach = user({
+    role: "COACH",
+    coachAssignments: [{ leagueId: "league-1", teamId: "team-a" }],
+  });
+
+  assert.equal(canPerform(coach, "league:view", { leagueId: "league-1" }), true);
+  assert.equal(canPerform(coach, "league:view", { leagueId: "league-2" }), false);
+  assert.equal(canPerform(coach, "booking:create", { leagueId: "league-1", teamId: "team-a" }), false);
+  assert.equal(canPerform(coach, "match:edit", { leagueId: "league-1", teamId: "team-a" }), false);
 });
 
 test("arbitro può modificare solo la partita assegnata", () => {

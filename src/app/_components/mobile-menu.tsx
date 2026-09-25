@@ -19,6 +19,7 @@ import {
   X,
   Youtube,
   Camera,
+  ClipboardCheck,
   UploadCloud,
 } from "lucide-react";
 import { clearAuthToken, useAuth, useCanAdminLeague, useCanCreateMedia, useIsSuperAdmin } from "@/lib/client-auth";
@@ -78,6 +79,11 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
   const refereeOnlyNav = Boolean(
     leagueId && user?.role === "REFEREE" && user.leagueId === leagueId
   );
+  const coachOnlyNav = Boolean(
+    leagueId &&
+      user?.role === "COACH" &&
+      user.coachAssignments?.some((assignment) => assignment.leagueId === leagueId)
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -109,6 +115,12 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
     : refereeOnlyNav
       ? [
           { href: `/leagues/${leagueId}/referee`, label: "Il mio calendario", icon: <ShieldCheck size={18} /> },
+          { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Table2 size={18} /> },
+        ]
+    : coachOnlyNav
+      ? [
+          { href: `/leagues/${leagueId}/coach`, label: "Coach Center", icon: <ClipboardCheck size={18} /> },
+          { href: `/leagues/${leagueId}/calendar`, label: "Partite", icon: <CalendarDays size={18} /> },
           { href: `/leagues/${leagueId}/table`, label: "Classifica", icon: <Table2 size={18} /> },
         ]
     : leagueId
@@ -179,7 +191,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          {leagueId && !creatorOnlyNav && !refereeOnlyNav && (
+          {leagueId && !creatorOnlyNav && !refereeOnlyNav && !coachOnlyNav && (
             <form onSubmit={submitSearch} className="mb-5">
               <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                 Cerca giocatore

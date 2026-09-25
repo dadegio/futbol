@@ -73,6 +73,11 @@ export type Match = {
   awayTeam: Team;
   stats: StatRow[];
   sheetPlayers?: Array<{ playerId: string; teamId: string }>;
+  coachSuggestedLineup?: Array<{
+    playerId: string;
+    teamId: string;
+    status: "STARTER" | "BENCH";
+  }>;
   leagueId: string;
 };
 
@@ -206,6 +211,7 @@ export function TeamStatsCard({
   mvpPlayerId,
   setMvpPlayerId,
   showMvpSelection = false,
+  coachSuggestedStatuses,
   toggleSheet,
   setPlayerStat,
   readOnly,
@@ -223,6 +229,7 @@ export function TeamStatsCard({
   mvpPlayerId?: string;
   setMvpPlayerId?: (playerId: string) => void;
   showMvpSelection?: boolean;
+  coachSuggestedStatuses?: Record<string, "STARTER" | "BENCH">;
   toggleSheet: (playerId: string, checked: boolean) => void;
   setPlayerStat: (playerId: string, key: "goals" | "assists", value: string) => void;
   readOnly?: boolean;
@@ -297,6 +304,11 @@ export function TeamStatsCard({
                     <span className={["mt-0.5 flex items-center gap-1 truncate text-[10px] font-bold", eligible ? "text-emerald-300" : "text-amber-300"].join(" ")}>
                       {eligible ? <ShieldCheck size={12} /> : <CircleDot size={12} />}
                       {playerEligibilityLabel(p, isAdmin)}
+                    </span>
+                  )}
+                  {coachSuggestedStatuses?.[p.id] && (
+                    <span className="mt-1 inline-flex rounded-full bg-sky-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-sky-300">
+                      Coach · {coachSuggestedStatuses[p.id] === "STARTER" ? "Titolare" : "Panchina"}
                     </span>
                   )}
                 </div>

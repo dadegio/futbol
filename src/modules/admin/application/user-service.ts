@@ -12,6 +12,7 @@ const USER_ROLES = new Set([
   "ADMIN",
   "LEAGUE_ADMIN",
   "CAPTAIN",
+  "COACH",
   "REFEREE",
   "CREATOR",
 ]);
@@ -28,6 +29,16 @@ export async function listUsers() {
       adminLeague: { select: { name: true } },
       team: { select: { name: true } },
       captainAssignments: {
+        select: {
+          id: true,
+          leagueId: true,
+          teamId: true,
+          league: { select: { name: true } },
+          team: { select: { name: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      coachAssignments: {
         select: {
           id: true,
           leagueId: true,
@@ -85,11 +96,25 @@ export async function createUser({
         : "Seleziona il torneo da amministrare"
     );
   }
-  if (role === "CAPTAIN" && !teamId) {
-    throw new AppError(400, "Specifica teamId per un capitano");
+  if ((role === "CAPTAIN" || role === "COACH") && !teamId) {
+    throw new AppError(
+      400,
+      role === "COACH" ? "Seleziona la squadra dell'allenatore" : "Specifica teamId per un capitano"
+    );
   }
   if (role === "REFEREE" && !refereeId) {
     throw new AppError(400, "Seleziona l'arbitro da collegare all'account");
+  }
+
+  const staffTeam =
+    (role === "CAPTAIN" || role === "COACH") && teamId
+      ? await prisma.team.findUnique({
+          where: { id: teamId },
+          select: { leagueId: true },
+        })
+      : null;
+  if ((role === "CAPTAIN" || role === "COACH") && !staffTeam) {
+    throw new AppError(400, "Squadra non valida");
   }
 
   const refereeLeague =
@@ -123,16 +148,12 @@ export async function createUser({
         teamId: role === "CAPTAIN" ? teamId : null,
         refereeId: role === "REFEREE" ? refereeId : null,
         captainAssignments:
-          role === "CAPTAIN" && teamId
-            ? {
-                create: {
-                  teamId,
-                  leagueId: (await prisma.team.findUniqueOrThrow({
-                    where: { id: teamId },
-                    select: { leagueId: true },
-                  })).leagueId,
-                },
-              }
+          role === "CAPTAIN" && teamId && staffTeam
+            ? { create: { teamId, leagueId: staffTeam.leagueId } }
+            : undefined,
+        coachAssignments:
+          role === "COACH" && teamId && staffTeam
+            ? { create: { teamId, leagueId: staffTeam.leagueId } }
             : undefined,
         creatorProfile:
           role === "CREATOR" && leagueId
@@ -157,7 +178,7 @@ export async function createUser({
     });
 
     await writeAuditLog({
-      leagueId: user.leagueId ?? null,
+      leagueId: user.leagueId ?? staffTeam?.leagueId ?? null,
       actor,
       action: "user.created",
       entityType: "user",

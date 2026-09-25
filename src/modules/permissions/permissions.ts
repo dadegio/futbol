@@ -49,6 +49,10 @@ export function isCreator(
   return Boolean(user?.role === "CREATOR" && leagueId && user.leagueId === leagueId);
 }
 
+function coachAssignments(user: Pick<SessionUser, "coachAssignments">) {
+  return user.coachAssignments ?? [];
+}
+
 function captainAssignments(user: Pick<SessionUser, "teamId" | "leagueId" | "captainAssignments">) {
   if (user.captainAssignments?.length) return user.captainAssignments;
   return user.teamId && user.leagueId
@@ -87,6 +91,8 @@ export function roleLabel(role: Role) {
       return "Admin torneo";
     case "CAPTAIN":
       return "Capitano";
+    case "COACH":
+      return "Allenatore";
     case "REFEREE":
       return "Arbitro";
     case "CREATOR":
@@ -108,7 +114,9 @@ export function canPerform(
     context.leagueId &&
       (user.leagueId === context.leagueId ||
         (user.role === "CAPTAIN" &&
-          captainAssignments(user).some((assignment) => assignment.leagueId === context.leagueId)))
+          captainAssignments(user).some((assignment) => assignment.leagueId === context.leagueId)) ||
+        (user.role === "COACH" &&
+          coachAssignments(user).some((assignment) => assignment.leagueId === context.leagueId)))
   );
 
   if (user.role === "LEAGUE_ADMIN" && leagueScoped) {
@@ -140,6 +148,10 @@ export function canPerform(
     if (permission === "team:manage" || permission === "player:manage") {
       return Boolean(context.teamId && teamIds.has(context.teamId));
     }
+  }
+
+  if (user.role === "COACH") {
+    if (permission === "league:view") return leagueScoped;
   }
 
   if (user.role === "REFEREE") {

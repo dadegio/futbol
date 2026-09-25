@@ -15,11 +15,18 @@ import { readApiError } from "@/modules/core/client-error";
 type UserRow = {
   id: string;
   username: string;
-  role: "ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "REFEREE" | "CREATOR";
+  role: "ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "COACH" | "REFEREE" | "CREATOR";
   teamId: string | null;
   refereeId: string | null;
   leagueId: string | null;
   captainAssignments?: Array<{
+    id: string;
+    leagueId: string;
+    teamId: string;
+    league: { name: string };
+    team: { name: string };
+  }>;
+  coachAssignments?: Array<{
     id: string;
     leagueId: string;
     teamId: string;
@@ -70,7 +77,7 @@ export default function AdminUsersPage() {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] =
-    useState<"ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "REFEREE" | "CREATOR">("CAPTAIN");
+    useState<"ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "COACH" | "REFEREE" | "CREATOR">("CAPTAIN");
   const [newTeamId, setNewTeamId] = useState("");
   const [newLeagueId, setNewLeagueId] = useState("");
   const [newRefereeId, setNewRefereeId] = useState("");
@@ -240,7 +247,7 @@ export default function AdminUsersPage() {
     if (!newUsername.trim()) { setFormErr("Username obbligatorio"); return; }
     if (newPassword.length < 8) { setFormErr("Password minimo 8 caratteri"); return; }
     if ((newRole === "LEAGUE_ADMIN" || newRole === "CREATOR") && !newLeagueId) { setFormErr(newRole === "CREATOR" ? "Seleziona il torneo del creator" : "Seleziona un torneo"); return; }
-    if (newRole === "CAPTAIN" && !newTeamId) { setFormErr("Seleziona una squadra"); return; }
+    if ((newRole === "CAPTAIN" || newRole === "COACH") && !newTeamId) { setFormErr("Seleziona una squadra"); return; }
     if (newRole === "REFEREE" && !newRefereeId) { setFormErr("Seleziona un arbitro"); return; }
 
     setCreating(true);
@@ -253,7 +260,7 @@ export default function AdminUsersPage() {
           password: newPassword,
           role: newRole,
           leagueId: newRole === "LEAGUE_ADMIN" || newRole === "CREATOR" ? newLeagueId : null,
-          teamId: newRole === "CAPTAIN" ? newTeamId : null,
+          teamId: newRole === "CAPTAIN" || newRole === "COACH" ? newTeamId : null,
           refereeId: newRole === "REFEREE" ? newRefereeId : null,
         }),
       });
@@ -283,7 +290,7 @@ export default function AdminUsersPage() {
           <CardHeader
             tag="Admin"
             title="Gestione utenti"
-            description="Gestisci Super Admin, Admin torneo, capitani, arbitri e creator."
+            description="Gestisci Super Admin, Admin torneo, capitani, allenatori, arbitri e creator."
           />
         </Card>
 
@@ -320,11 +327,12 @@ export default function AdminUsersPage() {
                   value={newRole}
                   onChange={(e) =>
                     setNewRole(
-                      e.target.value as "ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "REFEREE" | "CREATOR"
+                      e.target.value as "ADMIN" | "LEAGUE_ADMIN" | "CAPTAIN" | "COACH" | "REFEREE" | "CREATOR"
                     )
                   }
                 >
                   <option value="CAPTAIN" className="text-black">Capitano</option>
+                  <option value="COACH" className="text-black">Allenatore</option>
                   <option value="REFEREE" className="text-black">Arbitro</option>
                   <option value="ADMIN" className="text-black">Super Admin</option>
                   <option value="LEAGUE_ADMIN" className="text-black">Admin torneo</option>
@@ -338,9 +346,9 @@ export default function AdminUsersPage() {
                     ))}
                   </Select>
                 )}
-                {newRole === "CAPTAIN" && (
+                {(newRole === "CAPTAIN" || newRole === "COACH") && (
                   <Select value={newTeamId} onChange={(e) => setNewTeamId(e.target.value)}>
-                    <option value="" className="text-black">Seleziona squadra</option>
+                    <option value="" className="text-black">{newRole === "COACH" ? "Squadra allenata…" : "Seleziona squadra"}</option>
                     {teams.map((t) => (
                       <option key={t.id} value={t.id} className="text-black">{t.name}</option>
                     ))}
@@ -413,7 +421,9 @@ export default function AdminUsersPage() {
                                   ? "Arbitro"
                                   : u.role === "CREATOR"
                                     ? "Creator"
-                                    : "Capitano"}
+                                    : u.role === "COACH"
+                                      ? "Allenatore"
+                                      : "Capitano"}
                           </span>
                         </div>
                         <div className="mt-1 text-sm text-[var(--foreground)]/50">
@@ -423,6 +433,10 @@ export default function AdminUsersPage() {
                               ? `Creator: ${u.creatorProfile.displayName} (${u.creatorProfile.league.name})`
                               : u.role === "CAPTAIN"
                                 ? `${u.captainAssignments?.length ?? (u.team ? 1 : 0)} squadre associate`
+                                : u.role === "COACH"
+                                  ? u.coachAssignments?.[0]
+                                    ? `Allenatore: ${u.coachAssignments[0].team.name} (${u.coachAssignments[0].league.name})`
+                                    : "Allenatore senza squadra"
                                 : u.team
                                   ? `Squadra: ${u.team.name}`
                                   : u.referee

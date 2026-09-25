@@ -37,6 +37,10 @@ export async function authenticateUser(input: {
         select: { leagueId: true, teamId: true },
         orderBy: { createdAt: "asc" },
       },
+      coachAssignments: {
+        select: { leagueId: true, teamId: true },
+        orderBy: { createdAt: "asc" },
+      },
       referee: { select: { leagueId: true } },
     },
   });
@@ -63,6 +67,8 @@ export async function authenticateUser(input: {
             ? [{ leagueId: user.leagueId, teamId: user.teamId }]
             : []
         : [],
+    coachAssignments:
+      user.role === "COACH" ? user.coachAssignments : [],
   };
 
   return {
