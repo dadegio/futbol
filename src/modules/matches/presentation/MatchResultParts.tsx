@@ -35,6 +35,8 @@ type StatRow = {
   playerId: string;
   goals: number;
   assists: number;
+  yellowCards: number;
+  redCards: number;
 };
 
 type Referee = {
@@ -224,14 +226,14 @@ export function TeamStatsCard({
   colorHex?: string | null;
   secondaryColorHex?: string | null;
   players: Player[];
-  stats: Record<string, { goals: string; assists: string }>;
+  stats: Record<string, { goals: string; assists: string; yellowCards: string; redCards: string }>;
   sheet: Record<string, boolean>;
   mvpPlayerId?: string;
   setMvpPlayerId?: (playerId: string) => void;
   showMvpSelection?: boolean;
   coachSuggestedStatuses?: Record<string, "STARTER" | "BENCH">;
   toggleSheet: (playerId: string, checked: boolean) => void;
-  setPlayerStat: (playerId: string, key: "goals" | "assists", value: string) => void;
+  setPlayerStat: (playerId: string, key: "goals" | "assists" | "yellowCards" | "redCards", value: string) => void;
   readOnly?: boolean;
   isAdmin?: boolean;
   showEligibility?: boolean;
@@ -278,21 +280,24 @@ export function TeamStatsCard({
       ) : (
         <div>
           {displayedPlayers.map((p, i) => {
-            const hasStats = Number(stats[p.id]?.goals || 0) > 0 || Number(stats[p.id]?.assists || 0) > 0;
+            const hasStats =
+              Number(stats[p.id]?.goals || 0) > 0 ||
+              Number(stats[p.id]?.assists || 0) > 0 ||
+              Number(stats[p.id]?.yellowCards || 0) > 0 ||
+              Number(stats[p.id]?.redCards || 0) > 0;
             const eligible = isPlayerEligible(p);
             return (
               <div
                 key={p.id}
                 className={[
-                  "grid items-center gap-3 px-4 py-3",
+                  "grid grid-cols-[32px_48px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[32px_48px_minmax(0,1fr)_auto]",
                   i < displayedPlayers.length - 1 ? "border-b border-[var(--border)]" : "",
                   mvpPlayerId === p.id
                     ? "bg-amber-400/[0.07]"
                     : hasStats
                       ? "bg-[var(--accent-soft)]"
                       : "",
-                ].join(" ")}
-                style={{ gridTemplateColumns: "32px 48px minmax(0,1fr) auto" }}
+].join(" ")}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--card-2)] text-[11px] font-black text-[var(--muted)]">{p.number}</div>
 
@@ -313,7 +318,7 @@ export function TeamStatsCard({
                   )}
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
+                <div className="col-span-3 flex flex-col items-end gap-2 border-t border-[var(--border)]/60 pt-2 sm:col-span-1 sm:border-t-0 sm:pt-0">
                   {showEligibility ? (
                     <div className="flex min-h-8 flex-wrap items-center justify-end gap-2">
                       <label className="flex items-center gap-1 text-[10px] font-black text-[var(--muted)]">
@@ -353,6 +358,8 @@ export function TeamStatsCard({
                   <div className="flex items-center gap-1.5">
                     <StatInput label="G" value={stats[p.id]?.goals ?? ""} onChange={(v) => setPlayerStat(p.id, "goals", v)} readOnly={readOnly} />
                     <StatInput label="A" value={stats[p.id]?.assists ?? ""} onChange={(v) => setPlayerStat(p.id, "assists", v)} readOnly={readOnly} />
+                    <CardStatInput tone="yellow" value={stats[p.id]?.yellowCards ?? ""} onChange={(v) => setPlayerStat(p.id, "yellowCards", v)} readOnly={readOnly} />
+                    <CardStatInput tone="red" value={stats[p.id]?.redCards ?? ""} onChange={(v) => setPlayerStat(p.id, "redCards", v)} readOnly={readOnly} />
                   </div>
                 </div>
               </div>
@@ -396,6 +403,40 @@ function PlayerSheetPhoto({ player, onPreview }: { player: Player; onPreview: (p
         <ZoomIn size={11} />
       </span>
     </button>
+  );
+}
+
+function CardStatInput({
+  tone,
+  value,
+  onChange,
+  readOnly,
+}: {
+  tone: "yellow" | "red";
+  value: string;
+  onChange: (v: string) => void;
+  readOnly?: boolean;
+}) {
+  const label = tone === "yellow" ? "Gialli" : "Rossi";
+  const swatch = tone === "yellow" ? "bg-yellow-300" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-1" title={label}>
+      <span className={`h-4 w-2.5 shrink-0 rounded-[2px] ${swatch}`} aria-label={label} />
+      <input
+        value={value === "0" ? "" : value}
+        placeholder="0"
+        onChange={(e) => !readOnly && onChange(e.target.value)}
+        inputMode="numeric"
+        readOnly={readOnly}
+        aria-label={label}
+        className={[
+          "h-8 w-9 rounded-xl border text-center text-[13px] font-black text-[var(--foreground)] outline-none placeholder:text-[var(--border-strong)]",
+          readOnly
+            ? "cursor-default border-transparent bg-transparent"
+            : "border-[var(--border)] bg-[var(--card-2)] focus:border-[var(--accent)]",
+        ].join(" ")}
+      />
+    </div>
   );
 }
 

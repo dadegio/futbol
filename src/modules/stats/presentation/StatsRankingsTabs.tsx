@@ -7,7 +7,7 @@ import Card from "src/app/_components/ui/card";
 import type { PlayerStat, TeamStat } from "@/modules/stats/domain/league-stats";
 import { FormDots, MetricNumber, PlayerAvatar, SmallMetric, TeamLogo, formScore } from "@/modules/stats/presentation/StatsUi";
 
-type PlayerSort = "contributions" | "goals" | "assists" | "appearances" | "mvp" | "rate";
+type PlayerSort = "contributions" | "goals" | "assists" | "appearances" | "mvp" | "rate" | "yellowCards" | "redCards";
 type TeamSort = "points" | "attack" | "defense" | "cleanSheets" | "form";
 
 export function TeamsTab({ teams, leagueId }: { teams: TeamStat[]; leagueId: string }) {
@@ -101,6 +101,8 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
     if (sort === "goals") return rows.sort((a, b) => b.goals - a.goals || b.assists - a.assists);
     if (sort === "assists") return rows.sort((a, b) => b.assists - a.assists || b.goals - a.goals);
     if (sort === "appearances") return rows.sort((a, b) => b.appearances - a.appearances || b.contributions - a.contributions);
+    if (sort === "yellowCards") return rows.sort((a, b) => b.yellowCards - a.yellowCards || b.redCards - a.redCards);
+    if (sort === "redCards") return rows.sort((a, b) => b.redCards - a.redCards || b.yellowCards - a.yellowCards);
     if (sort === "mvp") return rows.sort((a, b) => b.mvpAwards - a.mvpAwards || b.contributions - a.contributions);
     if (sort === "rate") return rows.sort((a, b) => b.contributionsPerAppearance - a.contributionsPerAppearance || b.contributions - a.contributions);
     return rows.sort((a, b) => b.contributions - a.contributions || b.goals - a.goals || b.assists - a.assists);
@@ -127,19 +129,23 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
           <option value="goals">Gol</option>
           <option value="assists">Assist</option>
           <option value="appearances">Presenze</option>
+          <option value="yellowCards">Cartellini gialli</option>
+          <option value="redCards">Cartellini rossi</option>
           <option value="mvp">MVP</option>
           <option value="rate">G+A per presenza</option>
         </select>
       </Card>
 
       <Card className="overflow-hidden !p-0">
-        <div className="grid grid-cols-[32px_58px_minmax(0,1fr)_44px_44px_48px] items-center border-b border-[var(--border)] px-3 py-3 text-[10px] font-black uppercase tracking-wide text-[var(--muted)] sm:grid-cols-[36px_64px_minmax(0,1fr)_58px_58px_58px_72px]">
+        <div className="grid grid-cols-[28px_52px_minmax(0,1fr)_36px_36px_32px_32px] items-center border-b border-[var(--border)] px-2 py-3 text-[10px] font-black uppercase tracking-wide text-[var(--muted)] sm:grid-cols-[36px_64px_minmax(0,1fr)_50px_50px_44px_44px_58px_72px] sm:px-3">
           <div>#</div>
           <div></div>
           <div>Giocatore</div>
           <div className="text-center">G</div>
           <div className="text-center">A</div>
-          <div className="text-center">G+A</div>
+          <div className="text-center"><span className="mx-auto block h-4 w-2.5 rounded-[2px] bg-yellow-300" title="Gialli" /></div>
+          <div className="text-center"><span className="mx-auto block h-4 w-2.5 rounded-[2px] bg-red-500" title="Rossi" /></div>
+          <div className="hidden text-center sm:block">G+A</div>
           <div className="hidden text-right sm:block">G+A/G</div>
         </div>
         {filtered.length === 0 ? (
@@ -149,7 +155,7 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
             <Link
               key={player.playerId}
               href={`/leagues/${leagueId}/players/${player.playerId}`}
-              className="grid grid-cols-[32px_58px_minmax(0,1fr)_44px_44px_48px] items-center border-b border-[var(--border)] px-3 py-3 transition hover:bg-[var(--card-2)] last:border-b-0 sm:grid-cols-[36px_64px_minmax(0,1fr)_58px_58px_58px_72px]"
+              className="grid grid-cols-[28px_52px_minmax(0,1fr)_36px_36px_32px_32px] items-center border-b border-[var(--border)] px-2 py-3 transition hover:bg-[var(--card-2)] last:border-b-0 sm:grid-cols-[36px_64px_minmax(0,1fr)_50px_50px_44px_44px_58px_72px] sm:px-3"
             >
               <div className="text-xs font-black tabular-nums text-[var(--muted)]">{index + 1}</div>
               <PlayerAvatar player={player} />
@@ -168,7 +174,9 @@ export function PlayersTab({ players, leagueId }: { players: PlayerStat[]; leagu
               </div>
               <MetricNumber value={player.goals} />
               <MetricNumber value={player.assists} />
-              <MetricNumber value={player.contributions} strong />
+              <MetricNumber value={player.yellowCards} />
+              <MetricNumber value={player.redCards} />
+              <div className="hidden sm:block"><MetricNumber value={player.contributions} strong /></div>
               <div className="hidden text-right text-sm font-black tabular-nums text-[var(--foreground)] sm:block">
                 {player.contributionsPerAppearance.toFixed(2)}
               </div>

@@ -172,6 +172,8 @@ export async function getCoachLineupData(
             playerId: true,
             goals: true,
             assists: true,
+            yellowCards: true,
+            redCards: true,
           },
         })
       : Promise.resolve([]),
@@ -190,7 +192,7 @@ export async function getCoachLineupData(
 
   const playerStats = new Map<
     string,
-    { appearances: number; goals: number; assists: number; mvp: number }
+    { appearances: number; goals: number; assists: number; yellowCards: number; redCards: number; mvp: number }
   >();
 
   for (const player of players) {
@@ -198,6 +200,8 @@ export async function getCoachLineupData(
       appearances: 0,
       goals: 0,
       assists: 0,
+      yellowCards: 0,
+      redCards: 0,
       mvp: 0,
     });
   }
@@ -212,6 +216,8 @@ export async function getCoachLineupData(
     if (value) {
       value.goals += row.goals;
       value.assists += row.assists;
+      value.yellowCards += row.yellowCards;
+      value.redCards += row.redCards;
     }
   }
 
@@ -255,6 +261,8 @@ export async function getCoachLineupData(
         appearances: 0,
         goals: 0,
         assists: 0,
+        yellowCards: 0,
+        redCards: 0,
         mvp: 0,
       },
     })),

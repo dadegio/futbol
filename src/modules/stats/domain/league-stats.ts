@@ -52,6 +52,8 @@ export type PlayerStat = {
   appearances: number;
   goals: number;
   assists: number;
+  yellowCards: number;
+  redCards: number;
   contributions: number;
   goalsPerAppearance: number;
   assistsPerAppearance: number;

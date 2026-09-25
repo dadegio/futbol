@@ -521,7 +521,7 @@ export async function getPlayerStats({
   const [aggregate, sheetEntries, recentStats, appearances, mvpAwards] = await Promise.all([
     prisma.matchPlayerStat.aggregate({
       where: { playerId, match: { resultStatus: "FINAL" } },
-      _sum: { goals: true, assists: true },
+      _sum: { goals: true, assists: true, yellowCards: true, redCards: true },
     }),
     prisma.matchSheetPlayer.findMany({
       where: { playerId, match: { resultStatus: "FINAL" } },
@@ -543,22 +543,24 @@ export async function getPlayerStats({
     }),
     prisma.matchPlayerStat.findMany({
       where: { playerId, match: { resultStatus: "FINAL" } },
-      select: { matchId: true, goals: true, assists: true },
+      select: { matchId: true, goals: true, assists: true, yellowCards: true, redCards: true },
     }),
     prisma.matchSheetPlayer.count({ where: { playerId, match: { resultStatus: "FINAL" } } }),
     prisma.match.count({ where: { mvpPlayerId: playerId, resultStatus: "FINAL" } }),
   ]);
 
-  const statsByMatch = new Map<string, { goals: number; assists: number }>(
+  const statsByMatch = new Map<string, { goals: number; assists: number; yellowCards: number; redCards: number }>(
     recentStats.map((row) => [
       row.matchId,
-      { goals: row.goals, assists: row.assists },
+      { goals: row.goals, assists: row.assists, yellowCards: row.yellowCards, redCards: row.redCards },
     ])
   );
 
   return {
     goals: aggregate._sum.goals ?? 0,
     assists: aggregate._sum.assists ?? 0,
+    yellowCards: aggregate._sum.yellowCards ?? 0,
+    redCards: aggregate._sum.redCards ?? 0,
     appearances,
     mvpAwards,
     ...(showAdminDetails
@@ -575,6 +577,8 @@ export async function getPlayerStats({
         awayGoals: entry.match.awayGoals,
         goals: stat?.goals ?? 0,
         assists: stat?.assists ?? 0,
+        yellowCards: stat?.yellowCards ?? 0,
+        redCards: stat?.redCards ?? 0,
       };
     }),
   };

@@ -8,7 +8,7 @@ import {
 type SaveMatchResultBody = {
   homeGoals?: number;
   awayGoals?: number;
-  playerStats?: Array<{ playerId: string; goals: number; assists: number }>;
+  playerStats?: Array<{ playerId: string; goals: number; assists: number; yellowCards?: number; redCards?: number }>;
   sheetPlayerIds?: string[];
   mvpPlayerId?: string | null;
 };
@@ -50,9 +50,11 @@ function normalizeResultBody(body: SaveMatchResultBody) {
 
     const goals = asNonNegInt(row.goals);
     const assists = asNonNegInt(row.assists);
+    const yellowCards = asNonNegInt(row.yellowCards ?? 0);
+    const redCards = asNonNegInt(row.redCards ?? 0);
 
-    if (goals === null || assists === null) {
-      throw new AppError(400, "goals/assists non validi", "INVALID_PLAYER_STATS");
+    if (goals === null || assists === null || yellowCards === null || redCards === null) {
+      throw new AppError(400, "Statistiche giocatore non valide", "INVALID_PLAYER_STATS");
     }
   }
 
@@ -183,7 +185,7 @@ export async function saveMatchResult({
   if (statOutsideSheet) {
     throw new AppError(
       400,
-      "Gol e assist possono essere assegnati solo a giocatori presenti in distinta",
+      "Statistiche e cartellini possono essere assegnati solo a giocatori presenti in distinta",
       "STATS_OUTSIDE_SHEET"
     );
   }
@@ -221,6 +223,8 @@ export async function saveMatchResult({
           playerId: row.playerId,
           goals: Math.floor(row.goals),
           assists: Math.floor(row.assists),
+          yellowCards: Math.floor(row.yellowCards ?? 0),
+          redCards: Math.floor(row.redCards ?? 0),
         })),
       });
     }

@@ -203,7 +203,7 @@ export default async function CoachPage({ params }: { params: Promise<{ leagueId
                     <p className="truncate text-sm font-black text-[var(--foreground)]">#{player.number} {player.firstName} {player.lastName}</p>
                     <p className="mt-0.5 text-[10px] font-bold uppercase text-[var(--muted)]">{player.position ?? "Giocatore"}</p>
                     <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-black">
-                      <span>{player.stats.appearances} P</span><span>{player.stats.goals} G</span><span>{player.stats.assists} A</span><span className="text-amber-300">{player.stats.mvp} MVP</span>
+                      <span>{player.stats.appearances} P</span><span>{player.stats.goals} G</span><span>{player.stats.assists} A</span><span className="inline-flex items-center gap-1"><i className="h-3 w-2 rounded-[2px] bg-yellow-300" />{player.stats.yellowCards}</span><span className="inline-flex items-center gap-1"><i className="h-3 w-2 rounded-[2px] bg-red-500" />{player.stats.redCards}</span><span className="text-amber-300">{player.stats.mvp} MVP</span>
                     </div>
                   </div>
                 </Link>

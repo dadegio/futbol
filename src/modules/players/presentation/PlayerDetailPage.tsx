@@ -46,6 +46,8 @@ type Player = {
 type PlayerStatsResponse = {
   goals?: number;
   assists?: number;
+  yellowCards?: number;
+  redCards?: number;
   appearances?: number;
   mvpAwards?: number;
   feeCents?: number;
@@ -58,6 +60,8 @@ type PlayerStatsResponse = {
     awayGoals: number | null;
     goals: number;
     assists: number;
+    yellowCards: number;
+    redCards: number;
   }>;
 };
 
@@ -113,6 +117,8 @@ export default function PlayerPage({
   const [player, setPlayer] = useState<Player>(initialPlayer);
   const [goals, setGoals] = useState(initialStats.goals ?? 0);
   const [assists, setAssists] = useState(initialStats.assists ?? 0);
+  const [yellowCards, setYellowCards] = useState(initialStats.yellowCards ?? 0);
+  const [redCards, setRedCards] = useState(initialStats.redCards ?? 0);
   const [appearances, setAppearances] = useState(initialStats.appearances ?? 0);
   const [mvpAwards, setMvpAwards] = useState(initialStats.mvpAwards ?? 0);
   const [feeCents, setFeeCents] = useState<number | null>(
@@ -170,6 +176,8 @@ export default function PlayerPage({
       setPlayer(playerData);
       setGoals(statsRes.ok ? (statsData.goals ?? 0) : 0);
       setAssists(statsRes.ok ? (statsData.assists ?? 0) : 0);
+      setYellowCards(statsRes.ok ? (statsData.yellowCards ?? 0) : 0);
+      setRedCards(statsRes.ok ? (statsData.redCards ?? 0) : 0);
       setAppearances(statsRes.ok ? (statsData.appearances ?? 0) : 0);
       setMvpAwards(statsRes.ok ? (statsData.mvpAwards ?? 0) : 0);
       setFeeCents(statsRes.ok && typeof statsData.feeCents === "number" ? statsData.feeCents : null);
@@ -330,9 +338,11 @@ export default function PlayerPage({
                   </div>
                 )}
 
-                <div className={isAdmin ? "grid grid-cols-2 gap-2 sm:grid-cols-5" : "grid grid-cols-2 gap-2 sm:grid-cols-4"}>
+                <div className={isAdmin ? "grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7" : "grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6"}>
                   <HeroStat label="Gol" value={goals} icon={<Goal size={15} />} />
                   <HeroStat label="Assist" value={assists} icon={<Handshake size={15} />} />
+                  <HeroStat label="Gialli" value={yellowCards} icon={<span className="h-4 w-2.5 rounded-[2px] bg-yellow-300" />} />
+                  <HeroStat label="Rossi" value={redCards} icon={<span className="h-4 w-2.5 rounded-[2px] bg-red-500" />} />
                   <HeroStat label="Presenze" value={appearances} icon={<CalendarDays size={15} />} />
                   <HeroStat label="MVP" value={mvpAwards} icon={<Crown size={15} />} />
                   {isAdmin && <HeroStat label="Quote" value={formatEuro(feeCents ?? appearances * 50)} icon={<WalletCards size={15} />} />}
@@ -481,7 +491,7 @@ export default function PlayerPage({
               <Link key={match.matchId} href={`/leagues/${leagueId}/matches/${match.matchId}`} className="block rounded-2xl border border-[var(--border)] bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05]">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0"><div className="break-words font-semibold text-[var(--foreground)]">{match.homeTeamName} vs {match.awayTeamName}</div><div className="mt-1 text-sm text-[var(--foreground)]/55">{match.date ? new Date(match.date).toLocaleDateString("it-IT") : "Data da definire"}</div></div>
-                  <div className="flex items-center gap-4"><div className="text-sm font-bold text-[var(--foreground)]">{match.homeGoals ?? "-"} - {match.awayGoals ?? "-"}</div><div className="text-xs text-[var(--foreground)]/60">{match.goals} gol · {match.assists} assist</div></div>
+                  <div className="flex flex-wrap items-center gap-3"><div className="text-sm font-bold text-[var(--foreground)]">{match.homeGoals ?? "-"} - {match.awayGoals ?? "-"}</div><div className="flex flex-wrap items-center gap-2 text-xs text-[var(--foreground)]/60"><span>{match.goals} gol</span><span>{match.assists} assist</span>{match.yellowCards > 0 && <span className="inline-flex items-center gap-1"><i className="h-3.5 w-2 rounded-[2px] bg-yellow-300" />{match.yellowCards}</span>}{match.redCards > 0 && <span className="inline-flex items-center gap-1"><i className="h-3.5 w-2 rounded-[2px] bg-red-500" />{match.redCards}</span>}</div></div>
                 </div>
               </Link>
             ))}</div>

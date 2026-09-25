@@ -72,8 +72,8 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
       awayGoals: 1,
       sheetPlayerIds: [...home.playerIds, ...away.playerIds],
       playerStats: [
-        { playerId: home.playerIds[0], goals: 2, assists: 0 },
-        { playerId: home.playerIds[1], goals: 1, assists: 1 },
+        { playerId: home.playerIds[0], goals: 2, assists: 0, yellowCards: 1 },
+        { playerId: home.playerIds[1], goals: 1, assists: 1, redCards: 1 },
         { playerId: away.playerIds[0], goals: 1, assists: 0 },
       ],
       mvpPlayerId: home.playerIds[0],
@@ -86,6 +86,9 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
   assert.equal(stored.resultStatus, "DRAFT");
   assert.equal(await prisma.matchSheetPlayer.count({ where: { matchId: match.id } }), 16);
   assert.equal(await prisma.matchPlayerStat.count({ where: { matchId: match.id } }), 3);
+  const cardRows = await prisma.matchPlayerStat.findMany({ where: { matchId: match.id }, orderBy: { playerId: "asc" } });
+  assert.equal(cardRows.reduce((sum, row) => sum + row.yellowCards, 0), 1);
+  assert.equal(cardRows.reduce((sum, row) => sum + row.redCards, 0), 1);
 
   const draftTable = await getLeagueTable(league.id);
   assert.equal(draftTable.every((row) => row.played === 0), true, "la bozza non deve entrare in classifica");
@@ -113,6 +116,8 @@ test("distinta -> risultato -> statistiche -> classifica restano coerenti", asyn
   assert.equal(stats.overview.totalGoals, 4);
   assert.equal(stats.leaders.topScorer?.playerId, home.playerIds[0]);
   assert.equal(stats.playerStats.find((player) => player.playerId === home.playerIds[0])?.mvpAwards, 1);
+  assert.equal(stats.playerStats.find((player) => player.playerId === home.playerIds[0])?.yellowCards, 1);
+  assert.equal(stats.playerStats.find((player) => player.playerId === home.playerIds[1])?.redCards, 1);
   assert.equal(
     stats.playerStats.find((player) => player.playerId === home.playerIds[0])?.appearances,
     1

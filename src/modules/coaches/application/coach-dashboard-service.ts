@@ -83,7 +83,7 @@ export async function getCoachDashboard(session: SessionUser | null, leagueId: s
     finishedIds.length
       ? prisma.matchPlayerStat.findMany({
           where: { matchId: { in: finishedIds }, player: { teamId } },
-          select: { playerId: true, goals: true, assists: true },
+          select: { playerId: true, goals: true, assists: true, yellowCards: true, redCards: true },
         })
       : Promise.resolve([]),
     finishedIds.length
@@ -94,8 +94,8 @@ export async function getCoachDashboard(session: SessionUser | null, leagueId: s
       : Promise.resolve([]),
   ]);
 
-  const totals = new Map<string, { appearances: number; goals: number; assists: number; mvp: number }>();
-  for (const player of players) totals.set(player.id, { appearances: 0, goals: 0, assists: 0, mvp: 0 });
+  const totals = new Map<string, { appearances: number; goals: number; assists: number; yellowCards: number; redCards: number; mvp: number }>();
+  for (const player of players) totals.set(player.id, { appearances: 0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, mvp: 0 });
   for (const row of appearances) {
     const current = totals.get(row.playerId);
     if (current) current.appearances += 1;
@@ -105,6 +105,8 @@ export async function getCoachDashboard(session: SessionUser | null, leagueId: s
     if (current) {
       current.goals += row.goals;
       current.assists += row.assists;
+      current.yellowCards += row.yellowCards;
+      current.redCards += row.redCards;
     }
   }
   for (const match of finished) {
@@ -116,7 +118,7 @@ export async function getCoachDashboard(session: SessionUser | null, leagueId: s
   const playerCards = players
     .map((player) => ({
       ...player,
-      stats: totals.get(player.id) ?? { appearances: 0, goals: 0, assists: 0, mvp: 0 },
+      stats: totals.get(player.id) ?? { appearances: 0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, mvp: 0 },
     }))
     .sort((a, b) =>
       (b.stats.goals + b.stats.assists) - (a.stats.goals + a.stats.assists) ||

@@ -139,7 +139,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
 
       prisma.matchPlayerStat.groupBy({
         by: ["playerId"],
-        _sum: { goals: true, assists: true },
+        _sum: { goals: true, assists: true, yellowCards: true, redCards: true },
         where: {
           match: {
             leagueId,
@@ -364,6 +364,8 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
       {
         goals: row._sum.goals ?? 0,
         assists: row._sum.assists ?? 0,
+        yellowCards: row._sum.yellowCards ?? 0,
+        redCards: row._sum.redCards ?? 0,
       },
     ])
   );
@@ -376,7 +378,7 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
   }
 
   const playerStats: PlayerStat[] = players.map((player) => {
-    const agg = playerAggById.get(player.id) ?? { goals: 0, assists: 0 };
+    const agg = playerAggById.get(player.id) ?? { goals: 0, assists: 0, yellowCards: 0, redCards: 0 };
     const appearances = appearancesById.get(player.id) ?? 0;
     const contributions = agg.goals + agg.assists;
 
@@ -397,6 +399,8 @@ export async function getLeagueStats(leagueId: string): Promise<LeagueStatsRespo
       appearances,
       goals: agg.goals,
       assists: agg.assists,
+      yellowCards: agg.yellowCards,
+      redCards: agg.redCards,
       contributions,
       goalsPerAppearance: appearances ? round(agg.goals / appearances) : 0,
       assistsPerAppearance: appearances ? round(agg.assists / appearances) : 0,

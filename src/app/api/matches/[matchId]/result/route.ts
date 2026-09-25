@@ -12,7 +12,7 @@ import { writeAuditLog } from "@/modules/audit/application/audit-service";
 type Body = {
   homeGoals?: number;
   awayGoals?: number;
-  playerStats?: Array<{ playerId: string; goals: number; assists: number }>;
+  playerStats?: Array<{ playerId: string; goals: number; assists: number; yellowCards?: number; redCards?: number }>;
   sheetPlayerIds?: string[];
 };
 

@@ -60,6 +60,8 @@ type Player = {
     appearances: number;
     goals: number;
     assists: number;
+    yellowCards: number;
+    redCards: number;
     mvp: number;
   };
 };
@@ -375,17 +377,16 @@ export default function CoachLineupEditor({
     [initialData.players]
   );
 
-  const selectedPlayer =
-    (selectedPlayerId ? playerById.get(selectedPlayerId) : null) ??
-    initialData.players[0] ??
-    null;
-
   const starters = useMemo(
     () => initialData.players.filter((player) => entries[player.id]?.status === "STARTER"),
     [entries, initialData.players]
   );
   const bench = useMemo(
     () => initialData.players.filter((player) => entries[player.id]?.status === "BENCH"),
+    [entries, initialData.players]
+  );
+  const available = useMemo(
+    () => initialData.players.filter((player) => !entries[player.id]),
     [entries, initialData.players]
   );
   const called = starters.length + bench.length;
@@ -585,6 +586,14 @@ export default function CoachLineupEditor({
     setStatus(player, "BENCH");
   }
 
+  function dropOnAvailable(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragOverSlot(null);
+    const player = draggedPlayer(event);
+    if (!player) return;
+    setStatus(player, "OUT");
+  }
+
   function roleForEntry(entry: Entry): CoachSlotRole {
     return closestPresetRole(
       formation,
@@ -703,53 +712,6 @@ export default function CoachLineupEditor({
           </div>
         </Card>
 
-        {selectedPlayer && (
-          <Card className="overflow-hidden !p-0">
-            <div
-              className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5"
-              style={{
-                background: `linear-gradient(100deg, ${primary}18 0%, var(--card) 48%, ${secondary}16 100%)`,
-              }}
-            >
-              <PlayerPhoto player={selectedPlayer} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h2 className="truncate text-2xl font-black text-[var(--foreground)]">
-                    {selectedPlayer.firstName} {selectedPlayer.lastName}
-                  </h2>
-                  <span className="text-xs font-black uppercase text-[var(--accent)]">
-                    #{selectedPlayer.number} · {selectedPlayer.position ?? "—"}
-                  </span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-                  {[
-                    ["P", selectedPlayer.stats.appearances],
-                    ["G", selectedPlayer.stats.goals],
-                    ["A", selectedPlayer.stats.assists],
-                    ["G+A", selectedPlayer.stats.goals + selectedPlayer.stats.assists],
-                    ["MVP", selectedPlayer.stats.mvp],
-                  ].map(([label, value]) => (
-                    <span key={String(label)} className="text-sm">
-                      <b className="text-lg font-black text-[var(--foreground)]">
-                        {value}
-                      </b>{" "}
-                      <span className="text-[10px] font-black uppercase text-[var(--muted)]">
-                        {label}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <Link
-                href={`/leagues/${leagueId}/players/${selectedPlayer.id}`}
-                className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-xs font-black text-[var(--accent)]"
-              >
-                Profilo <ExternalLink size={13} />
-              </Link>
-            </div>
-          </Card>
-        )}
-
         {!initialData.editable && (
           <Card className="border-amber-400/20 bg-amber-400/[0.04]">
             <div className="flex items-start gap-3">
@@ -766,34 +728,25 @@ export default function CoachLineupEditor({
           </Card>
         )}
 
-        <Card>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="font-black text-[var(--foreground)]">Modulo</p>
-              <p className="mt-1 max-w-2xl text-xs text-[var(--muted)]">
-                Scegli un modulo: i giocatori restano agganciati agli otto slot.
-                Trascina una maglia sopra un'altra per scambiarle oppure trascina
-                un giocatore dalla rosa o dalla panchina direttamente nello slot desiderato.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {COACH_FORMATION_OPTIONS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={!initialData.editable}
-                  onClick={() => chooseFormation(option)}
-                  className={[
-                    "rounded-xl border px-3 py-2 text-[10px] font-black transition",
-                    formation === option
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)]",
-                  ].join(" ")}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
+        <Card className="!p-3 sm:!p-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className="mr-1 text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">Modulo</span>
+            {COACH_FORMATION_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                disabled={!initialData.editable}
+                onClick={() => chooseFormation(option)}
+                className={[
+                  "min-h-9 rounded-xl border px-3 text-[11px] font-black transition",
+                  formation === option
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)]",
+                ].join(" ")}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         </Card>
 
@@ -813,7 +766,7 @@ export default function CoachLineupEditor({
                 </div>
               </div>
               <span className="text-[10px] font-black uppercase text-[var(--muted)]">
-                Trascina dalla rosa →
+                Trascina dai disponibili →
               </span>
             </div>
 
@@ -1005,22 +958,28 @@ export default function CoachLineupEditor({
             </div>
           </Card>
 
-          <Card>
-            <div className="flex items-center gap-3">
-              <Users size={18} className="text-[var(--accent)]" />
-              <div>
-                <p className="font-black text-[var(--foreground)]">Rosa</p>
-                <p className="text-xs text-[var(--muted)]">
-                  Trascina un giocatore direttamente sullo slot desiderato; sopra un titolare lo sostituisce o lo scambia.
-                </p>
+          <Card
+            onDragOver={(event) => {
+              if (!initialData.editable) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={dropOnAvailable}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Users size={18} className="text-[var(--accent)]" />
+                <div>
+                  <p className="font-black text-[var(--foreground)]">Disponibili</p>
+                  <p className="text-[11px] text-[var(--muted)]">{available.length} non convocati · trascina qui per rimuovere</p>
+                </div>
               </div>
+              <span className="rounded-full bg-[var(--card-2)] px-2.5 py-1 text-[10px] font-black text-[var(--muted)]">{called}/{initialData.maxCalled}</span>
             </div>
 
             <div className="mt-4 max-h-[790px] space-y-2 overflow-y-auto pr-1">
-              {initialData.players.map((player) => {
-                const status = entries[player.id]?.status ?? "OUT";
+              {available.length ? available.map((player) => {
                 const preferences = coachRolePreferences(player.position);
-
                 return (
                   <div
                     key={player.id}
@@ -1028,72 +987,48 @@ export default function CoachLineupEditor({
                     onDragStart={(event) => beginRosterDrag(event, player)}
                     onDragEnd={() => setDragOverSlot(null)}
                     className={[
-                      "rounded-2xl border bg-[var(--card-2)] p-3 transition",
-                      selectedPlayerId === player.id
-                        ? "border-[var(--accent)]"
-                        : "border-[var(--border)]",
-                      initialData.editable && player.eligible
-                        ? "cursor-grab active:cursor-grabbing"
-                        : "",
+                      "rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-2.5 transition",
+                      initialData.editable && player.eligible ? "cursor-grab hover:border-[var(--accent)]/45 active:cursor-grabbing" : "",
                     ].join(" ")}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPlayerId(player.id)}
-                      className="flex w-full items-center gap-3 text-left"
-                    >
-                      <PlayerPhoto player={player} />
+                    <div className="flex items-center gap-3">
+                      <PlayerPhoto player={player} compact />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black text-[var(--foreground)]">
-                          #{player.number} {player.firstName} {player.lastName}
+                        <p className="truncate text-sm font-black text-[var(--foreground)]">#{player.number} {player.firstName} {player.lastName}</p>
+                        <p className="mt-0.5 truncate text-[10px] font-bold uppercase text-[var(--muted)]">
+                          {player.position ?? "Giocatore"}{preferences.length ? ` · ${preferences.map((role) => ROLE_LABEL[role]).join("/")}` : ""}
                         </p>
-                        <p className="text-[10px] font-bold uppercase text-[var(--muted)]">
-                          {player.position ?? "Giocatore"} · preferenza {preferences.map((role) => ROLE_LABEL[role]).join(" / ")}
-                        </p>
-                        <p className="mt-1 text-[10px] font-bold text-[var(--muted)]">
-                          {player.stats.appearances}P · {player.stats.goals}G · {player.stats.assists}A · {player.stats.mvp} MVP
-                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-black text-[var(--muted)]">
+                          <span>{player.stats.appearances}P</span>
+                          <span>{player.stats.goals}G</span>
+                          <span>{player.stats.assists}A</span>
+                          <span className="inline-flex items-center gap-1"><i className="h-3 w-2 rounded-[2px] bg-yellow-300" />{player.stats.yellowCards}</span>
+                          <span className="inline-flex items-center gap-1"><i className="h-3 w-2 rounded-[2px] bg-red-500" />{player.stats.redCards}</span>
+                        </div>
                       </div>
                       {!player.eligible && (
-                        <ShieldAlert
-                          size={16}
-                          className="shrink-0 text-amber-300"
-                          aria-label="Non idoneo alla distinta"
-                        />
+                        <ShieldAlert size={16} className="shrink-0 text-amber-300" aria-label="Non idoneo alla distinta" />
                       )}
-                    </button>
-
-                    <div className="mt-3 grid grid-cols-[1fr_1fr_1fr_auto] gap-1">
-                      {(["STARTER", "BENCH", "OUT"] as const).map((value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          disabled={
-                            !initialData.editable ||
-                            (!player.eligible && value !== "OUT")
-                          }
-                          onClick={() => setStatus(player, value)}
-                          className={[
-                            "rounded-xl px-2 py-2 text-[9px] font-black transition",
-                            status === value
-                              ? "bg-[var(--accent)] text-black"
-                              : "bg-black/10 text-[var(--muted)]",
-                            !initialData.editable ||
-                            (!player.eligible && value !== "OUT")
-                              ? "cursor-not-allowed opacity-40"
-                              : "",
-                          ].join(" ")}
-                        >
-                          {value === "STARTER"
-                            ? "TITOLARE"
-                            : value === "BENCH"
-                              ? "PANCA"
-                              : "FUORI"}
-                        </button>
-                      ))}
+                    </div>
+                    <div className="mt-2 grid grid-cols-[1fr_1fr_auto] gap-1.5">
+                      <button
+                        type="button"
+                        disabled={!initialData.editable || !player.eligible}
+                        onClick={() => setStatus(player, "STARTER")}
+                        className="rounded-xl bg-[var(--accent)] px-2 py-2 text-[9px] font-black text-black disabled:cursor-not-allowed disabled:opacity-35"
+                      >
+                        IN CAMPO
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!initialData.editable || !player.eligible}
+                        onClick={() => setStatus(player, "BENCH")}
+                        className="rounded-xl bg-black/15 px-2 py-2 text-[9px] font-black text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-35"
+                      >
+                        PANCHINA
+                      </button>
                       <Link
                         href={`/leagues/${leagueId}/players/${player.id}`}
-                        onClick={(event) => event.stopPropagation()}
                         className="grid min-h-8 place-items-center rounded-xl border border-[var(--border)] px-2 text-[var(--accent)]"
                         aria-label={`Apri profilo di ${player.firstName} ${player.lastName}`}
                       >
@@ -1102,7 +1037,11 @@ export default function CoachLineupEditor({
                     </div>
                   </div>
                 );
-              })}
+              }) : (
+                <div className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-8 text-center text-xs text-[var(--muted)]">
+                  Tutti i giocatori disponibili sono già convocati.
+                </div>
+              )}
             </div>
           </Card>
         </div>

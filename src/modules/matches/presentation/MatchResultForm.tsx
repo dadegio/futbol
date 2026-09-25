@@ -95,16 +95,28 @@ export default function MatchResultForm({ match }: { match: Match }) {
   const [dateErr, setDateErr] = useState<string | null>(null);
 
   const initial = useMemo(() => {
-    const m = new Map<string, { goals: number; assists: number }>();
-    for (const s of match.stats) m.set(s.playerId, { goals: s.goals, assists: s.assists });
+    const m = new Map<string, { goals: number; assists: number; yellowCards: number; redCards: number }>();
+    for (const s of match.stats) {
+      m.set(s.playerId, {
+        goals: s.goals,
+        assists: s.assists,
+        yellowCards: s.yellowCards ?? 0,
+        redCards: s.redCards ?? 0,
+      });
+    }
     return m;
   }, [match.stats]);
 
-  const [stats, setStats] = useState<Record<string, { goals: string; assists: string }>>(() => {
-    const out: Record<string, { goals: string; assists: string }> = {};
+  const [stats, setStats] = useState<Record<string, { goals: string; assists: string; yellowCards: string; redCards: string }>>(() => {
+    const out: Record<string, { goals: string; assists: string; yellowCards: string; redCards: string }> = {};
     for (const p of [...match.homeTeam.players, ...match.awayTeam.players]) {
       const s = initial.get(p.id);
-      out[p.id] = { goals: s ? String(s.goals) : "", assists: s ? String(s.assists) : "" };
+      out[p.id] = {
+        goals: s ? String(s.goals) : "",
+        assists: s ? String(s.assists) : "",
+        yellowCards: s ? String(s.yellowCards) : "",
+        redCards: s ? String(s.redCards) : "",
+      };
     }
     return out;
   });
@@ -131,6 +143,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
   const totals = useMemo(() => {
     let goalsSum = 0;
     let assistsSum = 0;
+    let yellowCardsSum = 0;
+    let redCardsSum = 0;
     let homeGoalsSum = 0;
     let awayGoalsSum = 0;
     let homeSheetCount = 0;
@@ -141,6 +155,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
       goalsSum += goals;
       homeGoalsSum += goals;
       assistsSum += Number(stats[p.id]?.assists || 0);
+      yellowCardsSum += Number(stats[p.id]?.yellowCards || 0);
+      redCardsSum += Number(stats[p.id]?.redCards || 0);
       if (sheet[p.id]) homeSheetCount += 1;
     }
 
@@ -149,16 +165,18 @@ export default function MatchResultForm({ match }: { match: Match }) {
       goalsSum += goals;
       awayGoalsSum += goals;
       assistsSum += Number(stats[p.id]?.assists || 0);
+      yellowCardsSum += Number(stats[p.id]?.yellowCards || 0);
+      redCardsSum += Number(stats[p.id]?.redCards || 0);
       if (sheet[p.id]) awaySheetCount += 1;
     }
 
-    return { goalsSum, assistsSum, homeGoalsSum, awayGoalsSum, homeSheetCount, awaySheetCount };
+    return { goalsSum, assistsSum, yellowCardsSum, redCardsSum, homeGoalsSum, awayGoalsSum, homeSheetCount, awaySheetCount };
   }, [stats, sheet, homePlayers, awayPlayers]);
 
   const missingHome = Math.max(0, FUTPOLI_RULES.minPlayersInMatchSheet - totals.homeSheetCount);
   const missingAway = Math.max(0, FUTPOLI_RULES.minPlayersInMatchSheet - totals.awaySheetCount);
 
-  function setPlayerStat(playerId: string, key: "goals" | "assists", value: string) {
+  function setPlayerStat(playerId: string, key: "goals" | "assists" | "yellowCards" | "redCards", value: string) {
     const cleaned = value.replace(/[^\d]/g, "");
     setStats((prev) => ({ ...prev, [playerId]: { ...prev[playerId], [key]: cleaned === "" ? "0" : cleaned } }));
   }
@@ -320,8 +338,14 @@ export default function MatchResultForm({ match }: { match: Match }) {
     }
 
     const playerStats = [...homePlayers, ...awayPlayers]
-      .map((p) => ({ playerId: p.id, goals: Number(stats[p.id]?.goals || 0), assists: Number(stats[p.id]?.assists || 0) }))
-      .filter((s) => s.goals > 0 || s.assists > 0);
+      .map((p) => ({
+        playerId: p.id,
+        goals: Number(stats[p.id]?.goals || 0),
+        assists: Number(stats[p.id]?.assists || 0),
+        yellowCards: Number(stats[p.id]?.yellowCards || 0),
+        redCards: Number(stats[p.id]?.redCards || 0),
+      }))
+      .filter((s) => s.goals > 0 || s.assists > 0 || s.yellowCards > 0 || s.redCards > 0);
 
     setSaving(true);
     try {
@@ -351,7 +375,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
   async function resetRecordedData() {
     if (!isAdmin) return;
     const confirmed = window.confirm(
-      "Resettare distinta, risultato, marcatori e assist di questa partita? Data, campo, slot e arbitro resteranno invariati."
+      "Resettare distinta, risultato, marcatori, assist e cartellini di questa partita? Data, campo, slot e arbitro resteranno invariati."
     );
     if (!confirmed) return;
 
@@ -366,9 +390,9 @@ export default function MatchResultForm({ match }: { match: Match }) {
       setHomeGoals("");
       setAwayGoals("");
       setStats(() => {
-        const next: Record<string, { goals: string; assists: string }> = {};
+        const next: Record<string, { goals: string; assists: string; yellowCards: string; redCards: string }> = {};
         for (const player of [...homePlayers, ...awayPlayers]) {
-          next[player.id] = { goals: "", assists: "" };
+          next[player.id] = { goals: "", assists: "", yellowCards: "", redCards: "" };
         }
         return next;
       });
@@ -420,7 +444,12 @@ export default function MatchResultForm({ match }: { match: Match }) {
     homeGoals !== "" ||
     awayGoals !== "" ||
     Object.values(sheet).some(Boolean) ||
-    Object.values(stats).some((row) => Number(row.goals || 0) > 0 || Number(row.assists || 0) > 0);
+    Object.values(stats).some((row) =>
+      Number(row.goals || 0) > 0 ||
+      Number(row.assists || 0) > 0 ||
+      Number(row.yellowCards || 0) > 0 ||
+      Number(row.redCards || 0) > 0
+    );
 
 
   return (
@@ -675,6 +704,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
             <div className="flex flex-wrap gap-3 text-sm text-[var(--muted)]">
               <span><b className="text-[var(--foreground)]">{totals.goalsSum}</b> gol</span>
               <span><b className="text-[var(--foreground)]">{totals.assistsSum}</b> assist</span>
+              <span className="inline-flex items-center gap-1"><i className="h-4 w-2.5 rounded-[2px] bg-yellow-300" /><b className="text-[var(--foreground)]">{totals.yellowCardsSum}</b></span>
+              <span className="inline-flex items-center gap-1"><i className="h-4 w-2.5 rounded-[2px] bg-red-500" /><b className="text-[var(--foreground)]">{totals.redCardsSum}</b></span>
               <SheetCounter team={match.homeTeam.name} count={totals.homeSheetCount} missing={missingHome} />
               <SheetCounter team={match.awayTeam.name} count={totals.awaySheetCount} missing={missingAway} />
             </div>
@@ -696,7 +727,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
                 <div>
                   <p className="font-black text-[var(--foreground)]">Reset dati partita</p>
                   <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-                    Elimina distinta, risultato, marcatori e assist. Data, campo, slot e arbitro restano invariati. L&apos;operazione è registrata nell&apos;audit log.
+                    Elimina distinta, risultato, marcatori, assist e cartellini. Data, campo, slot e arbitro restano invariati. L&apos;operazione è registrata nell&apos;audit log.
                   </p>
                 </div>
               </div>
