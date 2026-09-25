@@ -698,17 +698,3 @@ model PlayoffSeries {
   @@unique([leagueId, bracketRound, position])
   @@index([leagueId])
 }
-
-model CoachLineupDraft {
-  id        String   @id @default(cuid())
-  matchId   String
-  teamId    String
-  name      String
-  formation String   @default("3-3-1")
-  players   Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([matchId, teamId])
-  @@index([teamId])
-}

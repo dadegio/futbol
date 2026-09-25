@@ -221,12 +221,6 @@ export async function getCoachLineupData(
     if (value) value.mvp += 1;
   }
 
-  const drafts = await prisma.coachLineupDraft.findMany({
-    where: { matchId, teamId: assignment.teamId },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true, name: true, formation: true, players: true, updatedAt: true },
-  });
-
   const isHome = match.homeTeamId === assignment.teamId;
 
   return {
@@ -263,10 +257,6 @@ export async function getCoachLineupData(
         assists: 0,
         mvp: 0,
       },
-    })),
-    drafts: drafts.map((draft) => ({
-      ...draft,
-      updatedAt: draft.updatedAt,
     })),
     lineup: lineup
       ? {
@@ -486,57 +476,4 @@ export async function saveCoachLineup({
   });
 
   return saved;
-}
-
-function normalizeDraftPlayers(value: unknown) {
-  if (!Array.isArray(value)) throw new AppError(400, "Giocatori bozza non validi");
-  return value.map((raw, index) => {
-    const row = raw as Record<string, unknown>;
-    const playerId = String(row.playerId ?? "");
-    const status = String(row.status ?? "");
-    if (!playerId || (status !== "STARTER" && status !== "BENCH")) {
-      throw new AppError(400, "Giocatore bozza non valido");
-    }
-    return {
-      playerId,
-      status,
-      positionX: status === "STARTER" ? clampCoordinate(row.positionX, 4, 96) ?? 50 : null,
-      positionY: status === "STARTER" ? clampCoordinate(row.positionY, 5, 95) ?? 50 : null,
-      sortOrder: Number.isFinite(Number(row.sortOrder)) ? Number(row.sortOrder) : index,
-    };
-  });
-}
-
-export async function saveCoachLineupDraft({ session, leagueId, matchId, input }: {
-  session: SessionUser | null; leagueId: string; matchId: string; input: Record<string, unknown>;
-}) {
-  const { assignment } = await getContext(session, leagueId, matchId);
-  const name = String(input.name ?? "").trim().slice(0, 60);
-  if (!name) throw new AppError(400, "Dai un nome alla formazione di prova");
-  const formation = String(input.formation ?? "3-3-1");
-  if (!isCoachFormation(formation)) throw new AppError(400, "Modulo non valido");
-  const players = normalizeDraftPlayers(input.players);
-  const ids = [...new Set(players.map((player) => player.playerId))];
-  if (ids.length !== players.length || players.filter((p) => p.status === "STARTER").length > 8 || players.length > FUTPOLI_RULES.maxPlayersPerTeam) {
-    throw new AppError(400, "Bozza non valida");
-  }
-  const valid = await prisma.player.count({ where: { id: { in: ids }, teamId: assignment.teamId } });
-  if (valid !== ids.length) throw new AppError(400, "La bozza contiene giocatori non validi");
-  const id = String(input.id ?? "");
-  if (id) {
-    const existing = await prisma.coachLineupDraft.findFirst({ where: { id, matchId, teamId: assignment.teamId } });
-    if (!existing) throw new AppError(404, "Bozza non trovata");
-    return prisma.coachLineupDraft.update({ where: { id }, data: { name, formation, players } });
-  }
-  return prisma.coachLineupDraft.create({ data: { matchId, teamId: assignment.teamId, name, formation, players } });
-}
-
-export async function deleteCoachLineupDraft({ session, leagueId, matchId, draftId }: {
-  session: SessionUser | null; leagueId: string; matchId: string; draftId: string;
-}) {
-  const { assignment } = await getContext(session, leagueId, matchId);
-  const existing = await prisma.coachLineupDraft.findFirst({ where: { id: draftId, matchId, teamId: assignment.teamId } });
-  if (!existing) throw new AppError(404, "Bozza non trovata");
-  await prisma.coachLineupDraft.delete({ where: { id: draftId } });
-  return { ok: true };
 }
