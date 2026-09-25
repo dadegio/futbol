@@ -5,10 +5,18 @@ import CalendarPage from "@/modules/matches/presentation/CalendarPage";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ leagueId: string }>;
+  searchParams: Promise<{ round?: string | string[] }>;
 }) {
   const { leagueId } = await params;
+  const query = await searchParams;
+  const requestedRound = typeof query.round === "string" ? Number(query.round) : null;
+  const initialRound =
+    requestedRound !== null && Number.isInteger(requestedRound) && requestedRound > 0
+      ? requestedRound
+      : null;
   const session = await getServerSession();
   const canSeeRefereeName = isLeagueAdminSession(session, leagueId);
   const canSeeCreatorCrew = canSeeRefereeName || Boolean(
@@ -24,6 +32,7 @@ export default async function Page({
       leagueId={leagueId}
       initialMatches={matches}
       initialTeamCount={teams.length}
+      initialRound={initialRound}
     />
   );
 }

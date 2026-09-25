@@ -232,7 +232,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
           )}
           {isSuperAdmin && (
             <NavItem
-              href="/admin/users"
+              href={leagueId ? `/admin/users?leagueId=${encodeURIComponent(leagueId)}` : "/admin/users"}
               icon={<ShieldCheck size={17} />}
               label="Utenti"
               active={pathname === "/admin/users"}

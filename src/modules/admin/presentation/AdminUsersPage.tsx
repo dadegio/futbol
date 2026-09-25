@@ -53,7 +53,7 @@ type LeagueApiRow = { id: string; name: string };
 type TeamApiRow = { id: string; name: string };
 type RefereeApiRow = { id: string; name: string };
 
-export default function AdminUsersPage() {
+export default function AdminUsersPage({ returnLeagueId }: { returnLeagueId?: string }) {
   const isAdmin = useIsSuperAdmin();
   const router = useRouter();
 
@@ -284,7 +284,7 @@ export default function AdminUsersPage() {
   if (!isAdmin && !loading) return null;
 
   return (
-    <DashboardShell>
+    <DashboardShell leagueId={returnLeagueId}>
       <div className="space-y-6">
         <Card>
           <CardHeader

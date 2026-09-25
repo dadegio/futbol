@@ -456,7 +456,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
     <DashboardShell leagueId={match.leagueId}>
       <div className="w-full space-y-5 pb-8">
         <div className="flex items-center gap-2 pt-1">
-          <Link href={`/leagues/${match.leagueId}/calendar`} className="flex items-center gap-1 text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
+          <Link href={`/leagues/${match.leagueId}/calendar?round=${match.round}`} className="flex items-center gap-1 text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
             <ChevronLeft size={16} /> Calendario
           </Link>
           <span className="text-[var(--border-strong)]">·</span>

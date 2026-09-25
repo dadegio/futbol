@@ -261,7 +261,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
                 )}
                 {isSuperAdmin && (
                   <MenuLink
-                    href="/admin/users"
+                    href={leagueId ? `/admin/users?leagueId=${encodeURIComponent(leagueId)}` : "/admin/users"}
                     label="Gestione utenti"
                     icon={<ShieldCheck size={18} />}
                     active={pathname === "/admin/users"}

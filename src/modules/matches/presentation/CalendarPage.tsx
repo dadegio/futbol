@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Camera,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   MapPin,
@@ -229,12 +231,15 @@ export default function CalendarPage({
   leagueId,
   initialMatches,
   initialTeamCount,
+  initialRound,
 }: {
   leagueId: string;
   initialMatches: Match[];
   initialTeamCount: number;
+  initialRound: number | null;
 }) {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = user?.role === "ADMIN" || (user?.role === "LEAGUE_ADMIN" && user.leagueId === leagueId);
   const canSeeCreatorCrew = isAdmin || (user?.role === "CAPTAIN" && user.leagueId === leagueId);
 
@@ -245,7 +250,7 @@ export default function CalendarPage({
   const [msg, setMsg] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<Filter>("all");
-  const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [selectedRound, setSelectedRound] = useState<number | null>(initialRound);
 
   const [doubleRound, setDoubleRound] = useState(true);
   const [random, setRandom] = useState(true);
@@ -261,6 +266,7 @@ export default function CalendarPage({
     return toDatetimeLocalValue(next);
   });
   const [generating, setGenerating] = useState(false);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduleFromRound, setRescheduleFromRound] = useState(1);
   const [rescheduleStartDate, setRescheduleStartDate] = useState("");
@@ -317,8 +323,13 @@ export default function CalendarPage({
 
     if (selectedRound !== null && rounds.includes(selectedRound)) return;
 
+    if (initialRound !== null && rounds.includes(initialRound)) {
+      setSelectedRound(initialRound);
+      return;
+    }
+
     setSelectedRound(currentRound);
-  }, [currentRound, rounds, selectedRound]);
+  }, [currentRound, initialRound, rounds, selectedRound]);
 
   const visibleRound = selectedRound ?? currentRound;
 
@@ -403,6 +414,7 @@ export default function CalendarPage({
         }.`
       );
       setSelectedRound(null);
+      router.replace(`/leagues/${leagueId}/calendar`, { scroll: false });
       await load();
     } catch (error: unknown) {
       setErr(error instanceof Error ? error.message : "Errore generazione calendario");
@@ -479,13 +491,18 @@ export default function CalendarPage({
     }
   }
 
+  function selectRound(round: number) {
+    setSelectedRound(round);
+    router.replace(`/leagues/${leagueId}/calendar?round=${round}`, { scroll: false });
+  }
+
   function goToPreviousRound() {
     if (!visibleRound) return;
 
     const index = rounds.indexOf(visibleRound);
     const previous = rounds[index - 1];
 
-    if (previous) setSelectedRound(previous);
+    if (previous) selectRound(previous);
   }
 
   function goToNextRound() {
@@ -494,7 +511,7 @@ export default function CalendarPage({
     const index = rounds.indexOf(visibleRound);
     const next = rounds[index + 1];
 
-    if (next) setSelectedRound(next);
+    if (next) selectRound(next);
   }
 
   if (!leagueId) return <div>Caricamento…</div>;
@@ -547,6 +564,29 @@ export default function CalendarPage({
         <SponsorBanner compact />
 
         {isAdmin && (
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setGeneratorOpen((open) => !open)}
+              aria-expanded={generatorOpen}
+              className="flex w-full items-center justify-between gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-left transition hover:border-[var(--border-strong)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Wand2 size={17} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black text-[var(--foreground)]">Gestione calendario</span>
+                  <span className="block truncate text-xs text-[var(--muted)]">Genera, rigenera o posticipa le giornate</span>
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={["shrink-0 text-[var(--muted)] transition-transform", generatorOpen ? "rotate-180" : ""].join(" ")}
+              />
+            </button>
+
+            {generatorOpen && (
           <Card className="space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -756,6 +796,8 @@ export default function CalendarPage({
             )}
 
           </Card>
+            )}
+          </div>
         )}
 
         <div className="flex gap-8 border-b border-[var(--border)] text-base">
