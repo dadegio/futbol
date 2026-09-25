@@ -171,7 +171,7 @@ function TeamKit({
 
   if (showUploadedKit && normalizedUrl) {
     return (
-      <div className="relative mx-auto h-[74px] w-[74px] sm:h-[82px] sm:w-[82px]">
+      <div className="relative mx-auto h-14 w-14 sm:h-[72px] sm:w-[72px] lg:h-[82px] lg:w-[82px]">
         <img
           src={normalizedUrl}
           alt="Divisa squadra"
@@ -179,9 +179,6 @@ function TeamKit({
           onError={() => setFailedUrl(normalizedUrl)}
           className="h-full w-full object-contain drop-shadow-[0_9px_8px_rgba(0,0,0,.42)]"
         />
-        <span className="absolute left-1/2 top-[47%] -translate-x-1/2 -translate-y-1/2 rounded bg-black/40 px-1.5 py-0.5 text-[10px] font-black text-white shadow">
-          {number}
-        </span>
       </div>
     );
   }
@@ -190,7 +187,7 @@ function TeamKit({
   const second = goalkeeper ? primary : secondary;
 
   return (
-    <div className="relative mx-auto h-[74px] w-[74px] drop-shadow-[0_9px_8px_rgba(0,0,0,.35)] sm:h-[82px] sm:w-[82px]">
+    <div className="relative mx-auto h-14 w-14 drop-shadow-[0_9px_8px_rgba(0,0,0,.35)] sm:h-[72px] sm:w-[72px] lg:h-[82px] lg:w-[82px]">
       <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden="true">
         <defs>
           <linearGradient id={`kit-${number}-${goalkeeper ? "gk" : "out"}`} x1="0" x2="1">
@@ -206,9 +203,6 @@ function TeamKit({
         />
         <path d="M42 11c1 10 15 10 16 0" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="2" />
       </svg>
-      <span className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 text-[11px] font-black text-white drop-shadow">
-        {number}
-      </span>
     </div>
   );
 }
@@ -805,20 +799,29 @@ export default function CoachLineupEditor({
               </div>
 
               <div
-                className="relative mx-auto aspect-[6/5] w-full max-w-[860px] overflow-hidden rounded-[24px] border-2 border-white/20 bg-[#1d7136]"
+                className="relative mx-auto aspect-[4/5] w-full max-w-[900px] overflow-hidden rounded-[18px] border border-[#d7efb8]/70 bg-[#79b94d] shadow-[0_18px_55px_rgba(0,0,0,.28)] sm:aspect-[7/5] sm:rounded-[22px]"
                 style={{
                   backgroundImage:
-                    "radial-gradient(circle at 50% 50%, rgba(255,255,255,.045), transparent 28%), repeating-linear-gradient(0deg, rgba(255,255,255,.045) 0 12.5%, rgba(0,0,0,.025) 12.5% 25%)",
-                  boxShadow: "inset 0 0 70px rgba(0,0,0,.28)",
+                    "linear-gradient(90deg, rgba(20,74,24,.10), transparent 14%, transparent 86%, rgba(20,74,24,.10)), repeating-linear-gradient(180deg, rgba(255,255,255,.075) 0 12.5%, rgba(20,92,31,.055) 12.5% 25%)",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,.12), inset 0 0 65px rgba(25,77,30,.18), 0 18px 55px rgba(0,0,0,.28)",
                 }}
               >
-                <div className="pointer-events-none absolute inset-[3%] rounded-[18px] border border-white/35" />
-                <div className="pointer-events-none absolute left-1/2 top-[3%] bottom-[3%] w-px -translate-x-1/2 bg-white/30" />
-                <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/35 sm:h-28 sm:w-28" />
-                <div className="pointer-events-none absolute inset-x-[25%] top-[3%] h-[18%] border border-white/35" />
-                <div className="pointer-events-none absolute inset-x-[25%] bottom-[3%] h-[18%] border border-white/35" />
-                <div className="pointer-events-none absolute left-1/2 top-[21%] h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/35" />
-                <div className="pointer-events-none absolute bottom-[21%] left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white/35" />
+                <div className="pointer-events-none absolute inset-[3.2%] rounded-[10px] border border-white/75 sm:rounded-[14px]" />
+                <div className="pointer-events-none absolute left-[3.2%] right-[3.2%] top-1/2 h-px -translate-y-1/2 bg-white/65" />
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/75 sm:h-24 sm:w-24 lg:h-28 lg:w-28" />
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75" />
+
+                <div className="pointer-events-none absolute inset-x-[24%] top-[3.2%] h-[18%] border border-white/75" />
+                <div className="pointer-events-none absolute inset-x-[35%] top-[3.2%] h-[8%] border border-white/70" />
+                <div className="pointer-events-none absolute left-1/2 top-[18.7%] h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75" />
+
+                <div className="pointer-events-none absolute inset-x-[24%] bottom-[3.2%] h-[18%] border border-white/75" />
+                <div className="pointer-events-none absolute inset-x-[35%] bottom-[3.2%] h-[8%] border border-white/70" />
+                <div className="pointer-events-none absolute bottom-[18.7%] left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-white/75" />
+
+                <div className="pointer-events-none absolute left-1/2 top-[3.2%] h-[2.4%] w-[18%] -translate-x-1/2 -translate-y-full border-x border-t border-white/55" />
+                <div className="pointer-events-none absolute bottom-[3.2%] left-1/2 h-[2.4%] w-[18%] -translate-x-1/2 translate-y-full border-x border-b border-white/55" />
 
                 {COACH_FORMATIONS[formation].map((slot, index) => {
                   const playerId = playerIdAtSlot(entries, slot);
@@ -839,7 +842,7 @@ export default function CoachLineupEditor({
                       }}
                       onDrop={(event) => dropOnSlot(event, slot, index)}
                       className={[
-                        "absolute z-10 flex h-[112px] w-[112px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl transition sm:h-[124px] sm:w-[124px]",
+                        "absolute z-10 flex h-[86px] w-[74px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl transition sm:h-[112px] sm:w-[104px] lg:h-[124px] lg:w-[118px]",
                         isDropTarget ? "bg-white/10 ring-2 ring-white/60" : "",
                       ].join(" ")}
                       style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
@@ -855,7 +858,7 @@ export default function CoachLineupEditor({
                             setSelectedPlayerId(player.id);
                           }}
                           className={[
-                            "group w-[108px] select-none text-center text-white transition sm:w-[118px]",
+                            "group w-[72px] select-none text-center text-white transition sm:w-[102px] lg:w-[116px]",
                             initialData.editable && player.eligible
                               ? "cursor-grab active:cursor-grabbing"
                               : "",
@@ -881,8 +884,9 @@ export default function CoachLineupEditor({
                               goalkeeper={slot.role === "GK"}
                             />
                           </div>
-                          <span className="mx-auto -mt-1 block max-w-[108px] truncate rounded bg-black/65 px-2 py-1 text-[10px] font-black leading-none shadow sm:text-[11px]">
-                            {player.lastName}
+                          <span className="mx-auto -mt-1 flex max-w-[72px] items-center justify-center gap-1 truncate rounded bg-[#173b18]/80 px-1.5 py-1 text-[9px] font-black leading-none shadow sm:max-w-[102px] sm:px-2 sm:text-[11px] lg:max-w-[116px]">
+                            <span className="shrink-0 text-white/80">#{player.number}</span>
+                            <span className="truncate">{player.lastName}</span>
                           </span>
                           <span
                             className={[
@@ -928,7 +932,7 @@ export default function CoachLineupEditor({
                   Trascina qui per mettere in panchina
                 </span>
               </div>
-              <div className="mt-2 flex min-h-24 gap-2 overflow-x-auto rounded-2xl border border-dashed border-[var(--border)] bg-black/10 p-2 [scrollbar-width:thin]">
+              <div className="mt-3 flex min-h-28 gap-3 overflow-x-auto rounded-2xl border border-dashed border-[var(--border)] bg-black/10 p-3 [scrollbar-width:thin] sm:min-h-32">
                 {bench.length ? (
                   bench.map((player) => (
                     <button
@@ -939,18 +943,21 @@ export default function CoachLineupEditor({
                       onDragEnd={() => setDragOverSlot(null)}
                       onClick={() => setSelectedPlayerId(player.id)}
                       className={[
-                        "flex min-w-[150px] shrink-0 items-center gap-2 rounded-xl border bg-[var(--card-2)] px-2.5 py-2 text-left",
+                        "flex min-w-[205px] shrink-0 items-center gap-3 rounded-2xl border bg-[var(--card-2)] px-3 py-3 text-left sm:min-w-[225px]",
                         selectedPlayerId === player.id
                           ? "border-[var(--accent)]"
                           : "border-[var(--border)]",
                       ].join(" ")}
                     >
-                      <PlayerPhoto player={player} compact />
+                      <PlayerPhoto player={player} />
                       <span className="min-w-0">
-                        <span className="block truncate text-xs font-black text-[var(--foreground)]">
+                        <span className="block truncate text-sm font-black text-[var(--foreground)]">
                           #{player.number} {player.lastName}
                         </span>
-                        <span className="block text-[9px] font-bold text-[var(--muted)]">
+                        <span className="mt-1 block text-[10px] font-bold uppercase text-[var(--muted)]">
+                          {player.position ?? "Giocatore"}
+                        </span>
+                        <span className="mt-1 block text-[9px] font-bold text-[var(--muted)]">
                           {player.stats.goals}G · {player.stats.assists}A
                         </span>
                       </span>
