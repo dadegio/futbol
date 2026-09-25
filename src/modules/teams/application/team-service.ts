@@ -376,6 +376,9 @@ export async function updateTeam({
   const description = normalizedNullableText(input.description);
   const colorHex = normalizedColor(input.colorHex);
   const secondaryColorHex = normalizedColor(input.secondaryColorHex);
+  const kitHomeUrl = normalizedNullableText(input.kitHomeUrl);
+  const kitAwayUrl = normalizedNullableText(input.kitAwayUrl);
+  const kitGoalkeeperUrl = normalizedNullableText(input.kitGoalkeeperUrl);
 
   if (name !== undefined && !name) {
     throw new AppError(400, "Nome squadra non valido");
@@ -407,6 +410,9 @@ export async function updateTeam({
       ...(description !== undefined ? { description } : {}),
       ...(colorHex !== undefined ? { colorHex } : {}),
       ...(secondaryColorHex !== undefined ? { secondaryColorHex } : {}),
+      ...(kitHomeUrl !== undefined ? { kitHomeUrl } : {}),
+      ...(kitAwayUrl !== undefined ? { kitAwayUrl } : {}),
+      ...(kitGoalkeeperUrl !== undefined ? { kitGoalkeeperUrl } : {}),
     },
     include: {
       league: { select: { id: true, name: true } },

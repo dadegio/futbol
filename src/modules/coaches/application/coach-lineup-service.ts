@@ -5,8 +5,8 @@ import type { SessionUser } from "@/lib/session";
 import { writeAuditLog } from "@/modules/audit/application/audit-service";
 import { AppError } from "@/modules/core/errors";
 import {
-  COACH_FORMATIONS,
   COACH_LINEUP_LOCK_MINUTES,
+  assignPlayersToFormation,
   isCoachFormation,
   lineupDeadline,
   type CoachFormation,
@@ -49,6 +49,9 @@ async function getContext(
           badgeUrl: true,
           colorHex: true,
           secondaryColorHex: true,
+          kitHomeUrl: true,
+          kitAwayUrl: true,
+          kitGoalkeeperUrl: true,
         },
       },
     },
@@ -348,6 +351,7 @@ export async function saveCoachLineup({
       status: true,
       documentSigned: true,
       mediaConsent: true,
+      position: true,
     },
   });
 
@@ -359,17 +363,44 @@ export async function saveCoachLineup({
     throw new AppError(400, "La formazione contiene giocatori non idonei alla distinta");
   }
 
-  const preset =
-    formation === "MANUAL" ? null : COACH_FORMATIONS[formation as Exclude<CoachFormation, "MANUAL">];
+  const playerById = new Map(validPlayers.map((player) => [player.id, player]));
+
+  const automaticAssignments =
+    formation === "MANUAL"
+      ? null
+      : assignPlayersToFormation(
+          starters.map((starter) => ({
+            playerId: starter.playerId,
+            position: playerById.get(starter.playerId)?.position ?? null,
+          })),
+          formation as Exclude<CoachFormation, "MANUAL">
+        );
+
+  if (formation !== "MANUAL" && !automaticAssignments) {
+    throw new AppError(
+      400,
+      "Il modulo scelto non ha abbastanza slot compatibili con i ruoli dei titolari. Usa Libero per forzare una disposizione fuori ruolo."
+    );
+  }
 
   const withPositions = normalized.map((entry, index) => {
     if (entry.status !== "STARTER") return entry;
-    const starterIndex = starters.findIndex((starter) => starter.playerId === entry.playerId);
-    const point = preset?.[starterIndex];
+
+    const point =
+      formation === "MANUAL"
+        ? null
+        : automaticAssignments?.[entry.playerId] ?? null;
+
     return {
       ...entry,
-      positionX: formation === "MANUAL" ? entry.positionX ?? 50 : point?.x ?? 50,
-      positionY: formation === "MANUAL" ? entry.positionY ?? 50 : point?.y ?? 50,
+      positionX:
+        formation === "MANUAL"
+          ? entry.positionX ?? 50
+          : point?.x ?? 50,
+      positionY:
+        formation === "MANUAL"
+          ? entry.positionY ?? 50
+          : point?.y ?? 50,
       sortOrder: index,
     };
   });

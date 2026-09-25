@@ -75,8 +75,17 @@ export default function TeamPage({
   const [description, setDescription] = useState(initialTeam.description ?? "");
   const [colorHex, setColorHex] = useState(initialTeam.colorHex ?? "#F97316");
   const [secondaryColorHex, setSecondaryColorHex] = useState(initialTeam.secondaryColorHex ?? initialTeam.colorHex ?? "#F97316");
+  const [kitHomeUrl, setKitHomeUrl] = useState(initialTeam.kitHomeUrl ?? "");
+  const [kitAwayUrl, setKitAwayUrl] = useState(initialTeam.kitAwayUrl ?? "");
+  const [kitGoalkeeperUrl, setKitGoalkeeperUrl] = useState(initialTeam.kitGoalkeeperUrl ?? "");
   const [badgeFile, setBadgeFile] = useState<File | null>(null);
   const [removeBadge, setRemoveBadge] = useState(false);
+  const [kitHomeFile, setKitHomeFile] = useState<File | null>(null);
+  const [kitAwayFile, setKitAwayFile] = useState<File | null>(null);
+  const [kitGoalkeeperFile, setKitGoalkeeperFile] = useState<File | null>(null);
+  const [removeKitHome, setRemoveKitHome] = useState(false);
+  const [removeKitAway, setRemoveKitAway] = useState(false);
+  const [removeKitGoalkeeper, setRemoveKitGoalkeeper] = useState(false);
   const [editingTeam, setEditingTeam] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [savingTeam, setSavingTeam] = useState(false);
@@ -103,8 +112,17 @@ export default function TeamPage({
     setDescription(data.description ?? "");
     setColorHex(data.colorHex ?? "#F97316");
     setSecondaryColorHex(data.secondaryColorHex ?? data.colorHex ?? "#F97316");
+    setKitHomeUrl(data.kitHomeUrl ?? "");
+    setKitAwayUrl(data.kitAwayUrl ?? "");
+    setKitGoalkeeperUrl(data.kitGoalkeeperUrl ?? "");
     setBadgeFile(null);
     setRemoveBadge(false);
+    setKitHomeFile(null);
+    setKitAwayFile(null);
+    setKitGoalkeeperFile(null);
+    setRemoveKitHome(false);
+    setRemoveKitAway(false);
+    setRemoveKitGoalkeeper(false);
   }
 
   const badgePreview = useMemo(() => {
@@ -112,6 +130,34 @@ export default function TeamPage({
     if (badgeFile) return URL.createObjectURL(badgeFile);
     return badgeUrl || "";
   }, [badgeFile, badgeUrl, removeBadge]);
+
+  const kitHomePreview = useMemo(() => {
+    if (removeKitHome) return "";
+    if (kitHomeFile) return URL.createObjectURL(kitHomeFile);
+    return kitHomeUrl || "";
+  }, [kitHomeFile, kitHomeUrl, removeKitHome]);
+
+  const kitAwayPreview = useMemo(() => {
+    if (removeKitAway) return "";
+    if (kitAwayFile) return URL.createObjectURL(kitAwayFile);
+    return kitAwayUrl || "";
+  }, [kitAwayFile, kitAwayUrl, removeKitAway]);
+
+  const kitGoalkeeperPreview = useMemo(() => {
+    if (removeKitGoalkeeper) return "";
+    if (kitGoalkeeperFile) return URL.createObjectURL(kitGoalkeeperFile);
+    return kitGoalkeeperUrl || "";
+  }, [kitGoalkeeperFile, kitGoalkeeperUrl, removeKitGoalkeeper]);
+
+  async function uploadTeamAsset(file: File, label: string) {
+    if (!file.type.startsWith("image/")) {
+      throw new Error(`${label}: seleziona un'immagine valida`);
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(`${label}: massimo 5 MB`);
+    }
+    return uploadImage(file);
+  }
 
   async function saveTeam() {
     setErr(null);
@@ -127,10 +173,34 @@ export default function TeamPage({
         if (badgeFile.size > 5 * 1024 * 1024) throw new Error("Il logo deve essere massimo 5 MB");
         finalBadgeUrl = await uploadImage(badgeFile);
       }
+
+      let finalKitHomeUrl: string | null = removeKitHome ? null : kitHomeUrl.trim() || null;
+      let finalKitAwayUrl: string | null = removeKitAway ? null : kitAwayUrl.trim() || null;
+      let finalKitGoalkeeperUrl: string | null = removeKitGoalkeeper ? null : kitGoalkeeperUrl.trim() || null;
+
+      if (kitHomeFile) {
+        finalKitHomeUrl = await uploadTeamAsset(kitHomeFile, "Prima divisa");
+      }
+      if (kitAwayFile) {
+        finalKitAwayUrl = await uploadTeamAsset(kitAwayFile, "Divisa trasferta");
+      }
+      if (kitGoalkeeperFile) {
+        finalKitGoalkeeperUrl = await uploadTeamAsset(kitGoalkeeperFile, "Divisa portiere");
+      }
+
       const res = await authFetch(`/api/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmedName, badgeUrl: finalBadgeUrl, description: description.trim() || null, colorHex, secondaryColorHex }),
+        body: JSON.stringify({
+          name: trimmedName,
+          badgeUrl: finalBadgeUrl,
+          description: description.trim() || null,
+          colorHex,
+          secondaryColorHex,
+          kitHomeUrl: finalKitHomeUrl,
+          kitAwayUrl: finalKitAwayUrl,
+          kitGoalkeeperUrl: finalKitGoalkeeperUrl,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error ?? "Errore");
@@ -300,7 +370,54 @@ export default function TeamPage({
 
         {canEdit && <TeamChangeRequestsPanel teamId={teamId} isAdmin={isAdmin} />}
 
-        <TeamEditPanel visible={canEdit && editingTeam} name={name} setName={setName} badgePreview={badgePreview} setBadgeFile={setBadgeFile} setBadgeUrl={setBadgeUrl} setRemoveBadge={setRemoveBadge} colorHex={colorHex} setColorHex={setColorHex} secondaryColorHex={secondaryColorHex} setSecondaryColorHex={setSecondaryColorHex} description={description} setDescription={setDescription} saveTeam={saveTeam} savingTeam={savingTeam} close={() => setEditingTeam(false)} />
+        <TeamEditPanel
+          visible={canEdit && editingTeam}
+          name={name}
+          setName={setName}
+          badgePreview={badgePreview}
+          setBadgeFile={setBadgeFile}
+          setBadgeUrl={setBadgeUrl}
+          setRemoveBadge={setRemoveBadge}
+          colorHex={colorHex}
+          setColorHex={setColorHex}
+          secondaryColorHex={secondaryColorHex}
+          setSecondaryColorHex={setSecondaryColorHex}
+          kitHomePreview={kitHomePreview}
+          kitAwayPreview={kitAwayPreview}
+          kitGoalkeeperPreview={kitGoalkeeperPreview}
+          setKitHomeFile={(file) => {
+            setKitHomeFile(file);
+            if (file) setRemoveKitHome(false);
+          }}
+          setKitAwayFile={(file) => {
+            setKitAwayFile(file);
+            if (file) setRemoveKitAway(false);
+          }}
+          setKitGoalkeeperFile={(file) => {
+            setKitGoalkeeperFile(file);
+            if (file) setRemoveKitGoalkeeper(false);
+          }}
+          removeKitHome={() => {
+            setKitHomeFile(null);
+            setKitHomeUrl("");
+            setRemoveKitHome(true);
+          }}
+          removeKitAway={() => {
+            setKitAwayFile(null);
+            setKitAwayUrl("");
+            setRemoveKitAway(true);
+          }}
+          removeKitGoalkeeper={() => {
+            setKitGoalkeeperFile(null);
+            setKitGoalkeeperUrl("");
+            setRemoveKitGoalkeeper(true);
+          }}
+          description={description}
+          setDescription={setDescription}
+          saveTeam={saveTeam}
+          savingTeam={savingTeam}
+          close={() => setEditingTeam(false)}
+        />
         <AddPlayerPanel visible={canEdit && showAddPlayer} allowPhoto={isAdmin} firstName={newFirstName} setFirstName={setNewFirstName} lastName={newLastName} setLastName={setNewLastName} number={newNumber} setNumber={setNewNumber} position={newPosition} setPosition={setNewPosition} photoUrl={newPhotoUrl} setPhotoUrl={setNewPhotoUrl} addPlayer={addPlayer} close={() => setShowAddPlayer(false)} />
 
         <Card className="!p-3 sm:!p-4">

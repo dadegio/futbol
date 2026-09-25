@@ -303,6 +303,9 @@ model Team {
   description    String?
   colorHex          String?
   secondaryColorHex String?
+  kitHomeUrl       String?
+  kitAwayUrl       String?
+  kitGoalkeeperUrl String?
   activeInLeague Boolean  @default(true)
   createdAt      DateTime @default(now())
 

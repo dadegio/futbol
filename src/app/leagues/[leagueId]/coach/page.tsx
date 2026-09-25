@@ -74,14 +74,17 @@ export default async function CoachPage({ params }: { params: Promise<{ leagueId
       <div className="space-y-5 pb-8">
         <Card className="overflow-hidden !p-0">
           <div className="p-5 sm:p-7" style={{ background: `linear-gradient(115deg, ${primary}2A 0%, var(--card) 48%, ${secondary}24 100%)` }}>
-            <div className="flex items-center gap-4">
+            <Link
+              href={`/leagues/${leagueId}/teams/${data.team.id}`}
+              className="flex items-center gap-4 rounded-2xl outline-none ring-[var(--accent)] focus-visible:ring-2"
+            >
               <TeamLogo team={data.team} large />
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">Coach Center</p>
                 <h1 className="truncate text-3xl font-black tracking-[-0.05em] text-[var(--foreground)]">{data.team.name}</h1>
-                <p className="mt-1 text-sm text-[var(--muted)]">{data.league.name} · area tecnica</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">{data.league.name} · apri pagina squadra →</p>
               </div>
-            </div>
+            </Link>
           </div>
         </Card>
 
@@ -108,10 +111,20 @@ export default async function CoachPage({ params }: { params: Promise<{ leagueId
                 <span className="text-xs font-black text-[var(--muted)]">Giornata {data.nextMatch.round}</span>
               </div>
               <div className="mt-5 flex items-center gap-4">
-                <TeamLogo team={data.nextMatch.opponent} large />
+                <Link
+                  href={`/leagues/${leagueId}/teams/${data.nextMatch.opponent.id}`}
+                  className="shrink-0 rounded-2xl outline-none ring-[var(--accent)] focus-visible:ring-2"
+                >
+                  <TeamLogo team={data.nextMatch.opponent} large />
+                </Link>
                 <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">{data.nextMatch.isHome ? "In casa" : "In trasferta"}</p>
-                  <h2 className="truncate text-2xl font-black text-[var(--foreground)]">{data.nextMatch.opponent.name}</h2>
+                  <Link
+                    href={`/leagues/${leagueId}/teams/${data.nextMatch.opponent.id}`}
+                    className="block truncate text-2xl font-black text-[var(--foreground)] hover:text-[var(--accent)]"
+                  >
+                    {data.nextMatch.opponent.name}
+                  </Link>
                   <p className="mt-2 flex items-center gap-2 text-sm text-[var(--muted)]"><CalendarDays size={15} className="text-[var(--accent)]" />{formatDate(data.nextMatch.date)}</p>
                   <p className="mt-1 flex items-center gap-2 text-sm text-[var(--muted)]"><MapPin size={15} className="text-[var(--accent)]" />{data.nextMatch.venueName ?? "Campo da assegnare"}</p>
                 </div>
@@ -174,7 +187,11 @@ export default async function CoachPage({ params }: { params: Promise<{ leagueId
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {data.playerCards.slice(0, 6).map((player) => (
-                <div key={player.id} className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-3">
+                <Link
+                  key={player.id}
+                  href={`/leagues/${leagueId}/players/${player.id}`}
+                  className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-3 transition hover:border-[var(--accent)]/50"
+                >
                   <div className="h-16 w-14 shrink-0 overflow-hidden rounded-xl bg-black/20">
                     {player.photoUrl ? (
                       <img src={player.photoUrl} alt={`${player.firstName} ${player.lastName}`} className="h-full w-full object-contain" style={{ objectPosition: `${player.photoPositionX}% ${player.photoPositionY}%`, transform: `scale(${player.photoZoom})`, transformOrigin: `${player.photoPositionX}% ${player.photoPositionY}%` }} />
@@ -189,7 +206,7 @@ export default async function CoachPage({ params }: { params: Promise<{ leagueId
                       <span>{player.stats.appearances} P</span><span>{player.stats.goals} G</span><span>{player.stats.assists} A</span><span className="text-amber-300">{player.stats.mvp} MVP</span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </Card>

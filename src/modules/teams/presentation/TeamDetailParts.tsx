@@ -35,6 +35,9 @@ export type Team = {
   description?: string | null;
   colorHex?: string | null;
   secondaryColorHex?: string | null;
+  kitHomeUrl?: string | null;
+  kitAwayUrl?: string | null;
+  kitGoalkeeperUrl?: string | null;
   league: { id: string; name: string };
   players: Player[];
   competitionSummary?: {

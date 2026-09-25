@@ -18,6 +18,15 @@ export function TeamEditPanel({
   setColorHex,
   secondaryColorHex,
   setSecondaryColorHex,
+  kitHomePreview,
+  kitAwayPreview,
+  kitGoalkeeperPreview,
+  setKitHomeFile,
+  setKitAwayFile,
+  setKitGoalkeeperFile,
+  removeKitHome,
+  removeKitAway,
+  removeKitGoalkeeper,
   description,
   setDescription,
   saveTeam,
@@ -35,6 +44,15 @@ export function TeamEditPanel({
   setColorHex: (value: string) => void;
   secondaryColorHex: string;
   setSecondaryColorHex: (value: string) => void;
+  kitHomePreview: string;
+  kitAwayPreview: string;
+  kitGoalkeeperPreview: string;
+  setKitHomeFile: (file: File | null) => void;
+  setKitAwayFile: (file: File | null) => void;
+  setKitGoalkeeperFile: (file: File | null) => void;
+  removeKitHome: () => void;
+  removeKitAway: () => void;
+  removeKitGoalkeeper: () => void;
   description: string;
   setDescription: (value: string) => void;
   saveTeam: () => void | Promise<void>;
@@ -107,6 +125,42 @@ export function TeamEditPanel({
         <p className="text-xs text-[var(--muted)]">I due colori vengono mostrati insieme nel Match Center e restano modificabili dall&apos;app.</p>
       </div>
 
+      <div className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wider text-[var(--muted)]">
+            Divise Coach Mode
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+            Carica preferibilmente immagini PNG/WebP con sfondo trasparente e la sola maglia.
+            Verranno usate sul campo della formazione. Max 5 MB ciascuna.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <KitUploadField
+            label="Prima divisa"
+            preview={kitHomePreview}
+            requiredLabel="Usata come divisa principale"
+            setFile={setKitHomeFile}
+            remove={removeKitHome}
+          />
+          <KitUploadField
+            label="Portiere"
+            preview={kitGoalkeeperPreview}
+            requiredLabel="Usata per il POR"
+            setFile={setKitGoalkeeperFile}
+            remove={removeKitGoalkeeper}
+          />
+          <KitUploadField
+            label="Trasferta"
+            preview={kitAwayPreview}
+            requiredLabel="Opzionale"
+            setFile={setKitAwayFile}
+            remove={removeKitAway}
+          />
+        </div>
+      </div>
+
       <div className="space-y-3">
         <textarea
           aria-label="Descrizione squadra"
@@ -122,6 +176,62 @@ export function TeamEditPanel({
         </div>
       </div>
     </Card>
+  );
+}
+
+function KitUploadField({
+  label,
+  preview,
+  requiredLabel,
+  setFile,
+  remove,
+}: {
+  label: string;
+  preview: string;
+  requiredLabel: string;
+  setFile: (file: File | null) => void;
+  remove: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-black text-[var(--foreground)]">{label}</p>
+        <span className="text-[9px] font-bold uppercase text-[var(--muted)]">
+          {requiredLabel}
+        </span>
+      </div>
+
+      <div className="mt-3 grid h-36 place-items-center overflow-hidden rounded-2xl border border-dashed border-[var(--border)] bg-black/10 p-3">
+        {preview ? (
+          <img
+            src={preview}
+            alt={`Anteprima ${label}`}
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <span className="text-xs font-bold text-[var(--muted)]">
+            Nessuna immagine
+          </span>
+        )}
+      </div>
+
+      <input
+        type="file"
+        accept="image/png,image/webp,image/jpeg"
+        onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        className="mt-3 block w-full text-xs text-[var(--muted)] file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-2.5 file:py-1.5 file:text-[10px] file:font-black file:text-black"
+      />
+
+      {preview && (
+        <button
+          type="button"
+          onClick={remove}
+          className="mt-2 text-xs font-semibold text-amber-300"
+        >
+          Rimuovi
+        </button>
+      )}
+    </div>
   );
 }
 
