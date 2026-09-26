@@ -53,7 +53,6 @@ export async function getMatchPageData(
   const canViewDraft =
     isLeagueAdmin(session, match.leagueId) ||
     isRefereeAssignedToMatch(session, match.refereeId);
-  const canViewCoachLineups = isLeagueAdmin(session, match.leagueId) || isCaptainOfMatch;
   const canViewRecordedData = match.resultStatus === "FINAL" || canViewDraft;
   const canViewFinalExtras = match.resultStatus === "FINAL" || isLeagueAdmin(session, match.leagueId);
 
@@ -77,9 +76,9 @@ export async function getMatchPageData(
         }));
 
   const lineupTeamIds = new Set(match.lineups.map((lineup) => lineup.teamId));
-  const captainFallbackSheetPlayers = isCaptainOfMatch
-    ? match.sheetPlayers.filter((row) => !lineupTeamIds.has(row.teamId))
-    : [];
+  const fallbackSheetPlayers = match.sheetPlayers.filter(
+    (row) => !lineupTeamIds.has(row.teamId)
+  );
 
   const { refereeCostCents: _legacyRefereeCostCents, lineups: _lineups, ...visibleMatch } = match;
 
@@ -88,11 +87,9 @@ export async function getMatchPageData(
     homeGoals: canViewRecordedData ? match.homeGoals : null,
     awayGoals: canViewRecordedData ? match.awayGoals : null,
     stats: canViewRecordedData ? match.stats : [],
-    sheetPlayers: canViewRecordedData
-      ? effectiveSheetPlayers
-      : captainFallbackSheetPlayers,
+    sheetPlayers: canViewDraft ? effectiveSheetPlayers : fallbackSheetPlayers,
     coachSuggestedLineup,
-    publishedLineups: canViewCoachLineups ? match.lineups : [],
+    publishedLineups: match.lineups,
     homeSheetConfirmed: canViewRecordedData ? match.homeSheetConfirmed : false,
     awaySheetConfirmed: canViewRecordedData ? match.awaySheetConfirmed : false,
     finalizedAt: match.resultStatus === "FINAL" || canViewDraft ? match.finalizedAt : null,

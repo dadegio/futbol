@@ -153,7 +153,10 @@ export default function MatchResultForm({ match }: { match: Match }) {
     () => selectMatchKits(match.homeTeam, match.awayTeam),
     [match.homeTeam, match.awayTeam]
   );
-  const captainFormationView = isCaptainOfMatch && !canManageDraft;
+  // Admin e arbitro mantengono la distinta operativa.
+  // Tutti gli altri vedono la formazione pubblicata quando presente,
+  // con fallback sulla distinta della singola squadra quando manca.
+  const formationPreferredView = !authLoading && !isAdmin && !isAssignedReferee;
 
   const totals = useMemo(() => {
     let goalsSum = 0;
@@ -802,7 +805,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
         )}
 
         <div id="match-sheets" className="scroll-mt-20 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          {captainFormationView && homeLineup ? (
+          {formationPreferredView && homeLineup ? (
             <TeamFormationCard
               team={match.homeTeam}
               lineup={homeLineup}
@@ -810,9 +813,9 @@ export default function MatchResultForm({ match }: { match: Match }) {
               kitLabel={matchKits.home.kind === "home" ? "Casa" : "Trasferta"}
             />
           ) : (
-            <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onlySheet={captainFormationView} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
+            <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onlySheet={formationPreferredView} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
           )}
-          {captainFormationView && awayLineup ? (
+          {formationPreferredView && awayLineup ? (
             <TeamFormationCard
               team={match.awayTeam}
               lineup={awayLineup}
@@ -820,7 +823,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
               kitLabel={matchKits.away.kind === "home" ? "Casa" : "Trasferta"}
             />
           ) : (
-            <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onlySheet={captainFormationView} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
+            <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onlySheet={formationPreferredView} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
           )}
         </div>
 
