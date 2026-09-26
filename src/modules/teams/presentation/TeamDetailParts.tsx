@@ -113,7 +113,7 @@ export function PlayerRow({
 
   return (
     <div className={[
-      "grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-2 py-4 last:border-b-0 sm:grid-cols-[92px_minmax(0,1fr)_auto] sm:px-4",
+      "grid grid-cols-[112px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-2 py-3 last:border-b-0 sm:grid-cols-[136px_minmax(0,1fr)_auto] sm:px-4 sm:py-4",
       isAdmin && !isAdminOk(player) ? "bg-amber-400/5" : "",
     ].join(" ")}>
       <PlayerPhoto
@@ -232,17 +232,17 @@ function PlayerPhoto({
 
   if (photoUrl) {
     return (
-      <div className="relative h-[95px] w-[76px] shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--background)] sm:h-[115px] sm:w-[92px]">
+      <div className="relative h-[136px] w-[108px] shrink-0 overflow-visible sm:h-[164px] sm:w-[132px]">
         <OptimizedPlayerImage
           src={photoUrl}
           alt={`Foto ${name}`}
-          sizes="(max-width: 640px) 76px, 92px"
+          sizes="(max-width: 640px) 108px, 132px"
           eager={eager}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="absolute inset-x-0 bottom-0 h-full w-full object-contain"
           style={{
-            objectPosition: `${photoPositionX}% ${photoPositionY}%`,
-            transform: `scale(${photoZoom})`,
-            transformOrigin: `${photoPositionX}% ${photoPositionY}%`,
+            objectPosition: `${photoPositionX}% 100%`,
+            transform: `scale(${Math.min(photoZoom, 1.12)})`,
+            transformOrigin: `${photoPositionX}% 100%`,
           }}
         />
       </div>
@@ -250,7 +250,7 @@ function PlayerPhoto({
   }
 
   return (
-    <div className="relative flex h-[95px] w-[76px] shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--background)] text-lg font-black text-[var(--accent)] sm:h-[115px] sm:w-[92px]">
+    <div className="relative flex h-[136px] w-[108px] shrink-0 items-center justify-center text-2xl font-black text-[var(--accent)] sm:h-[164px] sm:w-[132px]">
       {initials}
     </div>
   );

@@ -293,9 +293,9 @@ export default function PlayerPage({
         {err && <Badge variant="error">{err}</Badge>}
 
         <Card className="overflow-hidden !p-0">
-          <div className="matchroom-hero grid lg:grid-cols-[minmax(280px,34%)_minmax(0,1fr)]">
-            <div className="relative flex min-h-[330px] items-end justify-center overflow-hidden border-b border-white/10 bg-black/20 p-5 sm:min-h-[390px] lg:min-h-[430px] lg:border-b-0 lg:border-r">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.10),transparent_48%)]" />
+          <div className="matchroom-hero grid lg:grid-cols-[minmax(360px,40%)_minmax(0,1fr)]">
+            <div className="relative flex min-h-[360px] items-end justify-center overflow-visible border-b border-white/10 px-2 pt-5 sm:min-h-[430px] sm:px-4 lg:min-h-[510px] lg:border-b-0 lg:border-r-0 lg:px-6">
+              <div className="pointer-events-none absolute inset-x-[12%] bottom-0 h-px bg-[var(--border)] lg:inset-x-[18%]" />
               <PlayerAvatar firstName={player.firstName} lastName={player.lastName} number={player.number} photoUrl={player.photoUrl ?? null} photoZoom={player.photoZoom ?? 1} photoPositionX={player.photoPositionX ?? 50} photoPositionY={player.photoPositionY ?? 50} />
             </div>
 
@@ -502,25 +502,34 @@ export default function PlayerPage({
   );
 }
 
-function PlayerAvatar({ firstName, lastName, number, photoUrl, photoZoom = 1, photoPositionX = 50, photoPositionY = 50 }: { firstName: string; lastName: string; number: number; photoUrl?: string | null; photoZoom?: number; photoPositionX?: number; photoPositionY?: number }) {
+function PlayerAvatar({ firstName, lastName, number: _number, photoUrl, photoZoom = 1, photoPositionX = 50, photoPositionY: _photoPositionY = 50 }: { firstName: string; lastName: string; number: number; photoUrl?: string | null; photoZoom?: number; photoPositionX?: number; photoPositionY?: number }) {
   const fullName = `${firstName} ${lastName}`;
   const initials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
   const frameClass =
-    "relative z-[1] aspect-[4/5] w-full max-w-[250px] shrink-0 overflow-hidden rounded-[28px] border border-white/10 bg-[var(--background)] shadow-[0_20px_60px_rgba(0,0,0,0.22)] sm:max-w-[285px]";
+    "relative z-[1] h-[350px] w-full max-w-[340px] shrink-0 overflow-visible sm:h-[420px] sm:max-w-[400px] lg:h-[500px] lg:max-w-[460px]";
 
   if (photoUrl) {
     return (
       <div className={frameClass}>
-        <OptimizedPlayerImage src={photoUrl} alt={`Foto ${fullName}`} sizes="(max-width: 640px) 250px, 285px" eager className="absolute inset-0 h-full w-full object-contain" style={{ objectPosition: `${photoPositionX}% ${photoPositionY}%`, transform: `scale(${Math.min(photoZoom, 1)})`, transformOrigin: `${photoPositionX}% ${photoPositionY}%` }} />
-        <span className="absolute bottom-0 right-0 flex h-12 min-w-12 items-center justify-center rounded-tl-3xl bg-[var(--accent)] px-3 text-base font-black text-black">{number}</span>
+        <OptimizedPlayerImage
+          src={photoUrl}
+          alt={`Foto ${fullName}`}
+          sizes="(max-width: 640px) 340px, (max-width: 1024px) 400px, 460px"
+          eager
+          className="absolute inset-x-0 bottom-0 h-full w-full object-contain"
+          style={{
+            objectPosition: `${photoPositionX}% 100%`,
+            transform: `scale(${Math.min(photoZoom, 1.12)})`,
+            transformOrigin: `${photoPositionX}% 100%`,
+          }}
+        />
       </div>
     );
   }
 
   return (
-    <div className={`${frameClass} flex items-center justify-center text-4xl font-black text-[var(--accent)]`}>
+    <div className={`${frameClass} flex items-center justify-center text-6xl font-black text-[var(--accent)]`}>
       {initials || "?"}
-      <span className="absolute bottom-0 right-0 flex h-12 min-w-12 items-center justify-center rounded-tl-3xl bg-[var(--accent)] px-3 text-base font-black text-black">{number}</span>
     </div>
   );
 }
