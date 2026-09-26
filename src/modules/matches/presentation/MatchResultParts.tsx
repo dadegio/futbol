@@ -341,14 +341,45 @@ export function TeamFormationCard({
           {bench.length === 0 ? (
             <p className="text-xs text-[var(--muted)]">Nessun giocatore in panchina.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {bench.map((entry) => {
                 const player = playerById.get(entry.playerId);
                 if (!player) return null;
                 return (
-                  <div key={entry.playerId} className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-2 py-2 text-center">
-                    <p className="truncate text-[11px] font-black text-[var(--foreground)]">#{player.number} {player.lastName}</p>
-                    <p className="mt-0.5 truncate text-[9px] font-bold uppercase text-[var(--muted)]">{player.position ?? "—"}</p>
+                  <div
+                    key={entry.playerId}
+                    className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[#080b09]"
+                  >
+                    <div className="bg-[linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,0))] px-2 pt-2">
+                      {player.photoUrl ? (
+                        <div className="relative h-20 w-full overflow-hidden sm:h-24 lg:h-28">
+                          <img
+                            src={player.photoUrl}
+                            alt={`${player.firstName} ${player.lastName}`}
+                            className="h-full w-full object-contain object-bottom drop-shadow-[0_8px_8px_rgba(0,0,0,.45)]"
+                            style={{
+                              objectPosition: `${player.photoPositionX ?? 50}% ${player.photoPositionY ?? 50}%`,
+                              transform: `scale(${player.photoZoom ?? 1})`,
+                              transformOrigin: `${player.photoPositionX ?? 50}% ${player.photoPositionY ?? 50}%`,
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="grid h-20 w-full place-items-center text-xl font-black text-white/35 sm:h-24 lg:h-28">
+                          {(player.firstName?.[0] ?? "")}{(player.lastName?.[0] ?? "")}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-white/10 bg-black/35 px-2.5 py-2">
+                      <div className="flex items-center justify-between gap-2 text-[9px] font-black uppercase tracking-[0.08em] sm:text-[10px]">
+                        <span className="truncate text-emerald-400">{player.position ?? "—"}</span>
+                        <span className="shrink-0 text-white/55">#{player.number}</span>
+                      </div>
+                      <p className="mt-1 truncate text-center text-xs font-black text-white sm:text-sm">
+                        {player.lastName}
+                      </p>
+                    </div>
                   </div>
                 );
               })}
