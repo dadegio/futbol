@@ -14,6 +14,7 @@ type Body = {
   awayGoals?: number;
   playerStats?: Array<{ playerId: string; goals: number; assists: number; yellowCards?: number; redCards?: number }>;
   sheetPlayerIds?: string[];
+  mvpPlayerId?: string | null;
 };
 
 export async function POST(

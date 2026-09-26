@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArchiveRestore, Ban, CheckCircle2, Clock3, ExternalLink, LockKeyhole, PauseCircle, PlayCircle, ShieldCheck, Star, Video } from "lucide-react";
+import { ArchiveRestore, Ban, Clock3, ExternalLink, LockKeyhole, PauseCircle, PlayCircle, Star, Video } from "lucide-react";
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
 import Badge from "src/app/_components/ui/badge";
@@ -22,13 +22,8 @@ async function readResponse(response: Response, fallback: string) {
 export default function MatchLifecyclePanel({
   matchId,
   isAdmin,
-  canManageDraft,
   lifecycleStatus,
   resultStatus,
-  homeSheetConfirmed,
-  awaySheetConfirmed,
-  homeTeamName,
-  awayTeamName,
   players,
   mvpPlayerId,
   replayUrl,
@@ -36,13 +31,8 @@ export default function MatchLifecyclePanel({
 }: {
   matchId: string;
   isAdmin: boolean;
-  canManageDraft: boolean;
   lifecycleStatus: LifecycleStatus;
   resultStatus: ResultStatus;
-  homeSheetConfirmed: boolean;
-  awaySheetConfirmed: boolean;
-  homeTeamName: string;
-  awayTeamName: string;
   players: Player[];
   mvpPlayerId: string | null;
   replayUrl: string | null;
@@ -125,44 +115,13 @@ export default function MatchLifecyclePanel({
               <Badge variant={resultStatus === "FINAL" ? "success" : resultStatus === "DRAFT" ? "accent" : "default"}>{resultLabel}</Badge>
             </div>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-              Salva distinta e risultato come bozza, conferma entrambe le distinte e poi chiudi ufficialmente la gara. Un risultato definitivo entra in classifica e statistiche pubbliche.
+              Puoi salvare una bozza oppure usare “Salva e finalizza” nella gestione gara per registrare in un solo passaggio distinta, risultato, statistiche e MVP. Un risultato definitivo entra in classifica e nelle statistiche pubbliche.
             </p>
           </div>
           {resultStatus === "FINAL" && <LockKeyhole size={22} className="text-emerald-400" />}
         </div>
 
         {(message || error) && <div className="mt-4">{message ? <Badge variant="success">{message}</Badge> : <Badge variant="error">{error}</Badge>}</div>}
-
-        {canManageDraft && lifecycleStatus !== "CANCELLED" && resultStatus !== "FINAL" && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <SheetConfirm
-              label={homeTeamName}
-              confirmed={homeSheetConfirmed}
-              busy={busy === "confirm-sheet-home"}
-              onClick={() => lifecycle({ action: "confirm-sheet", team: "home", confirmed: !homeSheetConfirmed }, homeSheetConfirmed ? "Conferma distinta casa rimossa" : "Distinta casa confermata")}
-            />
-            <SheetConfirm
-              label={awayTeamName}
-              confirmed={awaySheetConfirmed}
-              busy={busy === "confirm-sheet-away"}
-              onClick={() => lifecycle({ action: "confirm-sheet", team: "away", confirmed: !awaySheetConfirmed }, awaySheetConfirmed ? "Conferma distinta ospite rimossa" : "Distinta ospite confermata")}
-            />
-          </div>
-        )}
-
-        {canManageDraft && resultStatus === "DRAFT" && lifecycleStatus !== "CANCELLED" && (
-          <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-black text-[var(--foreground)]">Conferma risultato definitivo</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">Dopo la conferma il risultato diventa pubblico e non è più modificabile finché un admin non lo riapre.{!mvpPlayerId ? " Prima di finalizzare salva anche l'MVP scelto in campo." : ""}</p>
-              </div>
-              <Button onClick={() => lifecycle({ action: "finalize" }, "Risultato finalizzato")} disabled={Boolean(busy) || !homeSheetConfirmed || !awaySheetConfirmed || !mvpPlayerId}>
-                <ShieldCheck size={15} /> Finalizza
-              </Button>
-            </div>
-          </div>
-        )}
 
         {isAdmin && resultStatus === "FINAL" && (
           <div className="mt-4 flex justify-end">
@@ -230,15 +189,6 @@ export default function MatchLifecyclePanel({
         </Card>
       )}
     </div>
-  );
-}
-
-function SheetConfirm({ label, confirmed, busy, onClick }: { label: string; confirmed: boolean; busy: boolean; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} disabled={busy} className={["flex items-center justify-between rounded-2xl border p-3 text-left transition", confirmed ? "border-emerald-500/25 bg-emerald-500/[0.06]" : "border-[var(--border)] bg-[var(--card-2)]"].join(" ")}>
-      <span><span className="block text-xs font-black text-[var(--foreground)]">Distinta {label}</span><span className="mt-0.5 block text-[10px] text-[var(--muted)]">{confirmed ? "Confermata" : "Da confermare dopo il salvataggio"}</span></span>
-      <CheckCircle2 size={18} className={confirmed ? "text-emerald-400" : "text-[var(--muted)]"} />
-    </button>
   );
 }
 

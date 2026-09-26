@@ -314,11 +314,12 @@ export function TeamFormationCard({
             const x = entry.positionX ?? 50;
             const y = entry.positionY ?? Math.min(90, 14 + index * 9);
             const isGoalkeeper = y >= 82;
+            const renderedY = isGoalkeeper ? Math.min(y, 84) : y;
             return (
               <div
                 key={entry.playerId}
-                className="absolute z-10 flex w-[58px] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center sm:w-[78px]"
-                style={{ left: `${x}%`, top: `${y}%` }}
+                className={`absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center ${isGoalkeeper ? "w-[82px] sm:w-[108px]" : "w-[64px] sm:w-[86px]"}`}
+                style={{ left: `${x}%`, top: `${renderedY}%` }}
               >
                 <TeamKitThumb
                   url={isGoalkeeper ? team.kitGoalkeeperUrl ?? outfieldKitUrl : outfieldKitUrl}
@@ -326,9 +327,9 @@ export function TeamFormationCard({
                   secondary={isGoalkeeper ? primary : secondary}
                   large
                 />
-                <span className="mt-0.5 flex w-full items-center justify-center gap-1 truncate rounded-[3px] bg-[#173b18]/90 px-1 py-1 text-[8px] font-black leading-none text-white shadow sm:text-[10px]">
+                <span className="mt-0.5 flex w-full max-w-full items-center justify-center gap-1 overflow-hidden rounded-[3px] bg-[#173b18]/90 px-1.5 py-1 text-[8px] font-black leading-none text-white shadow sm:text-[10px]">
                   <span className="shrink-0 text-white/75">#{player.number}</span>
-                  <span className="truncate">{player.lastName}</span>
+                  <span className="min-w-0 truncate">{player.lastName}</span>
                 </span>
               </div>
             );

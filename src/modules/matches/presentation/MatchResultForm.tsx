@@ -312,7 +312,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
     }
   }
 
-  async function save() {
+  async function save(finalize = false) {
     setErr(null);
     setMsg(null);
 
@@ -326,6 +326,11 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
     if (ag !== null && (!Number.isFinite(ag) || ag < 0)) {
       setErr("Gol squadra ospite non valido");
+      return;
+    }
+
+    if (finalize && (hg === null || ag === null)) {
+      setErr("Inserisci il risultato completo prima di finalizzare.");
       return;
     }
 
@@ -349,6 +354,11 @@ export default function MatchResultForm({ match }: { match: Match }) {
     const sheetPlayerIds = [...homePlayers, ...awayPlayers].filter((p) => sheet[p.id]).map((p) => p.id);
     if (mvpPlayerId && !sheetPlayerIds.includes(mvpPlayerId)) {
       setErr("L'MVP deve essere un giocatore presente in distinta.");
+      return;
+    }
+
+    if (finalize && !mvpPlayerId) {
+      setErr("Seleziona l'MVP della partita prima di finalizzare.");
       return;
     }
 
@@ -377,7 +387,41 @@ export default function MatchResultForm({ match }: { match: Match }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(readApiError(data, "Errore salvataggio"));
-      setMsg("Bozza salvata");
+
+      if (finalize) {
+        for (const team of ["home", "away"] as const) {
+          const confirmRes = await authFetch(`/api/matches/${match.id}/lifecycle`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "confirm-sheet", team, confirmed: true }),
+          });
+          const confirmData = await confirmRes.json().catch(() => ({}));
+          if (!confirmRes.ok) {
+            throw new Error(
+              readApiError(
+                confirmData,
+                team === "home"
+                  ? "Errore conferma distinta casa"
+                  : "Errore conferma distinta ospite"
+              )
+            );
+          }
+        }
+
+        const finalizeRes = await authFetch(`/api/matches/${match.id}/lifecycle`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "finalize" }),
+        });
+        const finalizeData = await finalizeRes.json().catch(() => ({}));
+        if (!finalizeRes.ok) {
+          throw new Error(readApiError(finalizeData, "Errore finalizzazione partita"));
+        }
+
+        setMsg("Partita salvata e finalizzata");
+      } else {
+        setMsg("Bozza salvata");
+      }
       router.refresh();
     } catch (error) {
       setErr(error instanceof Error ? error.message : "Errore salvataggio");
@@ -581,13 +625,8 @@ export default function MatchResultForm({ match }: { match: Match }) {
           <MatchLifecyclePanel
             matchId={match.id}
             isAdmin={isAdmin}
-            canManageDraft={canManageDraft}
             lifecycleStatus={match.lifecycleStatus ?? "SCHEDULED"}
             resultStatus={match.resultStatus ?? null}
-            homeSheetConfirmed={match.homeSheetConfirmed === true}
-            awaySheetConfirmed={match.awaySheetConfirmed === true}
-            homeTeamName={match.homeTeam.name}
-            awayTeamName={match.awayTeam.name}
             players={[...homePlayers, ...awayPlayers]}
             mvpPlayerId={match.mvpPlayerId ?? null}
             replayUrl={match.replayUrl ?? null}
@@ -800,7 +839,17 @@ export default function MatchResultForm({ match }: { match: Match }) {
               <p className="mt-1 text-xs font-bold text-amber-300">Marcatori da completare: {match.homeTeam.name} {totals.homeGoalsSum}/{hg} · {match.awayTeam.name} {totals.awayGoalsSum}/{ag}</p>
             )}
             </div>
-            <Button onClick={save} disabled={saving}>{saving ? "Salvataggio…" : "Salva bozza"}</Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="secondary" onClick={() => save(false)} disabled={saving}>
+                {saving ? "Salvataggio…" : "Salva bozza"}
+              </Button>
+              <Button
+                onClick={() => save(true)}
+                disabled={saving || !played || !mvpPlayerId || missingHome > 0 || missingAway > 0 || match.lifecycleStatus !== "SCHEDULED"}
+              >
+                {saving ? "Salvataggio…" : "Salva e finalizza"}
+              </Button>
+            </div>
           </div>
         )}
 
