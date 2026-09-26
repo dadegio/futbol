@@ -9,6 +9,7 @@ import MobileMenu from "./mobile-menu";
 import Breadcrumbs from "./breadcrumbs";
 import { useAuth } from "@/lib/client-auth";
 import LeagueThemeController from "./league-theme-controller";
+import NotificationCenter from "./notification-center";
 import { resolveLeagueBranding, type LeagueBranding } from "@/modules/branding/domain/league-branding";
 import { cachedJson } from "@/modules/core/client-cache";
 
@@ -78,10 +79,13 @@ return (
           {!authLoading && (
             <div className="flex shrink-0 items-center gap-2">
               {user ? (
+                <>
+                <NotificationCenter leagueId={leagueId} />
                 <span className="hidden items-center gap-1.5 text-xs text-[var(--foreground)]/60 min-[380px]:flex">
                   <UserCircle size={15} />
                   <span className="max-w-24 truncate">{user.username}</span>
                 </span>
+                </>
               ) : (
                 <Link
                   href="/login"
@@ -107,6 +111,9 @@ return (
           <Sidebar leagueId={leagueId} branding={leagueBrand} />
 
           <main className="min-w-0 flex-1 pb-20 lg:pb-0">
+            {user && (
+              <div className="no-print mb-2 hidden justify-end lg:flex"><NotificationCenter leagueId={leagueId} /></div>
+            )}
             <Breadcrumbs leagueId={leagueId} />
             {children}
           </main>

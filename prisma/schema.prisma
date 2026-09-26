@@ -109,9 +109,56 @@ model User {
   reviewedTeamChanges  TeamChangeRequest[] @relation("TeamChangeRequestReviewer")
   createdAt    DateTime @default(now())
 
-  bookedMatches Match[] @relation("MatchBookedBy")
+  bookedMatches          Match[]                  @relation("MatchBookedBy")
+  notifications          Notification[]
+  pushSubscriptions      PushSubscription[]
+  notificationPreference NotificationPreference?
 
   @@index([leagueId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  leagueId  String?
+  matchId   String?
+  kind      String
+  title     String
+  body      String
+  href      String?
+  dedupeKey String   @unique
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([leagueId, createdAt])
+  @@index([matchId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NotificationPreference {
+  userId         String   @id
+  matchReminders Boolean  @default(true)
+  pushEnabled    Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model League {
