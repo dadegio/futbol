@@ -62,11 +62,11 @@ export default function YouTubeVideoCard({
 
           <div className="flex min-w-0 flex-col justify-between p-4">
             <div className="min-w-0">
-              <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">
+              <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                 <Youtube size={14} />
                 <span>{label}</span>
               </div>
-              <h3 className="line-clamp-1 text-xl font-black leading-tight text-[var(--foreground)]">
+              <h3 className="line-clamp-1 text-xl font-bold leading-tight text-[var(--foreground)]">
                 {config.title}
               </h3>
               <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--muted)]">
@@ -79,14 +79,14 @@ export default function YouTubeVideoCard({
                 href={config.url || config.channelUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[rgba(210,174,114,0.38)] bg-[linear-gradient(135deg,var(--imperial-green-2),var(--imperial-green))] px-3 py-2 text-xs font-black text-[var(--imperial-text)]"
+                className="inline-flex items-center justify-center gap-2 rounded-[5px] border border-[rgba(210,174,114,0.38)] bg-[linear-gradient(135deg,var(--imperial-green-2),var(--imperial-green))] px-3 py-2 text-xs font-bold text-[var(--imperial-text)]"
               >
                 Guarda ora <ArrowRight size={14} />
               </a>
               {leagueId && (
                 <Link
                   href={archiveHref}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-black/20 px-3 py-2 text-xs font-bold text-[var(--foreground)] transition hover:border-[rgba(210,174,114,0.38)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-[5px] border border-[var(--border)] bg-black/20 px-3 py-2 text-xs font-bold text-[var(--foreground)] transition hover:border-[rgba(210,174,114,0.38)]"
                 >
                   Archivio
                 </Link>
@@ -103,12 +103,12 @@ export default function YouTubeVideoCard({
       <div className="p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--accent)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
               Cammino TV
             </p>
-            <h3 className="mt-1 text-xl font-black text-[var(--foreground)]">{label}</h3>
+            <h3 className="mt-1 text-xl font-bold text-[var(--foreground)]">{label}</h3>
           </div>
-          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-[rgba(210,174,114,0.32)] bg-[var(--accent-soft)] text-[var(--accent)]">
+          <div className="grid h-11 w-11 place-items-center rounded-[5px] border border-[rgba(210,174,114,0.32)] bg-[var(--accent-soft)] text-[var(--accent)]">
             <Youtube size={21} />
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function YouTubeVideoCard({
           href={config.url || config.channelUrl}
           target="_blank"
           rel="noreferrer"
-          className="group relative block overflow-hidden rounded-[22px] border border-[rgba(210,174,114,0.24)] bg-black/35"
+          className="group relative block overflow-hidden rounded-[6px] border border-[rgba(210,174,114,0.24)] bg-black/35"
         >
           {thumbnail ? (
             <img
@@ -133,7 +133,7 @@ export default function YouTubeVideoCard({
                 <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-[rgba(210,174,114,0.36)] bg-black/30 text-[var(--accent)]">
                   <Play size={22} fill="currentColor" />
                 </div>
-                <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">
+                <p className="mt-3 text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
                   Video in arrivo
                 </p>
               </div>
@@ -151,7 +151,7 @@ export default function YouTubeVideoCard({
           )}
         </a>
 
-        <h4 className="mt-4 line-clamp-2 text-lg font-black leading-tight text-[var(--foreground)]">
+        <h4 className="mt-4 line-clamp-2 text-lg font-bold leading-tight text-[var(--foreground)]">
           {config.title}
         </h4>
         <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--muted)]">

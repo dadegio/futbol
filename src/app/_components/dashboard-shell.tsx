@@ -63,11 +63,11 @@ export default function DashboardShell({
   );
 
 return (
-    <div className="min-h-screen max-w-full overflow-x-hidden px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 lg:px-7 lg:py-7 xl:px-9 2xl:px-12">
+    <div className="min-h-screen max-w-full overflow-x-hidden px-3 pb-3 sm:px-4 sm:pb-4 md:px-5 md:pb-5 lg:px-7 lg:py-7 xl:px-9 2xl:px-12">
       <LeagueThemeController league={leagueBrand} />
       <div className="w-full min-w-0">
         {/* Mobile top bar */}
-        <div className="no-print mb-4 flex min-w-0 items-center justify-between gap-3 rounded-[18px] bg-[var(--card)] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)] lg:hidden">
+        <div className="no-print -mx-3 mb-5 flex min-w-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--background)] px-3 py-3 sm:-mx-4 sm:px-4 md:-mx-5 md:px-5 lg:hidden">
           <Link href="/" className="flex min-w-0 items-center gap-2.5 text-base font-extrabold tracking-tight sm:text-lg">
             {leagueBrand && resolvedBrand.logoUrl && (
               <img src={resolvedBrand.logoUrl} alt="" loading="eager" decoding="async" className="h-8 w-8 shrink-0 object-contain" />
@@ -95,7 +95,7 @@ return (
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Apri menu"
-                className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--border)] bg-[var(--card-2)] text-[var(--foreground)]/70"
+                className="grid h-10 w-10 place-items-center border-l border-[var(--border)] text-[var(--foreground)]/70"
               >
                 <Menu size={19} />
               </button>
@@ -103,7 +103,7 @@ return (
           )}
         </div>
 
-        <div className="flex w-full min-w-0 gap-4 md:gap-6">
+        <div className="flex w-full min-w-0 gap-5 lg:gap-8">
           <Sidebar leagueId={leagueId} branding={leagueBrand} />
 
           <main className="min-w-0 flex-1 pb-20 lg:pb-0">

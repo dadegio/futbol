@@ -33,28 +33,45 @@ function NavItem({
   icon,
   label,
   active = false,
+  index,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  index?: number;
 }) {
   return (
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
       className={[
-        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
+        "group flex items-center gap-3 border-l-2 px-3 py-2.5 text-sm transition-colors",
         active
-          ? "border border-[var(--border-strong)] bg-[var(--accent-soft)] font-bold text-[var(--accent)]"
-          : "border border-transparent font-normal text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--card-2)] hover:text-[var(--foreground)]",
+          ? "border-[var(--accent)] bg-transparent font-semibold text-[var(--foreground)]"
+          : "border-transparent font-normal text-[var(--muted)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]",
       ].join(" ")}
     >
-      <span className={active ? "opacity-100" : "opacity-60"}>{icon}</span>
-      {label}
+      {typeof index === "number" ? (
+        <span className="w-5 shrink-0 font-mono text-[10px] tracking-[0.08em] text-[var(--foreground)]/32">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+      ) : (
+        <span className={active ? "w-5 shrink-0 text-[var(--accent)]" : "w-5 shrink-0 opacity-45"}>
+          {icon}
+        </span>
+      )}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {typeof index === "number" && (
+        <span className={active ? "text-[var(--accent)]" : "opacity-25 transition-opacity group-hover:opacity-55"}>
+          {icon}
+        </span>
+      )}
     </Link>
   );
 }
+
+
 
 export default function Sidebar({ leagueId, branding }: SidebarProps) {
   const pathname = usePathname();
@@ -126,9 +143,9 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
   }
 
   return (
-    <aside className="turf-card hidden w-[260px] shrink-0 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 lg:block">
+    <aside className="hidden w-[236px] shrink-0 border-r border-[var(--border)] pr-5 lg:flex lg:min-h-[calc(100vh-3.5rem)] lg:flex-col">
       {/* Identità del torneo */}
-      <div className="mb-5">
+      <div className="mb-5 border-b border-[var(--border)] pb-5">
         <Link href="/" className="flex items-center gap-3">
           {resolvedBrand.logoUrl ? (
             <img
@@ -157,7 +174,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
 
       {/* League name */}
       {leagueId && leagueName && (
-        <div className="imperial-plate mb-4 rounded-xl px-3 py-2.5">
+        <div className="mb-5 border-b border-[var(--border)] pb-4">
           <p className="text-[10px] font-medium uppercase tracking-widest text-[var(--foreground)]/35">
             Torneo attivo
           </p>
@@ -170,7 +187,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
       {/* Search */}
       {!creatorOnlyNav && !refereeOnlyNav && !coachOnlyNav && <form
         onSubmit={submitSearch}
-        className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2"
+        className="mb-5 flex items-center gap-2 border-b border-[var(--border)] px-1 py-2.5"
       >
         <Search size={14} className="shrink-0 text-[var(--foreground)]/40" />
         <input
@@ -182,7 +199,7 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
         {leagueId && (
           <button
             type="submit"
-            className="rounded-lg border border-[var(--border-strong)] bg-[var(--imperial-green-2)] px-2.5 py-1 text-xs font-semibold text-[var(--imperial-text)]"
+            className="border-l border-[var(--border-strong)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)]"
           >
             Vai
           </button>
@@ -191,12 +208,13 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
 
       {/* Nav */}
       <nav aria-label="Navigazione principale" className="space-y-0.5">
-        {links.map((item) => (
+        {links.map((item, index) => (
           <NavItem
             key={item.href}
             href={item.href}
             icon={item.icon}
             label={item.label}
+            index={index}
             active={pathname === item.href}
           />
         ))}

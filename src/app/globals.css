@@ -277,3 +277,86 @@ textarea {
   --accent-2: #4a5bd6;
   --accent-soft: rgba(91, 159, 214, 0.12);
 }
+
+/* ============================================================
+   Editorial sports pass — meno "dashboard", più lega/broadcast.
+   Queste primitive sono volutamente sobrie: linee, ritmo,
+   tipografia e dati sostituiscono pill, glow e box decorativi.
+   ============================================================ */
+
+.editorial-kicker {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.editorial-section-title {
+  color: var(--foreground);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.editorial-link {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: opacity 160ms ease;
+}
+
+.editorial-link:hover {
+  opacity: 0.72;
+}
+
+.editorial-rule {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.editorial-row {
+  border-top: 1px solid var(--border);
+}
+
+.editorial-row:first-child {
+  border-top: 0;
+}
+
+.editorial-score {
+  font-family: var(--font-scoreboard), var(--font-display), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.turf-card {
+  border-radius: 6px !important;
+}
+
+.matchroom-hero {
+  overflow: hidden;
+  border-radius: 8px !important;
+}
+
+.imperial-plate {
+  border-radius: 4px !important;
+}
+
+.imperial-chip {
+  border-radius: 4px !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 1024px) {
+  .desktop-control-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  }
+}
+

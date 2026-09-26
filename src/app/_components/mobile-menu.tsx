@@ -51,10 +51,10 @@ function MenuLink({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={[
-        "flex min-h-12 items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-colors",
+        "flex min-h-12 items-center gap-3 border-l-2 border-b px-3 py-3 text-sm transition-colors",
         active
-          ? "border-[var(--border-strong)] bg-[var(--accent-soft)] font-bold text-[var(--accent)]"
-          : "border-[var(--border)] bg-[var(--card-2)] font-semibold text-[var(--foreground)]/75",
+          ? "border-l-[var(--accent)] border-b-[var(--border)] bg-transparent font-semibold text-[var(--foreground)]"
+          : "border-l-transparent border-b-[var(--border)] bg-transparent font-medium text-[var(--foreground)]/72",
       ].join(" ")}
     >
       <span className="shrink-0 opacity-80">{icon}</span>
@@ -169,7 +169,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
         className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
       />
 
-      <div className="absolute inset-y-0 right-0 flex w-[min(92vw,390px)] flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-2xl">
+      <div className="absolute inset-y-0 right-0 flex w-[min(92vw,390px)] flex-col border-l border-[var(--border-strong)] bg-[var(--background)]">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
           <div className="flex min-w-0 items-center gap-3">
             {branding && resolvedBrand.logoUrl && <img src={resolvedBrand.logoUrl} alt="" loading="eager" decoding="async" className="h-9 w-9 shrink-0 rounded-lg object-contain" />}
@@ -184,7 +184,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
             type="button"
             onClick={onClose}
             aria-label="Chiudi"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[var(--border)] text-[var(--muted)]"
+            className="grid h-11 w-11 shrink-0 place-items-center border-l border-[var(--border)] text-[var(--muted)]"
           >
             <X size={20} />
           </button>
@@ -196,7 +196,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
               <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">
                 Cerca giocatore
               </label>
-              <div className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-1.5 pl-3">
+              <div className="flex items-center gap-2 border border-[var(--border)] bg-transparent p-1.5 pl-3">
                 <Search size={17} className="shrink-0 text-[var(--muted)]" />
                 <input
                   value={search}
@@ -206,7 +206,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
                 />
                 <button
                   type="submit"
-                  className="min-h-10 rounded-xl bg-[var(--accent)] px-4 text-xs font-black text-black"
+                  className="min-h-10 rounded-[4px] bg-[var(--accent)] px-4 text-xs font-semibold text-black"
                 >
                   Cerca
                 </button>
@@ -278,7 +278,7 @@ export default function MobileMenu({ leagueId, open, onClose, branding }: Mobile
             <button
               type="button"
               onClick={logout}
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 text-sm font-bold text-red-300"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[4px] border border-red-400/20 bg-red-500/10 px-4 text-sm font-semibold text-red-300"
             >
               <LogOut size={17} />
               Esci dall'account

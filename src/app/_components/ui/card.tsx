@@ -3,9 +3,9 @@ type CardProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 const styles = {
-  default: "rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:p-5",
-  inner: "rounded-lg border border-[var(--border)] bg-[var(--card-2)] p-4 md:p-5",
-  flat: "rounded-lg bg-[var(--card-2)] p-4",
+  default: "rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-4 md:p-5",
+  inner: "rounded-[4px] border border-[var(--border)] bg-[var(--card-2)] p-4 md:p-5",
+  flat: "rounded-none bg-[var(--card-2)] p-4",
 } as const;
 
 export default function Card({ className = "", variant = "default", ...props }: CardProps) {
@@ -34,7 +34,7 @@ export function CardHeader({
         </div>
       )}
 
-      <Tag className="text-2xl font-extrabold tracking-[-0.02em] text-[var(--foreground)] md:text-3xl">
+      <Tag className="text-2xl font-bold tracking-[-0.025em] text-[var(--foreground)] md:text-3xl">
         {title}
       </Tag>
 

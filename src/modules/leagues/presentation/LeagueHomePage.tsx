@@ -339,22 +339,23 @@ export default function LeagueHomePage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-6 pb-8">
-        <header className="pt-2">
+        <header className="border-b border-[var(--border-strong)] pb-5 pt-1">
           <Link
             href="/"
-            className="mb-8 flex items-center gap-3 text-sm text-[var(--muted)]"
+            className="mb-5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]"
           >
             <span className="text-xl leading-none">‹</span>
             <span>{league?.name ?? "Torneo"}</span>
           </Link>
 
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <h1 className="imperial-title max-w-full break-words text-[30px] font-black leading-tight text-[var(--foreground)] sm:text-[34px]">
+            <h1 className="imperial-title max-w-full break-words text-[38px] font-semibold leading-[0.95] text-[var(--foreground)] sm:text-[52px]">
               {league?.name ?? "Coppa Primavera"}
             </h1>
 
-            <span className="imperial-chip rounded-full px-4 py-2 text-sm font-bold">
-              In corso
+            <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+              <span className="h-2 w-2 rounded-full bg-[var(--accent-2)]" />
+              Stagione in corso
             </span>
           </div>
         </header>
@@ -373,11 +374,11 @@ export default function LeagueHomePage() {
 {liveMatch && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold tracking-[-0.03em]">In diretta</h2>
+              <h2 className="editorial-section-title">In diretta</h2>
 
               <Link
                 href={`/leagues/${leagueId}/calendar`}
-                className="text-sm font-semibold text-[var(--accent)]"
+                className="editorial-link"
               >
                 Dettagli →
               </Link>
@@ -405,7 +406,7 @@ export default function LeagueHomePage() {
                   </span>
                 </div>
 
-                <div className="whitespace-nowrap px-1 text-center text-[28px] font-black tracking-[-0.06em] sm:text-[36px]">
+                <div className="editorial-score whitespace-nowrap px-1 text-center text-[32px] font-semibold sm:text-[42px]">
                   {liveMatch.homeGoals ?? 0}
                   <span className="mx-2 text-[var(--muted)]">-</span>
                   {liveMatch.awayGoals ?? 0}
@@ -429,17 +430,17 @@ export default function LeagueHomePage() {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-[-0.03em]">Calendario</h2>
+            <h2 className="editorial-section-title">Calendario</h2>
 
             <Link
               href={`/leagues/${leagueId}/calendar`}
-              className="text-sm font-semibold text-[var(--accent)]"
+              className="editorial-link"
             >
               Tutte →
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="divide-y divide-[var(--border)] border-y border-[var(--border)]">
             {nextMatches.length > 0 ? (
               nextMatches.map((match) => (
                 <NextMatchCard key={match.id} match={match} leagueId={leagueId} />
@@ -482,12 +483,12 @@ export default function LeagueHomePage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold tracking-[-0.03em]">Ultimi risultati</h2>
+                <h2 className="editorial-section-title">Ultimi risultati</h2>
                 <p className="mt-1 text-sm text-[var(--muted)]">Risultati definitivi, MVP e contenuti della gara.</p>
               </div>
-              <Link href={`/leagues/${leagueId}/calendar`} className="text-sm font-semibold text-[var(--accent)]">Tutti →</Link>
+              <Link href={`/leagues/${leagueId}/calendar`} className="editorial-link">Tutti →</Link>
             </div>
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="divide-y divide-[var(--border)] border-y border-[var(--border)]">
               {recentResults.map((match) => <RecentResultCard key={match.id} match={match} leagueId={leagueId} />)}
             </div>
           </section>
@@ -496,7 +497,7 @@ export default function LeagueHomePage() {
         <section className="space-y-3">
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-semibold tracking-[-0.03em]">Cammino TV</h2>
+              <h2 className="editorial-section-title">Cammino TV</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">Video ufficiale di presentazione del torneo.</p>
             </div>
 
@@ -513,11 +514,11 @@ export default function LeagueHomePage() {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-[-0.03em]">Classifica</h2>
+            <h2 className="editorial-section-title">Classifica</h2>
 
             <Link
               href={`/leagues/${leagueId}/table`}
-              className="text-sm font-semibold text-[var(--accent)]"
+              className="editorial-link"
             >
               Vedi tutta →
             </Link>
@@ -544,7 +545,7 @@ export default function LeagueHomePage() {
 
                   <span className="min-w-0 break-words text-sm font-semibold text-[var(--foreground)] sm:truncate sm:text-base">{row.teamName}</span>
 
-                  <span className="text-xl font-black text-[var(--imperial-gold-2)]">{row.points}</span>
+                  <span className="editorial-score text-2xl font-semibold text-[var(--imperial-gold-2)]">{row.points}</span>
                 </div>
               );
             })}
@@ -633,9 +634,9 @@ function SummaryStat({
   compact?: boolean;
 }) {
   return (
-    <div className={compact ? "rounded-xl border border-[rgba(210,174,114,0.14)] bg-black/10 px-3 py-2" : "imperial-plate rounded-2xl px-4 py-3"}>
-      <div className={compact ? "text-lg font-black text-[var(--imperial-gold-2)]" : "text-3xl font-black tracking-[-0.02em] text-[var(--imperial-gold-2)]"}>{value}</div>
-      <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
+    <div className={compact ? "border-l border-[var(--border)] pl-3 first:border-l-0" : "border-l border-[var(--border)] pl-4"}>
+      <div className={compact ? "editorial-score text-2xl font-semibold text-[var(--imperial-gold-2)]" : "editorial-score text-4xl font-semibold text-[var(--imperial-gold-2)]"}>{value}</div>
+      <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
         {label}
       </div>
     </div>
@@ -645,67 +646,77 @@ function SummaryStat({
 
 function RecentResultCard({ match, leagueId }: { match: Match; leagueId: string }) {
   return (
-    <Card className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--accent)]">
+    <div className="py-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="editorial-kicker text-[var(--accent)]">
           {match.isPlayoff ? match.stageLabel ?? "Playoff" : `Giornata ${match.round}`}
         </span>
-        <span className="text-xs text-[var(--muted)]">{formatMatchDateTime(match.date)}</span>
+        <span className="text-[11px] text-[var(--muted)]">{formatMatchDateTime(match.date)}</span>
       </div>
-      <Link href={`/leagues/${leagueId}/matches/${match.id}`} className="block rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-3 transition hover:border-[var(--border-strong)]">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-          <span className="truncate text-sm font-black text-[var(--foreground)]">{match.homeTeam.name}</span>
-          <span className="whitespace-nowrap text-xl font-black text-[var(--imperial-gold-2)]">{match.homeGoals}–{match.awayGoals}</span>
-          <span className="truncate text-right text-sm font-black text-[var(--foreground)]">{match.awayTeam.name}</span>
-        </div>
+
+      <Link
+        href={`/leagues/${leagueId}/matches/${match.id}`}
+        className="group grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-1"
+      >
+        <span className="truncate text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)]">{match.homeTeam.name}</span>
+        <span className="editorial-score whitespace-nowrap text-2xl font-semibold text-[var(--imperial-gold-2)]">{match.homeGoals}–{match.awayGoals}</span>
+        <span className="truncate text-right text-sm font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)]">{match.awayTeam.name}</span>
       </Link>
-      {match.mvpPlayer && (
-        <div className="flex items-center gap-2 text-xs text-[var(--muted)]"><Star size={14} className="text-amber-300" /><span><strong className="text-[var(--foreground)]">MVP</strong> · #{match.mvpPlayer.number} {match.mvpPlayer.firstName} {match.mvpPlayer.lastName}</span></div>
-      )}
-      {(match.replayUrl || match.highlightsUrl) && (
-        <div className="flex flex-wrap gap-2">
-          {match.replayUrl && <a href={match.replayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-bold text-[var(--foreground)]"><PlayCircle size={14} /> Replay</a>}
-          {match.highlightsUrl && <a href={match.highlightsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-bold text-[var(--foreground)]"><Clapperboard size={14} /> Highlights</a>}
-        </div>
-      )}
-    </Card>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-[var(--muted)]">
+        {match.mvpPlayer && (
+          <span className="inline-flex items-center gap-1.5">
+            <Star size={13} className="text-[var(--accent)]" />
+            MVP · #{match.mvpPlayer.number} {match.mvpPlayer.firstName} {match.mvpPlayer.lastName}
+          </span>
+        )}
+        {match.replayUrl && (
+          <a href={match.replayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-[var(--foreground)] hover:text-[var(--accent)]">
+            <PlayCircle size={13} /> Replay
+          </a>
+        )}
+        {match.highlightsUrl && (
+          <a href={match.highlightsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-[var(--foreground)] hover:text-[var(--accent)]">
+            <Clapperboard size={13} /> Highlights
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 
 function NextMatchCard({ match, leagueId }: { match: Match; leagueId: string }) {
   return (
-    <Link href={`/leagues/${leagueId}/matches/${match.id}`} className="block">
-    <Card className="turf-card min-h-[136px] transition hover:-translate-y-0.5 hover:border-[var(--border-strong)]">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
-          {formatMatchDateTime(match.date)}
+    <Link
+      href={`/leagues/${leagueId}/matches/${match.id}`}
+      className="group block py-4 transition-colors"
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <div className="editorial-kicker text-[var(--accent)]">{formatMatchDateTime(match.date)}</div>
+          <div className="mt-1 text-[11px] text-[var(--muted)]">{match.venueName ?? "Campo da definire"}</div>
         </div>
-
         {match.isPlayoff && (
-          <span className="imperial-chip shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide">
+          <span className="imperial-chip shrink-0 px-2 py-1 text-[9px] font-semibold">
             {match.stageLabel ?? "Playoff"}
           </span>
         )}
       </div>
 
-      <div className="mb-4 text-[11px] font-semibold text-[var(--muted)]">
-        <span>{match.venueName ?? "Campo da definire"}</span>
-      </div>
-
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <TeamBadge
             name={match.homeTeam.name}
             badgeUrl={match.homeTeam.badgeUrl ?? null}
             size="sm"
           />
-          <span className="truncate text-sm font-semibold">{match.homeTeam.name}</span>
+          <span className="truncate text-sm font-semibold group-hover:text-[var(--accent)]">{match.homeTeam.name}</span>
         </div>
 
-        <span className="imperial-title text-lg text-[var(--imperial-gold-2)]">VS</span>
+        <span className="editorial-score text-base text-[var(--muted)]">VS</span>
 
-        <div className="flex min-w-0 items-center gap-2 sm:justify-end sm:text-right">
-          <span className="truncate text-sm font-semibold">{match.awayTeam.name}</span>
+        <div className="flex min-w-0 items-center justify-end gap-2 text-right">
+          <span className="truncate text-sm font-semibold group-hover:text-[var(--accent)]">{match.awayTeam.name}</span>
           <TeamBadge
             name={match.awayTeam.name}
             badgeUrl={match.awayTeam.badgeUrl ?? null}
@@ -713,7 +724,6 @@ function NextMatchCard({ match, leagueId }: { match: Match; leagueId: string }) 
           />
         </div>
       </div>
-    </Card>
     </Link>
   );
 }
@@ -734,20 +744,9 @@ function TeamBadge({
     .slice(0, 2)
     .toUpperCase();
 
-  const colors = [
-    "bg-green-200 text-green-900",
-    "bg-pink-200 text-pink-900",
-    "bg-cyan-200 text-cyan-900",
-    "bg-orange-200 text-orange-900",
-    "bg-violet-200 text-violet-900",
-    "bg-fuchsia-200 text-fuchsia-900",
-  ];
-
-  const index = initials ? initials.charCodeAt(0) % colors.length : 0;
-
   const sizes = {
-    sm: "h-7 w-7 rounded-lg text-[10px]",
-    md: "h-11 w-11 rounded-[14px] text-base",
+    sm: "h-7 w-7 rounded-[3px] text-[10px]",
+    md: "h-11 w-11 rounded-[5px] text-base",
   };
 
   if (badgeUrl) {
@@ -756,7 +755,7 @@ function TeamBadge({
         src={badgeUrl}
         alt={`Logo ${name}`}
         className={`shrink-0 object-contain ${sizes[size].split(" ").slice(0, 2).join(" ")} ${
-          size === "sm" ? "rounded-lg" : "rounded-[14px]"
+          size === "sm" ? "rounded-[3px]" : "rounded-[5px]"
         }`}
       />
     );
@@ -764,7 +763,7 @@ function TeamBadge({
 
   return (
     <span
-      className={`flex shrink-0 items-center justify-center font-black ${sizes[size]} ${colors[index]}`}
+      className={`flex shrink-0 items-center justify-center border border-[var(--border-strong)] bg-transparent font-semibold text-[var(--accent)] ${sizes[size]}`}
     >
       {initials}
     </span>

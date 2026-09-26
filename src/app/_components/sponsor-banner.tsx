@@ -19,14 +19,14 @@ export default function SponsorBanner({
   const content = (
     <div
       className={[
-        "sponsor-banner flex min-w-0 items-center justify-center gap-4 rounded-[22px] border border-[var(--border)] px-4 text-center",
+        "sponsor-banner flex min-w-0 items-center justify-center gap-4 rounded-[6px] border border-[var(--border)] px-4 text-center",
         compact
           ? "min-h-[104px] py-4 sm:px-6"
           : "min-h-[132px] py-5 sm:px-8 sm:py-6",
         className,
       ].join(" ")}
     >
-      <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.22em] text-[#6c5b3c] sm:text-[10px]">
+      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] sm:text-[10px]">
         Sponsor
         <span className="block">ufficiale</span>
       </span>
