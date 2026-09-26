@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+import crypto, { type JsonWebKey } from "node:crypto";
 
 export type StoredPushSubscription = {
   endpoint: string;
