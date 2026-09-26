@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import Link from "next/link";
-import { ArrowRight, CopyPlus, Layers3, Plus, Search } from "lucide-react";
-import Card from "src/app/_components/ui/card";
+import { ArrowRight, CopyPlus, Plus, Search, Trash2 } from "lucide-react";
 import Button from "src/app/_components/ui/button";
 import Input from "src/app/_components/ui/input";
 import Badge from "src/app/_components/ui/badge";
@@ -131,7 +130,14 @@ export default function HomePage() {
 
     try {
       setLoading(true);
-      await postJSON("/api/leagues", { name: n, teamIdsToCopy, playoffEnabled, playoffFormat, playoffTeamCount, playoffSeeded });
+      await postJSON("/api/leagues", {
+        name: n,
+        teamIdsToCopy,
+        playoffEnabled,
+        playoffFormat,
+        playoffTeamCount,
+        playoffSeeded,
+      });
       setName("");
       setTeamIdsToCopy([]);
       setPlayoffEnabled(false);
@@ -149,7 +155,13 @@ export default function HomePage() {
 
   async function removeLeague(id: string, leagueName: string) {
     setErr(null);
-    if (!window.confirm(`Eliminare il torneo "${leagueName}"?\n\nVerranno cancellati anche squadre, giocatori, partite e statistiche.`)) return;
+    if (
+      !window.confirm(
+        `Eliminare il torneo "${leagueName}"?\n\nVerranno cancellati anche squadre, giocatori, partite e statistiche.`
+      )
+    ) {
+      return;
+    }
 
     try {
       const res = await authFetch(`/api/leagues/${id}`, { method: "DELETE" });
@@ -161,193 +173,305 @@ export default function HomePage() {
     }
   }
 
-  const totalTeams = leagues.reduce((sum, league) => sum + (league.teams?.length ?? 0), 0);
-  const totalPlayers = leagues.reduce((sum, league) => sum + (league.teams?.reduce((n, team) => n + (team.players?.length ?? 0), 0) ?? 0), 0);
+  const totalTeams = leagues.reduce(
+    (sum, league) => sum + (league.teams?.length ?? 0),
+    0
+  );
+  const totalPlayers = leagues.reduce(
+    (sum, league) =>
+      sum +
+      (league.teams?.reduce(
+        (count, team) => count + (team.players?.length ?? 0),
+        0
+      ) ?? 0),
+    0
+  );
+
   const normalizedLeagueSearch = leagueSearch.trim().toLocaleLowerCase("it");
   const visibleLeagues = leagues.filter((league) => {
     if (!normalizedLeagueSearch) return true;
-    const haystack = [league.name, ...(league.teams?.map((team) => team.name) ?? [])].join(" ").toLocaleLowerCase("it");
+    const haystack = [
+      league.name,
+      ...(league.teams?.map((team) => team.name) ?? []),
+    ]
+      .join(" ")
+      .toLocaleLowerCase("it");
     return haystack.includes(normalizedLeagueSearch);
   });
 
   return (
-    <div className="tournament-hub min-h-screen w-full bg-[#070b12] px-4 py-5 text-[#f6f7fb] sm:px-6 lg:px-10 lg:py-8 2xl:px-14">
-      <div className="mx-auto w-full max-w-[1500px] space-y-6">
-        {err && <Badge variant="error" className="w-full">{err}</Badge>}
+    <div className="tournament-hub min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <header className="border-b border-[var(--border-strong)]">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-10">
+          <Link href="/" className="flex items-baseline gap-3">
+            <span className="scoreboard-figure text-3xl leading-none text-[var(--accent)]">
+              FUTPOLI
+            </span>
+            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] sm:inline">
+              piattaforma tornei
+            </span>
+          </Link>
 
-        <section className="relative overflow-hidden rounded-[36px] border border-white/10 bg-[#071018] p-5 shadow-[0_28px_90px_rgba(0,0,0,.34)] sm:p-8 lg:p-10">
-          <div className="absolute inset-0 opacity-70 [background:radial-gradient(circle_at_18%_18%,rgba(102,227,255,.16),transparent_24rem),radial-gradient(circle_at_90%_0%,rgba(201,167,102,.13),transparent_28rem),linear-gradient(135deg,rgba(255,255,255,.055)_0_1px,transparent_1px_100%)] [background-size:auto,auto,44px_44px]" />
-          <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
+          <div className="flex items-center gap-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            <span>{loadingLeagues ? "—" : leagues.length} tornei</span>
+            <Link href="/login" className="text-[var(--foreground)] hover:text-[var(--accent)]">
+              Area riservata
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-10 sm:px-6 lg:px-10 lg:pt-14">
+        {err && <Badge variant="error" className="mb-6 w-full">{err}</Badge>}
+
+        <section className="border-b border-[var(--border-strong)] pb-9 lg:pb-12">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200">
-                <Layers3 size={14} /> Tournament desk
-              </div>
-              <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-[-0.07em] sm:text-6xl lg:text-7xl">
-                Il tuo modo di gestire tornei di calcio nel modo più semplice possibile
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/62 sm:text-base">
-                Ogni torneo ha la sua identità, i suoi admin e le sue regole. Da qui in poi è tutto nelle tue mani
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                Competizioni
               </p>
-              <div className="mt-6 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-white/52">
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">Campi</span>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">Arbitri</span>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">Rose</span>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">Statistiche</span>
-              </div>
+              <h1 className="scoreboard-figure mt-3 max-w-5xl text-[clamp(3.8rem,10vw,8.5rem)] font-semibold leading-[0.72] tracking-[-0.02em]">
+                SCEGLI IL
+                <br />
+                TORNEO.
+              </h1>
             </div>
 
-            <div className="rounded-[30px] border border-white/10 bg-black/20 p-3">
-              <div className="grid grid-cols-3 gap-3">
-                <HubMetric label="Tornei" value={loadingLeagues ? "…" : leagues.length} />
-                <HubMetric label="Squadre" value={loadingLeagues ? "…" : totalTeams} />
-                <HubMetric label="Giocatori" value={loadingLeagues ? "…" : totalPlayers} />
-              </div>
+            <div className="grid grid-cols-3 gap-5 border-t border-[var(--border)] pt-4 lg:min-w-[380px] lg:border-t-0 lg:pt-0">
+              <HubMetric label="Tornei" value={loadingLeagues ? "—" : leagues.length} />
+              <HubMetric label="Squadre" value={loadingLeagues ? "—" : totalTeams} />
+              <HubMetric label="Giocatori" value={loadingLeagues ? "—" : totalPlayers} />
             </div>
           </div>
         </section>
 
-        <div className={isAdmin && showCreateLeague ? "desktop-control-grid gap-6" : "space-y-6"}>
-          <section className="space-y-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Selezione</p>
-              <h2 className="mt-1 text-2xl font-black tracking-[-0.05em]">Stagioni attive</h2>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <label className="flex h-11 min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 sm:w-72">
-                <Search size={16} className="shrink-0 text-white/45" />
-                <input value={leagueSearch} onChange={(e) => setLeagueSearch(e.target.value)} placeholder="Cerca torneo, squadra o stagione" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" />
-              </label>
-              {isAdmin && <Button onClick={() => setShowCreateLeague((v) => !v)}>{showCreateLeague ? "Chiudi" : "Nuovo torneo"}</Button>}
-            </div>
-          </div>
-
-          {loadingLeagues ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"><LeagueCardSkeleton /><LeagueCardSkeleton /><LeagueCardSkeleton /></div>
-          ) : leagues.length === 0 ? (
-            <Card className="turf-card py-14 text-center">
-              <div className="w-full max-w-md space-y-3 lg:max-w-none">
-                <div className="text-lg font-black text-[var(--foreground)]">Nessuna stagione aperta</div>
-                <p className="text-sm text-[var(--muted)]">{isAdmin ? "Crea il primo torneo e assegnagli logo, colori e admin dedicato." : "Al momento non ci sono tornei disponibili."}</p>
-                {isAdmin && <Button onClick={() => setShowCreateLeague(true)}>Crea torneo</Button>}
+        <div
+          className={
+            isAdmin && showCreateLeague
+              ? "grid gap-10 pt-9 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-12"
+              : "pt-9"
+          }
+        >
+          <section className="min-w-0">
+            <div className="mb-7 flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Archivio attivo
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-[-0.025em]">
+                  Tornei disponibili
+                </h2>
               </div>
-            </Card>
-          ) : visibleLeagues.length === 0 ? (
-            <Card className="py-12 text-center"><p className="font-black">Nessun torneo trovato</p><p className="mt-1 text-sm text-[var(--muted)]">Prova con un altro nome o con una squadra.</p></Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {visibleLeagues.map((league) => (
-                <LeagueSwitchCard
-                  key={league.id}
-                  league={league}
-                  isAdmin={isAdmin}
-                  onDelete={() => removeLeague(league.id, league.name)}
-                />
-              ))}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label className="flex h-11 min-w-0 items-center gap-2 border-b border-[var(--border-strong)] px-1 sm:w-72">
+                  <Search size={15} className="shrink-0 text-[var(--muted)]" />
+                  <input
+                    value={leagueSearch}
+                    onChange={(event) => setLeagueSearch(event.target.value)}
+                    placeholder="Cerca torneo o squadra"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
+                  />
+                </label>
+
+                {isAdmin && (
+                  <Button onClick={() => setShowCreateLeague((value) => !value)}>
+                    <Plus size={15} className="mr-2" />
+                    {showCreateLeague ? "Chiudi" : "Nuovo torneo"}
+                  </Button>
+                )}
+              </div>
             </div>
+
+            {loadingLeagues ? (
+              <div>
+                <LeagueRowSkeleton />
+                <LeagueRowSkeleton />
+                <LeagueRowSkeleton />
+              </div>
+            ) : leagues.length === 0 ? (
+              <div className="border-y border-[var(--border)] py-14">
+                <p className="text-xl font-semibold">Nessun torneo disponibile.</p>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
+                  {isAdmin
+                    ? "Crea il primo torneo: branding, squadre, calendario e ruoli verranno poi gestiti dalla sua area dedicata."
+                    : "Al momento non ci sono competizioni pubblicate."}
+                </p>
+                {isAdmin && (
+                  <Button onClick={() => setShowCreateLeague(true)} className="mt-5">
+                    Crea il primo torneo
+                  </Button>
+                )}
+              </div>
+            ) : visibleLeagues.length === 0 ? (
+              <div className="border-y border-[var(--border)] py-12">
+                <p className="font-semibold">Nessun risultato per “{leagueSearch}”.</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  Prova con il nome del torneo o di una squadra.
+                </p>
+              </div>
+            ) : (
+              <div className="border-b border-[var(--border-strong)]">
+                {visibleLeagues.map((league, index) => (
+                  <LeagueSwitchRow
+                    key={league.id}
+                    league={league}
+                    index={index}
+                    isAdmin={isAdmin}
+                    onDelete={() => removeLeague(league.id, league.name)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {isAdmin && showCreateLeague && (
+            <aside className="border-t border-[var(--border-strong)] pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+              <CreateLeaguePanel
+                name={name}
+                setName={setName}
+                loading={loading}
+                create={create}
+                existingTeams={existingTeams}
+                loadingExistingTeams={loadingExistingTeams}
+                teamIdsToCopy={teamIdsToCopy}
+                setTeamIdsToCopy={setTeamIdsToCopy}
+                playoffEnabled={playoffEnabled}
+                setPlayoffEnabled={setPlayoffEnabled}
+                playoffFormat={playoffFormat}
+                setPlayoffFormat={setPlayoffFormat}
+                playoffTeamCount={playoffTeamCount}
+                setPlayoffTeamCount={setPlayoffTeamCount}
+                playoffSeeded={playoffSeeded}
+                setPlayoffSeeded={setPlayoffSeeded}
+              />
+            </aside>
           )}
-        </section>
-
-        {isAdmin && showCreateLeague && (
-          <aside className="space-y-5">
-            <CreateLeaguePanel
-              name={name}
-              setName={setName}
-              loading={loading}
-              create={create}
-              existingTeams={existingTeams}
-              loadingExistingTeams={loadingExistingTeams}
-              teamIdsToCopy={teamIdsToCopy}
-              setTeamIdsToCopy={setTeamIdsToCopy}
-              playoffEnabled={playoffEnabled}
-              setPlayoffEnabled={setPlayoffEnabled}
-              playoffFormat={playoffFormat}
-              setPlayoffFormat={setPlayoffFormat}
-              playoffTeamCount={playoffTeamCount}
-              setPlayoffTeamCount={setPlayoffTeamCount}
-              playoffSeeded={playoffSeeded}
-              setPlayoffSeeded={setPlayoffSeeded}
-            />
-          </aside>
-        )}
-      </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
 
-function HubMetric({ label, value }: { label: string; value: string | number }) {
+function HubMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/[0.045] px-4 py-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-white/40">{label}</p>
-      <p className="mt-1 text-2xl font-black text-white">{value}</p>
+    <div className="border-l border-[var(--border)] pl-4 first:border-l-0 first:pl-0">
+      <p className="scoreboard-figure text-4xl leading-none text-[var(--foreground)]">
+        {value}
+      </p>
+      <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        {label}
+      </p>
     </div>
   );
 }
 
-function LeagueSwitchCard({
+function LeagueSwitchRow({
   league,
+  index,
   isAdmin,
   onDelete,
 }: {
   league: League;
+  index: number;
   isAdmin: boolean;
   onDelete: () => void;
 }) {
   const teams = league.teams?.length ?? 0;
-  const players = league.teams?.reduce((sum, team) => sum + (team.players?.length ?? 0), 0) ?? 0;
+  const players =
+    league.teams?.reduce(
+      (sum, team) => sum + (team.players?.length ?? 0),
+      0
+    ) ?? 0;
   const brand = resolveLeagueBranding(league);
   const logo = brand.logoUrl;
 
   return (
-    <article
-      className="group relative min-h-[315px] overflow-hidden rounded-[30px] border border-white/10 bg-[#10151f] shadow-[0_20px_60px_rgba(0,0,0,.24)] transition hover:-translate-y-1 hover:border-white/20"
-      style={{
-        backgroundColor: brand.background,
-        backgroundImage: brand.coverUrl
-          ? `linear-gradient(180deg, rgba(4,7,12,.08), rgba(4,7,12,.88)), url(${JSON.stringify(brand.coverUrl)})`
-          : `radial-gradient(circle at 10% 0%, ${brand.primary}3d, transparent 24rem), radial-gradient(circle at 100% 15%, ${brand.secondary}2d, transparent 22rem), linear-gradient(145deg, ${brand.background}, #080b11)`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="flex min-h-[315px] flex-col justify-between p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            {logo ? (
-              <img src={logo} alt="" className="h-14 w-14 shrink-0 rounded-2xl border border-white/10 bg-black/15 object-contain p-1.5" />
-            ) : (
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/10 bg-black/15 text-xl font-black text-white">
-                {league.name.slice(0, 1).toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-white/12 bg-black/20 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-white/65">
-                {league.playoffFormat ? "Regular + playoff" : "Regular season"}
-              </span>
-              <h3 className="mt-2 line-clamp-2 text-2xl font-black tracking-[-0.045em] text-white">{league.name}</h3>
-            </div>
-          </div>
-          {isAdmin && (
-            <button onClick={onDelete} className="shrink-0 rounded-xl border border-red-300/20 bg-red-500/15 px-3 py-2 text-[11px] font-black text-red-100">
-              Elimina
-            </button>
-          )}
+    <article className="group relative border-t border-[var(--border)] first:border-t-0">
+      <div className="grid min-w-0 gap-4 py-5 sm:grid-cols-[42px_96px_minmax(0,1fr)_auto] sm:items-center sm:gap-5 lg:grid-cols-[52px_116px_minmax(0,1fr)_auto] lg:py-6">
+        <div className="hidden font-mono text-[10px] tracking-[0.16em] text-[var(--muted)] sm:block">
+          {String(index + 1).padStart(2, "0")}
         </div>
 
-        <div>
-          <div className="mb-4 flex flex-wrap gap-2 text-xs font-semibold text-white/65">
-            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5"><b className="text-white">{teams}</b> squadre</span>
-            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5"><b className="text-white">{players}</b> giocatori</span>
+        <div
+          className="relative h-20 w-20 overflow-hidden border border-[var(--border-strong)] sm:h-24 sm:w-24 lg:h-28 lg:w-28"
+          style={{ backgroundColor: brand.background }}
+        >
+          {brand.coverUrl && (
+            <img
+              src={brand.coverUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover opacity-35"
+            />
+          )}
+          <div
+            className="absolute inset-x-0 top-0 h-[3px]"
+            style={{ backgroundColor: brand.primary }}
+          />
+          <div className="absolute inset-0 grid place-items-center p-3">
+            {logo ? (
+              <img
+                src={logo}
+                alt=""
+                className="max-h-full max-w-full object-contain"
+              />
+            ) : (
+              <span
+                className="scoreboard-figure text-4xl"
+                style={{ color: brand.primary }}
+              >
+                {league.name.slice(0, 1).toUpperCase()}
+              </span>
+            )}
           </div>
-          <Link
-            href={`/leagues/${league.id}`}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[0_12px_34px_rgba(0,0,0,.25)] transition hover:brightness-110"
-            style={{ background: `linear-gradient(135deg, ${brand.secondary}, ${brand.primary})` }}
-          >
-            Apri control room <ArrowRight size={16} />
-          </Link>
         </div>
+
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            <span>{league.playoffFormat ? "Regular + playoff" : "Regular season"}</span>
+            <span className="hidden h-1 w-1 rounded-full bg-[var(--border-strong)] sm:inline" />
+            <span>{teams} squadre</span>
+            <span>{players} giocatori</span>
+          </div>
+
+          <h3 className="max-w-3xl text-2xl font-semibold leading-tight tracking-[-0.035em] text-[var(--foreground)] sm:text-3xl">
+            {league.name}
+          </h3>
+
+          <div className="mt-3 flex items-center gap-4">
+            <Link
+              href={`/leagues/${league.id}`}
+              className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)] transition group-hover:gap-3"
+            >
+              Entra nel torneo <ArrowRight size={14} />
+            </Link>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--muted)] hover:text-[var(--danger)]"
+              >
+                <Trash2 size={12} />
+                Elimina
+              </button>
+            )}
+          </div>
+        </div>
+
+        <Link
+          href={`/leagues/${league.id}`}
+          aria-label={`Apri ${league.name}`}
+          className="hidden h-14 w-14 place-items-center border-l border-[var(--border)] text-[var(--muted)] transition hover:text-[var(--accent)] sm:grid"
+        >
+          <ArrowRight size={22} />
+        </Link>
       </div>
     </article>
   );
@@ -355,7 +479,7 @@ function LeagueSwitchCard({
 
 function CreateLeaguePanel(props: {
   name: string;
-  setName: (v: string) => void;
+  setName: (value: string) => void;
   loading: boolean;
   create: () => void;
   existingTeams: ExistingTeam[];
@@ -363,16 +487,17 @@ function CreateLeaguePanel(props: {
   teamIdsToCopy: string[];
   setTeamIdsToCopy: Dispatch<SetStateAction<string[]>>;
   playoffEnabled: boolean;
-  setPlayoffEnabled: (v: boolean) => void;
+  setPlayoffEnabled: (value: boolean) => void;
   playoffFormat: "SINGLE_ELIM" | "TWO_LEG";
-  setPlayoffFormat: (v: "SINGLE_ELIM" | "TWO_LEG") => void;
+  setPlayoffFormat: (value: "SINGLE_ELIM" | "TWO_LEG") => void;
   playoffTeamCount: number;
-  setPlayoffTeamCount: (v: number) => void;
+  setPlayoffTeamCount: (value: number) => void;
   playoffSeeded: boolean;
-  setPlayoffSeeded: (v: boolean) => void;
+  setPlayoffSeeded: (value: boolean) => void;
 }) {
   const [teamSearch, setTeamSearch] = useState("");
   const normalizedSearch = teamSearch.trim().toLocaleLowerCase("it");
+
   const filteredTeams = useMemo(
     () =>
       props.existingTeams.filter((team) => {
@@ -404,29 +529,109 @@ function CreateLeaguePanel(props: {
   }
 
   return (
-    <Card>
-      <div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Plus size={20} /></div><div><p className="text-xs font-black uppercase tracking-widest text-[var(--accent)]">Creazione</p><h2 className="text-xl font-black">Nuovo torneo</h2></div></div>
-      <div className="mt-5 space-y-4">
-        <Input value={props.name} onChange={(e) => props.setName(e.target.value)} placeholder="Nome torneo" />
-        <label className="flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4"><input type="checkbox" checked={props.playoffEnabled} onChange={(e) => props.setPlayoffEnabled(e.target.checked)} className="mt-1" /><span><span className="block text-sm font-black">Prevedi fase playoff</span><span className="mt-1 block text-xs text-[var(--muted)]">La voce Playoff comparirà solo se questa opzione è attiva.</span></span></label>
-        {props.playoffEnabled && <div className="grid gap-3 sm:grid-cols-2"><select value={props.playoffFormat} onChange={(e) => props.setPlayoffFormat(e.target.value as "SINGLE_ELIM" | "TWO_LEG")} className="h-11 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm"><option value="SINGLE_ELIM" className="text-black">Eliminazione diretta</option><option value="TWO_LEG" className="text-black">Andata e ritorno</option></select><select value={props.playoffTeamCount} onChange={(e) => props.setPlayoffTeamCount(Number(e.target.value))} className="h-11 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm">{[2,4,8,16].map((n) => <option key={n} value={n} className="text-black">Top {n}</option>)}</select><label className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3 py-2 text-sm font-semibold"><input type="checkbox" checked={props.playoffSeeded} onChange={(e) => props.setPlayoffSeeded(e.target.checked)} /> Seeding</label></div>}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
+    <div className="lg:sticky lg:top-8">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+            Amministrazione
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em]">
+            Nuovo torneo
+          </h2>
+        </div>
+        <Plus size={20} className="mt-1 text-[var(--muted)]" />
+      </div>
+
+      <div className="space-y-5">
+        <div>
+          <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            Nome torneo
+          </label>
+          <Input
+            value={props.name}
+            onChange={(event) => props.setName(event.target.value)}
+            placeholder="Es. Cammino Imperiale 2026/27"
+            className="w-full"
+          />
+        </div>
+
+        <label className="flex items-start gap-3 border-y border-[var(--border)] py-4">
+          <input
+            type="checkbox"
+            checked={props.playoffEnabled}
+            onChange={(event) => props.setPlayoffEnabled(event.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            <span className="block text-sm font-semibold">Fase playoff</span>
+            <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">
+              Attiva la fase finale e la relativa voce di navigazione.
+            </span>
+          </span>
+        </label>
+
+        {props.playoffEnabled && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <select
+              value={props.playoffFormat}
+              onChange={(event) =>
+                props.setPlayoffFormat(
+                  event.target.value as "SINGLE_ELIM" | "TWO_LEG"
+                )
+              }
+              className="h-10 border border-[var(--border)] bg-transparent px-3 text-sm text-[var(--foreground)] outline-none"
+            >
+              <option value="SINGLE_ELIM" className="text-black">
+                Eliminazione diretta
+              </option>
+              <option value="TWO_LEG" className="text-black">
+                Andata e ritorno
+              </option>
+            </select>
+
+            <select
+              value={props.playoffTeamCount}
+              onChange={(event) =>
+                props.setPlayoffTeamCount(Number(event.target.value))
+              }
+              className="h-10 border border-[var(--border)] bg-transparent px-3 text-sm text-[var(--foreground)] outline-none"
+            >
+              {[2, 4, 8, 16].map((count) => (
+                <option key={count} value={count} className="text-black">
+                  Top {count}
+                </option>
+              ))}
+            </select>
+
+            <label className="flex items-center gap-2 border-b border-[var(--border)] py-2 text-sm">
+              <input
+                type="checkbox"
+                checked={props.playoffSeeded}
+                onChange={(event) => props.setPlayoffSeeded(event.target.checked)}
+              />
+              Seeding classifica
+            </label>
+          </div>
+        )}
+
+        <div className="border-t border-[var(--border-strong)] pt-5">
+          <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-wider text-[var(--muted)]">
-                Squadre già registrate
+              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Squadre esistenti
               </p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                Copia nel nuovo torneo profilo, stemma e rosa già salvati.
+              <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+                Puoi copiare profilo, stemma e rosa già registrati.
               </p>
             </div>
+
             {props.teamIdsToCopy.length > 0 && (
               <button
                 type="button"
                 onClick={() => props.setTeamIdsToCopy([])}
-                className="shrink-0 text-xs font-black text-[var(--accent)]"
+                className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]"
               >
-                Azzera ({props.teamIdsToCopy.length})
+                Azzera {props.teamIdsToCopy.length}
               </button>
             )}
           </div>
@@ -434,51 +639,61 @@ function CreateLeaguePanel(props: {
           <Input
             value={teamSearch}
             onChange={(event) => setTeamSearch(event.target.value)}
-            placeholder="Cerca squadra o torneo di origine"
+            placeholder="Cerca squadra o torneo"
+            className="w-full"
           />
 
           {props.loadingExistingTeams ? (
-            <p className="py-3 text-sm text-[var(--muted)]">Caricamento squadre salvate…</p>
+            <p className="py-4 text-sm text-[var(--muted)]">
+              Caricamento squadre…
+            </p>
           ) : filteredTeams.length === 0 ? (
-            <p className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 text-sm text-[var(--muted)]">
+            <p className="border-b border-[var(--border)] py-4 text-sm text-[var(--muted)]">
               {props.existingTeams.length === 0
                 ? "Non ci sono ancora squadre registrate."
                 : "Nessuna squadra corrisponde alla ricerca."}
             </p>
           ) : (
-            <div className="grid max-h-80 gap-2 overflow-y-auto pr-1">
+            <div className="mt-2 max-h-80 overflow-y-auto border-t border-[var(--border)]">
               {filteredTeams.map((team) => {
                 const checked = props.teamIdsToCopy.includes(team.id);
+
                 return (
                   <button
                     key={team.id}
                     type="button"
                     onClick={() => toggleExistingTeam(team)}
                     className={[
-                      "flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition",
+                      "flex w-full items-center gap-3 border-b border-[var(--border)] px-1 py-3 text-left transition-colors",
                       checked
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                        : "border-[var(--border)] bg-[var(--card-2)] hover:border-[var(--accent)]/50",
+                        ? "bg-[var(--accent-soft)] text-[var(--foreground)]"
+                        : "text-[var(--foreground)] hover:bg-[var(--card-2)]",
                     ].join(" ")}
                   >
-                    <CopyPlus size={16} className="shrink-0" />
+                    <CopyPlus
+                      size={15}
+                      className={checked ? "text-[var(--accent)]" : "text-[var(--muted)]"}
+                    />
+
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{team.name}</span>
+                      <span className="block truncate text-sm font-medium">
+                        {team.name}
+                      </span>
                       <span className="mt-0.5 block truncate text-xs text-[var(--muted)]">
                         {team.league.name} · {team.playersCount} giocatori
-                        {!team.activeInLeague ? " · rimossa dal torneo" : ""}
+                        {!team.activeInLeague ? " · archiviata" : ""}
                       </span>
                     </span>
+
                     <span
-                      aria-hidden="true"
                       className={[
-                        "grid h-5 w-5 shrink-0 place-items-center rounded-md border text-xs font-black",
+                        "grid h-5 w-5 shrink-0 place-items-center border text-[10px]",
                         checked
-                          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                          : "border-[var(--border)]",
+                          ? "border-[var(--accent)] bg-[var(--accent)] text-black"
+                          : "border-[var(--border-strong)] text-transparent",
                       ].join(" ")}
                     >
-                      {checked ? "✓" : ""}
+                      ✓
                     </span>
                   </button>
                 );
@@ -486,12 +701,30 @@ function CreateLeaguePanel(props: {
             </div>
           )}
         </div>
-        <Button onClick={props.create} disabled={props.loading} className="w-full">{props.loading ? "Creazione…" : "Crea torneo"}</Button>
+
+        <Button
+          onClick={props.create}
+          disabled={props.loading}
+          className="w-full"
+        >
+          {props.loading ? "Creazione…" : "Crea torneo"}
+        </Button>
       </div>
-    </Card>
+    </div>
   );
 }
 
-function LeagueCardSkeleton() {
-  return <div className="rounded-[24px] border border-[var(--border)] bg-[var(--card)] p-5"><div className="animate-pulse space-y-4"><div className="h-4 w-24 rounded bg-white/10" /><div className="h-8 w-2/3 rounded bg-white/10" /><div className="h-20 rounded bg-white/10" /></div></div>;
+function LeagueRowSkeleton() {
+  return (
+    <div className="grid gap-4 border-t border-[var(--border)] py-6 first:border-t-0 sm:grid-cols-[42px_96px_minmax(0,1fr)_auto] sm:items-center sm:gap-5">
+      <div className="hidden h-3 w-5 animate-pulse bg-[var(--card-2)] sm:block" />
+      <div className="h-24 w-24 animate-pulse bg-[var(--card-2)]" />
+      <div className="space-y-3">
+        <div className="h-3 w-36 animate-pulse bg-[var(--card-2)]" />
+        <div className="h-8 w-72 max-w-full animate-pulse bg-[var(--card-2)]" />
+        <div className="h-3 w-28 animate-pulse bg-[var(--card-2)]" />
+      </div>
+      <div className="hidden h-12 w-12 animate-pulse border-l border-[var(--border)] sm:block" />
+    </div>
+  );
 }
