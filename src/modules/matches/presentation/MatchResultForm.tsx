@@ -6,7 +6,9 @@ import Link from "next/link";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
+  ChevronUp,
   ClipboardCheck,
   Goal,
   MapPin,
@@ -24,15 +26,16 @@ import DashboardShell from "src/app/_components/dashboard-shell";
 import Card from "src/app/_components/ui/card";
 import Button from "src/app/_components/ui/button";
 import Badge from "src/app/_components/ui/badge";
-import SponsorBanner from "src/app/_components/sponsor-banner";
 import { useAuth, authFetch } from "@/lib/client-auth";
 import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 import { getRefereeMatchFeeCents } from "@/modules/referees/domain/referee-cost";
 import { readApiError } from "@/modules/core/client-error";
+import { selectMatchKits } from "@/modules/matches/domain/match-kits";
 import MatchSlotBooking from "@/modules/bookings/presentation/MatchSlotBooking";
 import {
   ScoreInput,
   SheetCounter,
+  TeamFormationCard,
   TeamScoreBlock,
   TeamStatsCard,
   type AdminRefereeState,
@@ -80,6 +83,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
   const [savingReferee, setSavingReferee] = useState(false);
   const [refereeMsg, setRefereeMsg] = useState<string | null>(null);
   const [refereeErr, setRefereeErr] = useState<string | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const toLocalDatetimeValue = (iso: string | null) => {
     if (!iso) return "";
@@ -139,6 +143,17 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
   const homePlayers = useMemo(() => match.homeTeam.players.slice().sort((a, b) => a.number - b.number), [match.homeTeam.players]);
   const awayPlayers = useMemo(() => match.awayTeam.players.slice().sort((a, b) => a.number - b.number), [match.awayTeam.players]);
+  const publishedLineupByTeam = useMemo(
+    () => new Map((match.publishedLineups ?? []).map((lineup) => [lineup.teamId, lineup])),
+    [match.publishedLineups]
+  );
+  const homeLineup = publishedLineupByTeam.get(match.homeTeam.id) ?? null;
+  const awayLineup = publishedLineupByTeam.get(match.awayTeam.id) ?? null;
+  const matchKits = useMemo(
+    () => selectMatchKits(match.homeTeam, match.awayTeam),
+    [match.homeTeam, match.awayTeam]
+  );
+  const captainFormationView = isCaptainOfMatch && !canManageDraft;
 
   const totals = useMemo(() => {
     let goalsSum = 0;
@@ -490,7 +505,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
             </div>
 
             <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-              <TeamScoreBlock team={match.homeTeam} faded={heroPlayed && heroHomeGoals < heroAwayGoals} />
+              <TeamScoreBlock team={match.homeTeam} faded={heroPlayed && heroHomeGoals < heroAwayGoals} kitUrl={matchKits.home.url} kitLabel={matchKits.home.kind === "home" ? "Casa" : "Trasferta"} />
               <div className="flex flex-col items-center gap-3">
                 {canEditResult ? (
                   <div className="flex items-center gap-2 rounded-[28px] border border-white/10 bg-black/30 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
@@ -516,7 +531,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
                   </span>
                 )}
               </div>
-              <TeamScoreBlock team={match.awayTeam} faded={heroPlayed && heroAwayGoals < heroHomeGoals} />
+              <TeamScoreBlock team={match.awayTeam} faded={heroPlayed && heroAwayGoals < heroHomeGoals} kitUrl={matchKits.away.url} kitLabel={matchKits.away.kind === "home" ? "Casa" : "Trasferta"} />
             </div>
           </div>
 
@@ -561,7 +576,6 @@ export default function MatchResultForm({ match }: { match: Match }) {
           </div>
         </Card>
 
-        <SponsorBanner compact />
 
         {canManageDraft && (
           <MatchLifecyclePanel
@@ -606,22 +620,53 @@ export default function MatchResultForm({ match }: { match: Match }) {
 
         {canBook && (
           <div id="match-booking" className="scroll-mt-20">
-            <MatchSlotBooking
-              leagueId={match.leagueId}
-              matchId={match.id}
-              canBook={canBook}
-              initialBooking={
-                match.date && match.venueKey
-                  ? {
-                      startsAt: match.date,
-                      endsAt: match.slotEnd,
-                      venueKey: match.venueKey,
-                      venueName: match.venueName,
-                      address: match.venueAddress,
-                    }
-                  : null
-              }
-            />
+            <Card variant="inner" className="overflow-hidden !p-0">
+              <button
+                type="button"
+                onClick={() => setBookingOpen((open) => !open)}
+                className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-[var(--card-2)] sm:px-5"
+                aria-expanded={bookingOpen}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <CalendarDays size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-[var(--foreground)]">Prenotazione campo</p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
+                      {match.date && match.venueKey
+                        ? `${new Date(match.date).toLocaleString("it-IT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · ${match.venueName ?? "Campo prenotato"}`
+                        : "Nessuno slot prenotato"}
+                    </p>
+                  </div>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black text-[var(--accent)]">
+                  {bookingOpen ? "Nascondi" : match.venueKey ? "Modifica" : "Apri"}
+                  {bookingOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                </span>
+              </button>
+            </Card>
+
+            {bookingOpen && (
+              <div className="mt-3">
+                <MatchSlotBooking
+                  leagueId={match.leagueId}
+                  matchId={match.id}
+                  canBook={canBook}
+                  initialBooking={
+                    match.date && match.venueKey
+                      ? {
+                          startsAt: match.date,
+                          endsAt: match.slotEnd,
+                          venueKey: match.venueKey,
+                          venueName: match.venueName,
+                          address: match.venueAddress,
+                        }
+                      : null
+                  }
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -661,7 +706,7 @@ export default function MatchResultForm({ match }: { match: Match }) {
               : match.lifecycleStatus === "CANCELLED"
                 ? "Partita annullata — sola lettura."
                 : isCaptainOfMatch
-                  ? "Puoi gestire la prenotazione dello slot; distinta e risultato sono gestiti dagli ufficiali di gara."
+                  ? "Puoi vedere le formazioni consegnate e gestire la prenotazione dello slot; risultato e statistiche restano agli ufficiali di gara."
                   : "Partita in sola lettura."}
           </p>
         )}
@@ -693,9 +738,51 @@ export default function MatchResultForm({ match }: { match: Match }) {
           </Card>
         )}
 
+        {isAdmin && (homeLineup || awayLineup) && (
+          <div className="space-y-3">
+            <p className="px-1 text-xs font-black uppercase tracking-[0.16em] text-[var(--muted)]">Formazioni allenatori</p>
+            <div className="grid gap-5 xl:grid-cols-2">
+              {homeLineup && (
+                <TeamFormationCard
+                  team={match.homeTeam}
+                  lineup={homeLineup}
+                  outfieldKitUrl={matchKits.home.url}
+                  kitLabel={matchKits.home.kind === "home" ? "Casa" : "Trasferta"}
+                />
+              )}
+              {awayLineup && (
+                <TeamFormationCard
+                  team={match.awayTeam}
+                  lineup={awayLineup}
+                  outfieldKitUrl={matchKits.away.url}
+                  kitLabel={matchKits.away.kind === "home" ? "Casa" : "Trasferta"}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         <div id="match-sheets" className="scroll-mt-20 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
-          <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
+          {captainFormationView && homeLineup ? (
+            <TeamFormationCard
+              team={match.homeTeam}
+              lineup={homeLineup}
+              outfieldKitUrl={matchKits.home.url}
+              kitLabel={matchKits.home.kind === "home" ? "Casa" : "Trasferta"}
+            />
+          ) : (
+            <TeamStatsCard title={match.homeTeam.name} colorHex={match.homeTeam.colorHex} secondaryColorHex={match.homeTeam.secondaryColorHex} players={homePlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onlySheet={captainFormationView} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(homePlayers, checked)} />
+          )}
+          {captainFormationView && awayLineup ? (
+            <TeamFormationCard
+              team={match.awayTeam}
+              lineup={awayLineup}
+              outfieldKitUrl={matchKits.away.url}
+              kitLabel={matchKits.away.kind === "home" ? "Casa" : "Trasferta"}
+            />
+          ) : (
+            <TeamStatsCard title={match.awayTeam.name} colorHex={match.awayTeam.colorHex} secondaryColorHex={match.awayTeam.secondaryColorHex} players={awayPlayers} stats={stats} sheet={sheet} mvpPlayerId={mvpPlayerId} setMvpPlayerId={setMvpPlayerId} showMvpSelection={canEditResult} coachSuggestedStatuses={coachSuggestedStatuses} toggleSheet={toggleSheet} setPlayerStat={setPlayerStat} readOnly={!canEditResult} isAdmin={isAdmin} showEligibility={canManageDraft} onlySheet={captainFormationView} onPreviewPhoto={setPhotoPreview} onSelectEligible={(checked) => setEligibleTeamSheet(awayPlayers, checked)} />
+          )}
         </div>
 
         {canEditResult && (

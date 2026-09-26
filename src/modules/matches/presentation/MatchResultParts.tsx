@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleDot, ShieldCheck, Star, ZoomIn } from "lucide-react";
+import { CircleDot, ShieldCheck, Shirt, Star, ZoomIn } from "lucide-react";
 import Card from "src/app/_components/ui/card";
 import { FUTPOLI_RULES } from "@/modules/players/domain/tournament-rules";
 
@@ -26,6 +26,9 @@ export type Team = {
   badgeUrl?: string | null;
   colorHex?: string | null;
   secondaryColorHex?: string | null;
+  kitHomeUrl?: string | null;
+  kitAwayUrl?: string | null;
+  kitGoalkeeperUrl?: string | null;
   players: Player[];
 };
 
@@ -79,6 +82,18 @@ export type Match = {
     playerId: string;
     teamId: string;
     status: "STARTER" | "BENCH";
+  }>;
+  publishedLineups?: Array<{
+    teamId: string;
+    formation: string;
+    updatedAt: string;
+    players: Array<{
+      playerId: string;
+      status: "STARTER" | "BENCH";
+      positionX: number | null;
+      positionY: number | null;
+      sortOrder: number;
+    }>;
   }>;
   leagueId: string;
 };
@@ -134,6 +149,42 @@ function TeamCrest({
   );
 }
 
+function TeamKitThumb({
+  url,
+  primary,
+  secondary,
+  large = false,
+}: {
+  url?: string | null;
+  primary: string;
+  secondary: string;
+  large?: boolean;
+}) {
+  const size = large
+    ? "h-12 w-12 sm:h-20 sm:w-20 lg:h-24 lg:w-24"
+    : "h-10 w-10";
+
+  if (url?.trim()) {
+    return (
+      <img
+        src={url.trim()}
+        alt="Divisa squadra"
+        className={`${size} shrink-0 object-contain drop-shadow-[0_8px_8px_rgba(0,0,0,.35)]`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${size} grid shrink-0 place-items-center rounded-2xl border border-white/10`}
+      style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+      aria-label="Divisa squadra"
+    >
+      <Shirt className="h-1/2 w-1/2 text-white/90" />
+    </div>
+  );
+}
+
 function isPlayerEligible(player: Player) {
   return player.isEligibleForMatchSheet === true;
 }
@@ -150,7 +201,17 @@ function safeTeamColor(color?: string | null) {
   return color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : "#F97316";
 }
 
-export function TeamScoreBlock({ team, faded }: { team: Team; faded?: boolean }) {
+export function TeamScoreBlock({
+  team,
+  faded,
+  kitUrl,
+  kitLabel,
+}: {
+  team: Team;
+  faded?: boolean;
+  kitUrl?: string | null;
+  kitLabel?: string;
+}) {
   const primaryColor = safeTeamColor(team.colorHex);
   const secondaryColor = safeTeamColor(team.secondaryColorHex ?? team.colorHex);
 
@@ -166,11 +227,26 @@ export function TeamScoreBlock({ team, faded }: { team: Team; faded?: boolean })
         background: `linear-gradient(135deg, ${primaryColor}24 0 48%, ${secondaryColor}24 52% 100%)`,
       }}
     >
-      <div
-        className="rounded-[26px] p-2"
-        style={{ boxShadow: `-8px 10px 28px ${primaryColor}1F, 8px 10px 28px ${secondaryColor}1F`, background: `linear-gradient(135deg, ${primaryColor}18 0 49%, ${secondaryColor}18 51% 100%)` }}
-      >
-        <TeamCrest name={team.name} badgeUrl={team.badgeUrl ?? null} large />
+      <div className="relative flex items-end justify-center pr-5 sm:pr-10">
+        <div
+          className="rounded-[26px] p-2"
+          style={{ boxShadow: `-8px 10px 28px ${primaryColor}1F, 8px 10px 28px ${secondaryColor}1F`, background: `linear-gradient(135deg, ${primaryColor}18 0 49%, ${secondaryColor}18 51% 100%)` }}
+        >
+          <TeamCrest name={team.name} badgeUrl={team.badgeUrl ?? null} large />
+        </div>
+        <div className="absolute -right-1 bottom-0 flex flex-col items-center sm:-right-2">
+          <TeamKitThumb
+            url={kitUrl}
+            primary={primaryColor}
+            secondary={secondaryColor}
+            large
+          />
+          {kitLabel && (
+            <span className="-mt-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider text-white/75 sm:px-2 sm:text-[9px]">
+              {kitLabel}
+            </span>
+          )}
+        </div>
       </div>
       <span className="max-w-full truncate text-sm font-black text-[var(--foreground)] sm:text-base">{team.name}</span>
       <span
@@ -178,6 +254,108 @@ export function TeamScoreBlock({ team, faded }: { team: Team; faded?: boolean })
         style={{ background: `linear-gradient(90deg, ${primaryColor} 0 50%, ${secondaryColor} 50% 100%)` }}
       />
     </div>
+  );
+}
+
+export function TeamFormationCard({
+  team,
+  lineup,
+  outfieldKitUrl,
+  kitLabel,
+}: {
+  team: Team;
+  lineup: NonNullable<Match["publishedLineups"]>[number];
+  outfieldKitUrl?: string | null;
+  kitLabel?: string;
+}) {
+  const primary = safeTeamColor(team.colorHex);
+  const secondary = safeTeamColor(team.secondaryColorHex ?? team.colorHex);
+  const playerById = new Map(team.players.map((player) => [player.id, player]));
+  const starters = lineup.players.filter((entry) => entry.status === "STARTER");
+  const bench = lineup.players.filter((entry) => entry.status === "BENCH");
+
+  return (
+    <Card className="overflow-hidden !p-0">
+      <div
+        className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3"
+        style={{
+          borderTop: "4px solid transparent",
+          borderImage: `linear-gradient(90deg, ${primary} 0 50%, ${secondary} 50% 100%) 1`,
+          background: `linear-gradient(105deg, ${primary}1F 0 30%, ${secondary}1F 70% 100%)`,
+        }}
+      >
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-black text-[var(--foreground)]">{team.name}</h2>
+          <p className="mt-0.5 text-xs text-[var(--muted)]">Formazione · {lineup.formation}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <TeamKitThumb url={outfieldKitUrl} primary={primary} secondary={secondary} />
+          {kitLabel && <span className="hidden text-[9px] font-black uppercase text-[var(--muted)] sm:block">{kitLabel}</span>}
+        </div>
+      </div>
+
+      <div className="p-3 sm:p-4">
+        <div
+          className="relative mx-auto aspect-[4/5] w-full overflow-hidden rounded-[18px] border border-[#d7efb8]/70 bg-[#79b94d] sm:aspect-[6/5]"
+          style={{
+            backgroundImage: "repeating-linear-gradient(180deg, rgba(255,255,255,.075) 0 12.5%, rgba(20,92,31,.055) 12.5% 25%)",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,.12), inset 0 0 55px rgba(25,77,30,.16)",
+          }}
+        >
+          <div className="pointer-events-none absolute inset-[3.2%] rounded-[10px] border border-white/75" />
+          <div className="pointer-events-none absolute left-[3.2%] right-[3.2%] top-1/2 h-px -translate-y-1/2 bg-white/65" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/75 sm:h-20 sm:w-20" />
+          <div className="pointer-events-none absolute inset-x-[24%] top-[3.2%] h-[18%] border border-white/75" />
+          <div className="pointer-events-none absolute inset-x-[24%] bottom-[3.2%] h-[18%] border border-white/75" />
+
+          {starters.map((entry, index) => {
+            const player = playerById.get(entry.playerId);
+            if (!player) return null;
+            const x = entry.positionX ?? 50;
+            const y = entry.positionY ?? Math.min(90, 14 + index * 9);
+            const isGoalkeeper = y >= 82;
+            return (
+              <div
+                key={entry.playerId}
+                className="absolute z-10 w-[68px] -translate-x-1/2 -translate-y-1/2 text-center sm:w-[82px]"
+                style={{ left: `${x}%`, top: `${y}%` }}
+              >
+                <TeamKitThumb
+                  url={isGoalkeeper ? team.kitGoalkeeperUrl ?? outfieldKitUrl : outfieldKitUrl}
+                  primary={isGoalkeeper ? secondary : primary}
+                  secondary={isGoalkeeper ? primary : secondary}
+                  large
+                />
+                <span className="mx-auto -mt-1 flex max-w-full items-center justify-center gap-1 truncate rounded bg-[#173b18]/85 px-1.5 py-1 text-[9px] font-black leading-none text-white shadow sm:text-[10px]">
+                  <span className="shrink-0 text-white/75">#{player.number}</span>
+                  <span className="truncate">{player.lastName}</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-3">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">Panchina</p>
+          {bench.length === 0 ? (
+            <p className="text-xs text-[var(--muted)]">Nessun giocatore in panchina.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {bench.map((entry) => {
+                const player = playerById.get(entry.playerId);
+                if (!player) return null;
+                return (
+                  <div key={entry.playerId} className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-2 py-2 text-center">
+                    <p className="truncate text-[11px] font-black text-[var(--foreground)]">#{player.number} {player.lastName}</p>
+                    <p className="mt-0.5 truncate text-[9px] font-bold uppercase text-[var(--muted)]">{player.position ?? "—"}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -221,6 +399,7 @@ export function TeamStatsCard({
   showEligibility = false,
   onPreviewPhoto,
   onSelectEligible,
+  onlySheet = false,
 }: {
   title: string;
   colorHex?: string | null;
@@ -239,12 +418,15 @@ export function TeamStatsCard({
   showEligibility?: boolean;
   onPreviewPhoto: (player: Player) => void;
   onSelectEligible?: (checked: boolean) => void;
+  onlySheet?: boolean;
 }) {
   const eligibleCount = players.filter(isPlayerEligible).length;
   const hasPublishedSheet = !showEligibility && players.some((player) => sheet[player.id]);
-  const displayedPlayers = hasPublishedSheet
+  const displayedPlayers = onlySheet
     ? players.filter((player) => sheet[player.id])
-    : players;
+    : hasPublishedSheet
+      ? players.filter((player) => sheet[player.id])
+      : players;
   const teamColor = safeTeamColor(colorHex);
   const teamSecondaryColor = safeTeamColor(secondaryColorHex ?? colorHex);
 
@@ -261,7 +443,11 @@ export function TeamStatsCard({
         <div>
           <h2 className="text-base font-black text-[var(--foreground)]">{title}</h2>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            {showEligibility ? `${eligibleCount} giocatori selezionabili` : "Distinta e statistiche gara"}
+            {showEligibility
+              ? `${eligibleCount} giocatori selezionabili`
+              : onlySheet
+                ? "Distinta gara"
+                : "Distinta e statistiche gara"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -276,7 +462,9 @@ export function TeamStatsCard({
       </div>
 
       {displayedPlayers.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-[var(--muted)]">Nessun giocatore.</p>
+        <p className="px-4 py-4 text-sm text-[var(--muted)]">
+          {onlySheet ? "Distinta non ancora disponibile." : "Nessun giocatore."}
+        </p>
       ) : (
         <div>
           {displayedPlayers.map((p, i) => {
@@ -319,48 +507,54 @@ export function TeamStatsCard({
                 </div>
 
                 <div className="col-span-3 flex flex-col items-end gap-2 border-t border-[var(--border)]/60 pt-2 sm:col-span-1 sm:border-t-0 sm:pt-0">
-                  {showEligibility ? (
-                    <div className="flex min-h-8 flex-wrap items-center justify-end gap-2">
-                      <label className="flex items-center gap-1 text-[10px] font-black text-[var(--muted)]">
-                        <input
-                          type="checkbox"
-                          checked={sheet[p.id] ?? false}
-                          disabled={readOnly || !eligible}
-                          onChange={(event) => toggleSheet(p.id, event.target.checked)}
-                        />
-                        Distinta
-                      </label>
-                      {showMvpSelection && setMvpPlayerId && (
-                        <label
-                          className={[
-                            "flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black transition",
-                            mvpPlayerId === p.id
-                              ? "bg-amber-400/15 text-amber-300"
-                              : "text-[var(--muted)]",
-                            !sheet[p.id] ? "opacity-45" : "",
-                          ].join(" ")}
-                          title={sheet[p.id] ? "Seleziona come MVP" : "Inserisci prima il giocatore in distinta"}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={mvpPlayerId === p.id}
-                            disabled={readOnly || !eligible || !sheet[p.id]}
-                            onChange={() => setMvpPlayerId(mvpPlayerId === p.id ? "" : p.id)}
-                          />
-                          <Star size={11} />
-                          MVP
-                        </label>
-                      )}
-                    </div>
-                  ) : sheet[p.id] ? (
+                  {onlySheet ? (
                     <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">In distinta</span>
-                  ) : null}
-                  <div className="flex items-center gap-1.5">
-                    <StatInput label="G" value={stats[p.id]?.goals ?? ""} onChange={(v) => setPlayerStat(p.id, "goals", v)} readOnly={readOnly} />
-                    <StatInput label="A" value={stats[p.id]?.assists ?? ""} onChange={(v) => setPlayerStat(p.id, "assists", v)} readOnly={readOnly} />
-                    <CardStatInput tone="yellow" value={stats[p.id]?.yellowCards ?? ""} onChange={(v) => setPlayerStat(p.id, "yellowCards", v)} readOnly={readOnly} />
-                    <CardStatInput tone="red" value={stats[p.id]?.redCards ?? ""} onChange={(v) => setPlayerStat(p.id, "redCards", v)} readOnly={readOnly} />
-                  </div>
+                  ) : (
+                    <>
+                      {showEligibility ? (
+                        <div className="flex min-h-8 flex-wrap items-center justify-end gap-2">
+                          <label className="flex items-center gap-1 text-[10px] font-black text-[var(--muted)]">
+                            <input
+                              type="checkbox"
+                              checked={sheet[p.id] ?? false}
+                              disabled={readOnly || !eligible}
+                              onChange={(event) => toggleSheet(p.id, event.target.checked)}
+                            />
+                            Distinta
+                          </label>
+                          {showMvpSelection && setMvpPlayerId && (
+                            <label
+                              className={[
+                                "flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black transition",
+                                mvpPlayerId === p.id
+                                  ? "bg-amber-400/15 text-amber-300"
+                                  : "text-[var(--muted)]",
+                                !sheet[p.id] ? "opacity-45" : "",
+                              ].join(" ")}
+                              title={sheet[p.id] ? "Seleziona come MVP" : "Inserisci prima il giocatore in distinta"}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={mvpPlayerId === p.id}
+                                disabled={readOnly || !eligible || !sheet[p.id]}
+                                onChange={() => setMvpPlayerId(mvpPlayerId === p.id ? "" : p.id)}
+                              />
+                              <Star size={11} />
+                              MVP
+                            </label>
+                          )}
+                        </div>
+                      ) : sheet[p.id] ? (
+                        <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">In distinta</span>
+                      ) : null}
+                      <div className="flex items-center gap-1.5">
+                        <StatInput label="G" value={stats[p.id]?.goals ?? ""} onChange={(v) => setPlayerStat(p.id, "goals", v)} readOnly={readOnly} />
+                        <StatInput label="A" value={stats[p.id]?.assists ?? ""} onChange={(v) => setPlayerStat(p.id, "assists", v)} readOnly={readOnly} />
+                        <CardStatInput tone="yellow" value={stats[p.id]?.yellowCards ?? ""} onChange={(v) => setPlayerStat(p.id, "yellowCards", v)} readOnly={readOnly} />
+                        <CardStatInput tone="red" value={stats[p.id]?.redCards ?? ""} onChange={(v) => setPlayerStat(p.id, "redCards", v)} readOnly={readOnly} />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             );

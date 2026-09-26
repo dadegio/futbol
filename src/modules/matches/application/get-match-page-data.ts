@@ -3,7 +3,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { SessionUser } from "@/lib/session";
 import { sanitizePlayerForRole } from "@/modules/players/application/player-visibility";
-import { isLeagueAdmin, isRefereeAssignedToMatch } from "@/modules/permissions/permissions";
+import { isCaptainOfTeam, isLeagueAdmin, isRefereeAssignedToMatch } from "@/modules/permissions/permissions";
 import { getRefereeMatchFeeCents } from "@/modules/referees/domain/referee-cost";
 
 export async function getMatchPageData(
@@ -28,11 +28,17 @@ export async function getMatchPageData(
       lineups: {
         select: {
           teamId: true,
+          formation: true,
+          updatedAt: true,
           players: {
             select: {
               playerId: true,
               status: true,
+              positionX: true,
+              positionY: true,
+              sortOrder: true,
             },
+            orderBy: { sortOrder: "asc" },
           },
         },
       },
@@ -41,9 +47,13 @@ export async function getMatchPageData(
 
   if (!match || match.leagueId !== leagueId) return null;
 
+  const isCaptainOfMatch =
+    isCaptainOfTeam(session, match.homeTeamId) ||
+    isCaptainOfTeam(session, match.awayTeamId);
   const canViewDraft =
     isLeagueAdmin(session, match.leagueId) ||
     isRefereeAssignedToMatch(session, match.refereeId);
+  const canViewCoachLineups = isLeagueAdmin(session, match.leagueId) || isCaptainOfMatch;
   const canViewRecordedData = match.resultStatus === "FINAL" || canViewDraft;
   const canViewFinalExtras = match.resultStatus === "FINAL" || isLeagueAdmin(session, match.leagueId);
 
@@ -66,6 +76,11 @@ export async function getMatchPageData(
           playerId: player.playerId,
         }));
 
+  const lineupTeamIds = new Set(match.lineups.map((lineup) => lineup.teamId));
+  const captainFallbackSheetPlayers = isCaptainOfMatch
+    ? match.sheetPlayers.filter((row) => !lineupTeamIds.has(row.teamId))
+    : [];
+
   const { refereeCostCents: _legacyRefereeCostCents, lineups: _lineups, ...visibleMatch } = match;
 
   return {
@@ -73,8 +88,11 @@ export async function getMatchPageData(
     homeGoals: canViewRecordedData ? match.homeGoals : null,
     awayGoals: canViewRecordedData ? match.awayGoals : null,
     stats: canViewRecordedData ? match.stats : [],
-    sheetPlayers: canViewRecordedData ? effectiveSheetPlayers : [],
+    sheetPlayers: canViewRecordedData
+      ? effectiveSheetPlayers
+      : captainFallbackSheetPlayers,
     coachSuggestedLineup,
+    publishedLineups: canViewCoachLineups ? match.lineups : [],
     homeSheetConfirmed: canViewRecordedData ? match.homeSheetConfirmed : false,
     awaySheetConfirmed: canViewRecordedData ? match.awaySheetConfirmed : false,
     finalizedAt: match.resultStatus === "FINAL" || canViewDraft ? match.finalizedAt : null,
