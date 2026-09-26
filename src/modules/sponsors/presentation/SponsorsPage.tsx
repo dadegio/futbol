@@ -86,8 +86,8 @@ export default function SponsorsPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-5 pb-8">
-        <Card>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <Card className="!border-0 !bg-transparent !p-0">
+          <div className="flex flex-col gap-4 border-b border-[var(--border-strong)] pb-6 lg:flex-row lg:items-start lg:justify-between">
             <CardHeader
               tag="Partner"
               title="Sponsor"
@@ -108,7 +108,7 @@ export default function SponsorsPage() {
         {categories.length > 0 && (
           <div className="flex flex-wrap gap-2 text-xs font-black uppercase tracking-[0.14em] text-[var(--muted)]">
             {categories.map((category) => (
-              <span key={category} className="rounded-full border border-[var(--border)] bg-[var(--card-2)] px-3 py-1.5">
+              <span key={category} className="border-b border-[var(--border-strong)] px-1 py-1.5">
                 {category}
               </span>
             ))}
@@ -146,17 +146,17 @@ export default function SponsorsPage() {
 
 function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
   return (
-    <article className="group flex min-h-[310px] flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
-      <div className="relative grid min-h-[132px] place-items-center border-b border-[var(--border)] bg-[radial-gradient(circle_at_20%_0%,var(--accent-soft),transparent_22rem),var(--card-2)] p-5">
+    <article className="group flex min-h-[310px] flex-col overflow-hidden rounded-[6px] border border-[var(--border)] bg-[var(--card)]">
+      <div className="relative grid min-h-[132px] place-items-center border-b border-[var(--border)] bg-[var(--card-2)] p-5">
         {sponsor.category && (
-          <span className="absolute left-4 top-4 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">
+          <span className="absolute left-4 top-4 border-l-2 border-[var(--accent)] pl-2 text-[9px] font-semibold uppercase tracking-widest text-[var(--accent)]">
             {sponsor.category}
           </span>
         )}
         {sponsor.logoUrl ? (
           <img src={sponsor.logoUrl} alt={`Logo ${sponsor.name}`} loading="lazy" decoding="async" className="max-h-20 max-w-[76%] object-contain" />
         ) : (
-          <div className="grid h-20 w-20 place-items-center rounded-3xl border border-[var(--border)] bg-[var(--card)] text-2xl font-black text-[var(--accent)]">
+          <div className="grid h-20 w-20 place-items-center rounded-[6px] border border-[var(--border)] bg-[var(--card)] text-2xl font-black text-[var(--accent)]">
             {sponsor.name.slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -174,23 +174,23 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
         <div className="mt-auto pt-5">
           <div className="grid gap-2">
             {sponsor.websiteUrl && (
-              <a href={sponsor.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-black text-black transition hover:brightness-110">
+              <a href={sponsor.websiteUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-between gap-2 border-t border-[var(--border)] px-0 pt-3 text-sm font-semibold text-[var(--accent)] transition hover:text-[var(--foreground)]">
                 <ExternalLink size={16} /> Apri sito · {getHost(sponsor.websiteUrl)}
               </a>
             )}
             <div className="grid gap-2 sm:grid-cols-2">
               {sponsor.phone && (
-                <a href={`tel:${sponsor.phone.replace(/\s+/g, "")}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-xs font-black text-[var(--foreground)]">
+                <a href={`tel:${sponsor.phone.replace(/\s+/g, "")}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[4px] border border-[var(--border)] bg-transparent px-3 text-xs font-black text-[var(--foreground)]">
                   <Phone size={15} /> Chiama
                 </a>
               )}
               {sponsor.email && (
-                <a href={`mailto:${sponsor.email}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-xs font-black text-[var(--foreground)]">
+                <a href={`mailto:${sponsor.email}`} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[4px] border border-[var(--border)] bg-transparent px-3 text-xs font-black text-[var(--foreground)]">
                   <Mail size={15} /> Email
                 </a>
               )}
               {sponsor.instagramUrl && (
-                <a href={sponsor.instagramUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-xs font-black text-[var(--foreground)] sm:col-span-2">
+                <a href={sponsor.instagramUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-[4px] border border-[var(--border)] bg-transparent px-3 text-xs font-black text-[var(--foreground)] sm:col-span-2">
                   <Instagram size={15} /> Instagram
                 </a>
               )}
@@ -204,7 +204,7 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
 
 function SponsorSkeleton() {
   return (
-    <div className="rounded-[28px] border border-[var(--border)] bg-[var(--card)] p-5">
+    <div className="rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-5">
       <div className="animate-pulse space-y-4">
         <div className="h-24 rounded-3xl bg-white/10" />
         <div className="h-6 w-2/3 rounded bg-white/10" />

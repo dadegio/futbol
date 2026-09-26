@@ -285,8 +285,8 @@ export default function AdminUsersPage({ returnLeagueId }: { returnLeagueId?: st
 
   return (
     <DashboardShell leagueId={returnLeagueId}>
-      <div className="space-y-6">
-        <Card>
+      <div className="w-full space-y-5 pb-8">
+        <Card className="!border-0 !bg-transparent !p-0 xl:border-b xl:!border-[var(--border-strong)] xl:pb-5">
           <CardHeader
             tag="Admin"
             title="Gestione utenti"
@@ -297,7 +297,7 @@ export default function AdminUsersPage({ returnLeagueId }: { returnLeagueId?: st
         {err && <Badge variant="error">{err}</Badge>}
 
         {/* Toolbar */}
-        <Card>
+        <Card className="xl:!rounded-none xl:!border-x-0 xl:!bg-transparent xl:!px-0">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-[var(--foreground)]/60">
               {users.length} account registrati
@@ -384,15 +384,15 @@ export default function AdminUsersPage({ returnLeagueId }: { returnLeagueId?: st
         {loading ? (
           <div className="text-[var(--foreground)]/60">Caricamento...</div>
         ) : (
-          <Card>
+          <Card className="xl:!rounded-none xl:!border-x-0 xl:!bg-transparent xl:!p-0">
             {users.length === 0 ? (
               <div className="text-[var(--foreground)]/55">Nessun utente trovato.</div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 xl:space-y-0">
                 {users.map((u) => (
                   <div
                     key={u.id}
-                    className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-4"
+                    className="rounded-[6px] border border-[var(--border)] bg-[var(--card-2)] p-4 xl:rounded-none xl:border-x-0 xl:border-t-0 xl:bg-transparent xl:px-1 xl:py-5"
                   >
                     {/* Row 1: info + action buttons */}
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -401,7 +401,7 @@ export default function AdminUsersPage({ returnLeagueId }: { returnLeagueId?: st
                           <span className="font-bold text-[var(--foreground)]">{u.username}</span>
                           <span
                             className={[
-                              "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                              "rounded-[3px] px-2.5 py-0.5 text-xs font-semibold",
                               u.role === "ADMIN"
                                 ? "bg-[var(--accent)]/20 text-[var(--accent)]"
                                 : u.role === "LEAGUE_ADMIN"
@@ -478,7 +478,7 @@ export default function AdminUsersPage({ returnLeagueId }: { returnLeagueId?: st
                             <span className="text-sm text-[var(--muted)]">Nessuna squadra associata.</span>
                           ) : (
                             u.captainAssignments?.map((assignment) => (
-                              <div key={assignment.id} className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs">
+                              <div key={assignment.id} className="flex items-center gap-2 rounded-[4px] border border-[var(--border)] bg-transparent px-3 py-2 text-xs">
                                 <span className="font-bold text-[var(--foreground)]">{assignment.team.name}</span>
                                 <span className="text-[var(--muted)]">· {assignment.league.name}</span>
                                 <button type="button" onClick={() => handleRemoveAssignment(u, assignment.id)} disabled={assignmentBusyId === u.id} className="ml-1 rounded-lg px-1.5 py-0.5 font-black text-red-400 hover:bg-red-500/10">×</button>

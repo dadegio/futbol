@@ -317,9 +317,9 @@ export default function TeamPage({
         <header className="pt-2">
           <Link href={`/leagues/${leagueId}/teams`} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--muted)] hover:text-[var(--accent)]">‹ Tutte le squadre</Link>
 
-          <Card className="relative overflow-hidden !p-0">
+          <Card className="relative overflow-hidden !rounded-none !border-x-0 !border-b !border-t-0 !bg-transparent !p-0">
             <div className="h-2" style={{ background: `linear-gradient(90deg, ${team.colorHex ?? "#F97316"}, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"})` }} />
-            <div className="pointer-events-none absolute inset-0 opacity-80" style={{ background: `radial-gradient(circle at 88% 20%, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"}24, transparent 24rem), linear-gradient(115deg, ${team.colorHex ?? "#F97316"}12, transparent 45%)` }} />
+            <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 88% 20%, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"}24, transparent 24rem), linear-gradient(115deg, ${team.colorHex ?? "#F97316"}12, transparent 45%)` }} />
             {team.badgeUrl && <img src={team.badgeUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -right-16 top-1/2 h-72 w-72 -translate-y-1/2 rotate-[-9deg] object-contain opacity-[0.06] blur-[1px]" />}
             <div className="relative grid gap-5 p-5 lg:grid-cols-[160px_minmax(0,1fr)] lg:items-center lg:p-7">
               <TeamLogo name={team.name} badgeUrl={team.badgeUrl ?? null} />
@@ -356,7 +356,7 @@ export default function TeamPage({
         {msg && <Badge variant="success">{msg}</Badge>}
         {err && <Badge variant="error">{err}</Badge>}
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-5 border-y border-[var(--border)] py-5 xl:grid-cols-4">
           <TeamMetric icon={UsersRound} label={isAdmin ? "Rosa" : "Giocatori"} value={isAdmin ? `${team.players.length}/${MAX_PLAYERS_PER_TEAM}` : String(team.players.length)} note={isAdmin ? `${eligibleCount} idonei` : undefined} />
           <TeamMetric icon={Trophy} label="Punti" value={String(competition?.points ?? 0)} note={`${competition?.played ?? 0} partite`} />
           <TeamMetric icon={Target} label="Gol" value={`${competition?.gf ?? 0}:${competition?.ga ?? 0}`} note={`Diff. ${signed(competition?.gd ?? 0)}`} />
@@ -371,7 +371,7 @@ export default function TeamPage({
 
         {competition?.nextMatch && (
           <Link href={`/leagues/${leagueId}/matches/${competition.nextMatch.id}`} className="group block">
-            <article className="relative min-h-[170px] overflow-hidden rounded-[28px] border border-white/10 bg-black/35 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.24)] transition hover:-translate-y-0.5 hover:border-[var(--border-strong)] sm:p-6">
+            <article className="relative min-h-[170px] overflow-hidden rounded-[8px] border border-white/10 bg-black/35 p-5 transition-colors hover:border-[var(--border-strong)] sm:p-6">
               <div className="pointer-events-none absolute inset-0" style={{ background: `linear-gradient(115deg, ${team.colorHex ?? "#F97316"}45 0%, ${team.colorHex ?? "#F97316"}13 44%, ${team.secondaryColorHex ?? team.colorHex ?? "#F97316"}35 100%)` }} />
               {team.badgeUrl && <img src={team.badgeUrl} alt="" aria-hidden="true" className="pointer-events-none absolute -right-12 -top-16 h-64 w-64 rotate-[-10deg] object-contain opacity-[0.12] blur-[1px] transition duration-500 group-hover:scale-[1.03]" />}
               <div className="relative flex min-h-[120px] flex-col justify-between gap-6 sm:flex-row sm:items-end">
@@ -438,10 +438,10 @@ export default function TeamPage({
         />
         <AddPlayerPanel visible={canEdit && showAddPlayer} allowPhoto={isAdmin} firstName={newFirstName} setFirstName={setNewFirstName} lastName={newLastName} setLastName={setNewLastName} number={newNumber} setNumber={setNewNumber} position={newPosition} setPosition={setNewPosition} photoUrl={newPhotoUrl} setPhotoUrl={setNewPhotoUrl} addPlayer={addPlayer} close={() => setShowAddPlayer(false)} />
 
-        <Card className="!p-3 sm:!p-4">
+        <Card className="!rounded-none !border-x-0 !bg-transparent !p-0 !py-4">
           <div className="relative">
             <Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cerca per nome o numero…" className="h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--card-2)] pl-11 pr-4 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cerca per nome o numero…" className="h-11 w-full rounded-[5px] border border-[var(--border)] bg-transparent pl-11 pr-4 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]" />
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             <Chip active={rosterFilter === "all"} onClick={() => setRosterFilter("all")}>Tutti</Chip>
@@ -479,11 +479,11 @@ function actionClass(active: boolean) {
 }
 
 function TeamMetric({ icon: Icon, label, value, note }: { icon: typeof Trophy; label: string; value: string; note?: string }) {
-  return <Card className="!p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon size={16} /></span><p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--foreground)]">{value}</p><p className="text-[11px] font-bold text-[var(--muted)]">{label}</p>{note && <p className="mt-1 text-[10px] text-[var(--muted)]">{note}</p>}</Card>;
+  return <div className="border-l border-[var(--border)] pl-4 first:border-l-0 first:pl-0"><span className="text-[var(--accent)]"><Icon size={15} /></span><p className="scoreboard-figure mt-2 text-3xl font-semibold leading-none text-[var(--foreground)]">{value}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</p>{note && <p className="mt-1 text-[10px] text-[var(--muted)]">{note}</p>}</div>;
 }
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button type="button" onClick={onClick} className={["inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-black transition", active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)]"].join(" ")}>{children}</button>;
+  return <button type="button" onClick={onClick} className={["inline-flex shrink-0 items-center gap-1 border-b-2 px-2 py-2 text-xs font-semibold transition", active ? "border-[var(--accent)] text-[var(--foreground)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"].join(" ")}>{children}</button>;
 }
 
 function signed(value: number) { return value > 0 ? `+${value}` : String(value); }

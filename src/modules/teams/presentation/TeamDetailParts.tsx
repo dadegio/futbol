@@ -113,7 +113,7 @@ export function PlayerRow({
 
   return (
     <div className={[
-      "grid grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-4 py-4 last:border-b-0 sm:grid-cols-[104px_minmax(0,1fr)_auto]",
+      "grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--border)] px-2 py-4 last:border-b-0 sm:grid-cols-[92px_minmax(0,1fr)_auto] sm:px-4",
       isAdmin && !isAdminOk(player) ? "bg-amber-400/5" : "",
     ].join(" ")}>
       <PlayerPhoto
@@ -134,7 +134,7 @@ export function PlayerRow({
             {fullName}
           </div>
           {player.isTeamCaptain && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-amber-300">
+            <span className="inline-flex items-center gap-1 rounded-[3px] border border-amber-400/35 bg-amber-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-amber-300">
               <Crown size={11} /> Capitano
             </span>
           )}

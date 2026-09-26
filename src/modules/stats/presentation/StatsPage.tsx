@@ -22,13 +22,13 @@ export default function StatsPage({
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-5 pb-10">
-        <header className="pt-2">
+        <header className="border-b border-[var(--border-strong)] pb-6 pt-2">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <div className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-[var(--accent)]">
                 Numeri del torneo
               </div>
-              <h1 className="text-[32px] font-black tracking-[-0.06em] text-[var(--foreground)] md:text-[38px]">
+              <h1 className="scoreboard-figure text-[48px] font-semibold leading-none text-[var(--foreground)] md:text-[64px]">
                 Statistiche
               </h1>
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
@@ -37,7 +37,7 @@ export default function StatsPage({
             </div>
 
             {stats.overview.completedMatches > 0 && (
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-2 text-right">
+              <div className="border-l border-[var(--border)] pl-4 text-right">
                 <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">
                   Campione
                 </div>
@@ -49,7 +49,7 @@ export default function StatsPage({
           </div>
         </header>
 
-        <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <div className="-mx-1 overflow-x-auto border-b border-[var(--border)] px-1 pb-0">
           <div className="flex min-w-max gap-2">
             <TabButton active={tab === "overview"} onClick={() => setTab("overview")} label="Panoramica" />
             <TabButton active={tab === "teams"} onClick={() => setTab("teams")} label="Squadre" />

@@ -168,7 +168,7 @@ export default function LeagueAdminPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-5 pb-8">
-        <header className="pt-2">
+        <header className="border-b border-[var(--border-strong)] pb-5 pt-2">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-[var(--accent)]">
@@ -185,7 +185,7 @@ export default function LeagueAdminPage() {
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
               <AdminQuickSearch leagueId={leagueId} />
               {summary?.league.name && (
-                <div className="hidden rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-2 text-right sm:block">
+                <div className="hidden border-l border-[var(--border)] pl-4 text-right sm:block">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Torneo</p>
                   <p className="mt-0.5 max-w-[260px] truncate text-sm font-black text-[var(--foreground)]">{summary.league.name}</p>
                 </div>
@@ -197,7 +197,7 @@ export default function LeagueAdminPage() {
         {error && <Badge variant="error">{error}</Badge>}
         {loading && !summary && !settings && <p className="text-sm text-[var(--muted)]">Caricamento centro di controllo…</p>}
 
-        <div className="xl:grid xl:grid-cols-[250px_minmax(0,1fr)] xl:items-start xl:gap-5">
+        <div className="xl:grid xl:grid-cols-[210px_minmax(0,1fr)] xl:items-start xl:gap-8">
           <AdminSectionNav
             active={activeSection}
             onSelect={selectSection}
@@ -206,7 +206,7 @@ export default function LeagueAdminPage() {
           />
 
           <div className="min-w-0 space-y-4">
-            <div className="hidden items-center justify-between gap-4 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 xl:flex">
+            <div className="hidden items-center justify-between gap-4 border-b border-[var(--border)] pb-3 xl:flex">
               <div>
                 <p className="text-sm font-black text-[var(--foreground)]">{currentSection.label}</p>
                 <p className="mt-0.5 text-xs text-[var(--muted)]">{currentSection.description}</p>

@@ -491,11 +491,11 @@ export default function MatchResultForm({ match }: { match: Match }) {
         )}
 
         <Card id="match-score" className="scroll-mt-20 overflow-hidden !p-0">
-          <div className="matchroom-hero p-5 sm:p-7">
+          <div className="matchroom-hero p-3 sm:p-7">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[var(--accent)]">Match Center</p>
-                <h1 className="mt-1 text-2xl font-black tracking-[-0.06em] text-[var(--foreground)] sm:text-4xl">
+                <h1 className="mt-1 text-xl font-black tracking-[-0.045em] text-[var(--foreground)] sm:text-4xl">
                   {match.homeTeam.name} <span className="text-[var(--muted)]">vs</span> {match.awayTeam.name}
                 </h1>
               </div>
@@ -504,25 +504,25 @@ export default function MatchResultForm({ match }: { match: Match }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+            <div className="grid grid-cols-[minmax(76px,1fr)_auto_minmax(76px,1fr)] items-center gap-1 sm:gap-3">
               <TeamScoreBlock team={match.homeTeam} faded={heroPlayed && heroHomeGoals < heroAwayGoals} kitUrl={matchKits.home.url} kitLabel={matchKits.home.kind === "home" ? "Casa" : "Trasferta"} />
               <div className="flex flex-col items-center gap-3">
                 {canEditResult ? (
-                  <div className="flex items-center gap-2 rounded-[28px] border border-white/10 bg-black/30 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <div className="flex items-center gap-1 rounded-[8px] border border-white/10 bg-black/30 p-1 sm:gap-2 sm:p-2">
                     <ScoreInput value={homeGoals} setValue={setHomeGoals} />
                     <span className="text-2xl font-black text-[var(--muted)]">:</span>
                     <ScoreInput value={awayGoals} setValue={setAwayGoals} />
                   </div>
                 ) : (
-                  <div className="min-w-[116px] rounded-[28px] border border-white/10 bg-black/30 px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:min-w-[150px]">
+                  <div className="min-w-[72px] rounded-[8px] border border-white/10 bg-black/30 px-2 py-3 text-center sm:min-w-[150px] sm:px-5 sm:py-4">
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--muted)]">{publicStatusLabel}</p>
-                    <p className="mt-1 text-4xl font-black tracking-[-0.06em] text-[var(--foreground)] sm:text-6xl">
+                    <p className="editorial-score mt-1 text-3xl font-semibold text-[var(--foreground)] sm:text-6xl">
                       {publicFinal ? `${match.homeGoals} : ${match.awayGoals}` : "VS"}
                     </p>
                   </div>
                 )}
                 {heroPlayed && (
-                  <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-black text-[var(--accent)]">
+                  <span className="max-w-[110px] text-center text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)] sm:max-w-none sm:text-xs">
                     {heroHomeGoals > heroAwayGoals
                       ? `${match.homeTeam.name} vincente`
                       : heroHomeGoals < heroAwayGoals

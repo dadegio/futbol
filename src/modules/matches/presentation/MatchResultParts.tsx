@@ -125,7 +125,7 @@ function TeamCrest({
 }) {
   const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const sizeClasses = large
-    ? "h-[72px] w-[72px] rounded-[20px] sm:h-28 sm:w-28 sm:rounded-[30px]"
+    ? "h-[60px] w-[60px] rounded-[10px] sm:h-24 sm:w-24 sm:rounded-[16px] lg:h-28 lg:w-28"
     : "h-11 w-11 rounded-xl";
 
   if (badgeUrl) {
@@ -161,7 +161,7 @@ function TeamKitThumb({
   large?: boolean;
 }) {
   const size = large
-    ? "h-12 w-12 sm:h-20 sm:w-20 lg:h-24 lg:w-24"
+    ? "h-11 w-11 sm:h-16 sm:w-16 lg:h-20 lg:w-20"
     : "h-10 w-10";
 
   if (url?.trim()) {
@@ -218,7 +218,7 @@ export function TeamScoreBlock({
   return (
     <div
       className={[
-        "flex min-w-0 flex-col items-center gap-2 rounded-[24px] px-2 py-3 text-center sm:px-4",
+        "flex min-w-0 flex-col items-center gap-2 rounded-[8px] px-1 py-2 text-center sm:px-4 sm:py-3",
         faded ? "opacity-55" : "",
       ].join(" ")}
       style={{
@@ -227,14 +227,14 @@ export function TeamScoreBlock({
         background: `linear-gradient(135deg, ${primaryColor}24 0 48%, ${secondaryColor}24 52% 100%)`,
       }}
     >
-      <div className="flex items-end justify-center gap-5 sm:gap-8 lg:gap-10">
+      <div className="flex w-full min-w-0 flex-col items-center justify-center gap-1 sm:flex-row sm:items-end sm:gap-5 lg:gap-8">
         <div
-          className="rounded-[26px] p-2"
+          className="rounded-[10px] p-1 sm:p-2"
           style={{ boxShadow: `-8px 10px 28px ${primaryColor}1F, 8px 10px 28px ${secondaryColor}1F`, background: `linear-gradient(135deg, ${primaryColor}18 0 49%, ${secondaryColor}18 51% 100%)` }}
         >
           <TeamCrest name={team.name} badgeUrl={team.badgeUrl ?? null} large />
         </div>
-        <div className="flex shrink-0 flex-col items-center">
+        <div className="flex w-full shrink-0 flex-col items-center sm:w-auto">
           <TeamKitThumb
             url={kitUrl}
             primary={primaryColor}
@@ -248,7 +248,7 @@ export function TeamScoreBlock({
           )}
         </div>
       </div>
-      <span className="max-w-full truncate text-sm font-black text-[var(--foreground)] sm:text-base">{team.name}</span>
+      <span className="max-w-full truncate text-[11px] font-black leading-tight text-[var(--foreground)] sm:text-base">{team.name}</span>
       <span
         className="h-1 w-12 rounded-full"
         style={{ background: `linear-gradient(90deg, ${primaryColor} 0 50%, ${secondaryColor} 50% 100%)` }}
@@ -317,7 +317,7 @@ export function TeamFormationCard({
             return (
               <div
                 key={entry.playerId}
-                className="absolute z-10 w-[68px] -translate-x-1/2 -translate-y-1/2 text-center sm:w-[82px]"
+                className="absolute z-10 flex w-[58px] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center sm:w-[78px]"
                 style={{ left: `${x}%`, top: `${y}%` }}
               >
                 <TeamKitThumb
@@ -326,7 +326,7 @@ export function TeamFormationCard({
                   secondary={isGoalkeeper ? primary : secondary}
                   large
                 />
-                <span className="mx-auto -mt-1 flex max-w-full items-center justify-center gap-1 truncate rounded bg-[#173b18]/85 px-1.5 py-1 text-[9px] font-black leading-none text-white shadow sm:text-[10px]">
+                <span className="mt-0.5 flex w-full items-center justify-center gap-1 truncate rounded-[3px] bg-[#173b18]/90 px-1 py-1 text-[8px] font-black leading-none text-white shadow sm:text-[10px]">
                   <span className="shrink-0 text-white/75">#{player.number}</span>
                   <span className="truncate">{player.lastName}</span>
                 </span>
@@ -367,7 +367,7 @@ export function ScoreInput({ value, setValue, readOnly }: { value: string; setVa
       placeholder="–"
       inputMode="numeric"
       readOnly={readOnly}
-      className="h-16 w-16 rounded-2xl border border-white/10 bg-white/[0.05] text-center text-[42px] font-black leading-none text-[var(--foreground)] outline-none placeholder:text-[var(--border-strong)] focus:border-[var(--accent)] sm:h-20 sm:w-20 sm:text-[54px]"
+      className="h-12 w-12 rounded-[6px] border border-white/10 bg-white/[0.05] text-center text-[32px] font-black leading-none text-[var(--foreground)] outline-none placeholder:text-[var(--border-strong)] focus:border-[var(--accent)] sm:h-20 sm:w-20 sm:text-[54px]"
     />
   );
 }

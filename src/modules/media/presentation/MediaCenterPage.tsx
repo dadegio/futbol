@@ -145,9 +145,9 @@ export default function LeagueMediaPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="space-y-5 pb-8">
-        <Card className="overflow-hidden !p-0">
+        <Card className="overflow-hidden !rounded-none !border-x-0 !border-t-0 !bg-transparent !p-0">
           <div className="relative overflow-hidden px-5 py-7 md:px-8 md:py-9">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,var(--accent-soft),transparent_26rem),linear-gradient(135deg,var(--card),var(--card-2))]" />
+            <div className="absolute inset-0 border-b border-[var(--border-strong)]" />
             <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <CardHeader
                 tag="Media Center"
@@ -166,9 +166,9 @@ export default function LeagueMediaPage() {
 
         {err && <Badge variant="error">{err}</Badge>}
 
-        <Card>
+        <Card className="!rounded-none !border-x-0 !bg-transparent !p-0 !py-4">
           <div className="grid gap-3 lg:grid-cols-[1.2fr_180px_220px]">
-            <label className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3">
+            <label className="flex items-center gap-2 rounded-[5px] border border-[var(--border)] bg-transparent px-3">
               <Search size={17} className="text-[var(--muted)]" />
               <input
                 value={query}
@@ -177,14 +177,14 @@ export default function LeagueMediaPage() {
                 className="min-h-11 min-w-0 flex-1 bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
               />
             </label>
-            <label className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3">
+            <label className="flex items-center gap-2 rounded-[5px] border border-[var(--border)] bg-transparent px-3">
               <Filter size={16} className="text-[var(--muted)]" />
               <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="min-h-11 min-w-0 flex-1 bg-transparent text-sm font-bold text-[var(--foreground)] outline-none">
                 <option value="ALL" className="text-black">Tutti i formati</option>
                 {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value} className="text-black">{label}</option>)}
               </select>
             </label>
-            <select value={creatorFilter} onChange={(event) => setCreatorFilter(event.target.value)} className="min-h-11 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm font-bold text-[var(--foreground)] outline-none">
+            <select value={creatorFilter} onChange={(event) => setCreatorFilter(event.target.value)} className="min-h-11 rounded-[5px] border border-[var(--border)] bg-transparent px-3 text-sm font-bold text-[var(--foreground)] outline-none">
               <option value="ALL" className="text-black">Tutti i creator</option>
               {creators.map((creator) => <option key={creator.id} value={creator.id} className="text-black">{creator.displayName}</option>)}
             </select>
@@ -194,7 +194,7 @@ export default function LeagueMediaPage() {
         {creators.length > 0 && (
           <div className="flex gap-3 overflow-x-auto pb-1">
             {creators.map((creator) => (
-              <Link key={creator.id} href={`/leagues/${leagueId}/creators/${creator.id}`} className="flex min-w-[210px] items-center gap-3 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 transition hover:border-[var(--accent)]">
+              <Link key={creator.id} href={`/leagues/${leagueId}/creators/${creator.id}`} className="flex min-w-[210px] items-center gap-3 border-b border-[var(--border)] bg-transparent px-1 py-3 transition hover:border-[var(--accent)]">
                 {creator.avatarUrl ? <img src={creator.avatarUrl} alt="" loading="lazy" decoding="async" className="h-12 w-12 rounded-2xl object-cover" /> : <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><UserRound size={20} /></div>}
                 <div className="min-w-0">
                   <p className="truncate text-sm font-black text-[var(--foreground)]">{creator.displayName}</p>
@@ -237,7 +237,7 @@ export default function LeagueMediaPage() {
 function MediaCard({ item, leagueId, onOpen, featured = false }: { item: MediaItem; leagueId: string; onOpen: () => void; featured?: boolean }) {
   const video = isVideo(item);
   return (
-    <article className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_60px_rgba(0,0,0,0.24)]">
+    <article className="overflow-hidden rounded-[6px] border border-[var(--border)] bg-[var(--card)]">
       <button type="button" onClick={onOpen} className="group relative block aspect-[4/5] w-full overflow-hidden bg-black text-left">
         {video ? (
           item.thumbnailUrl ? <img src={item.thumbnailUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-80 transition group-hover:scale-[1.02]" /> : <div className="grid h-full place-items-center bg-[var(--card-2)] text-[var(--accent)]"><Video size={44} /></div>
@@ -245,8 +245,8 @@ function MediaCard({ item, leagueId, onOpen, featured = false }: { item: MediaIt
           <img src={item.thumbnailUrl || item.fileUrl} alt={item.title || item.caption || "Contenuto media"} loading="lazy" decoding="async" className="h-full w-full object-cover transition group-hover:scale-[1.02]" />
         )}
         {video && <span className="absolute inset-0 grid place-items-center"><span className="grid h-16 w-16 place-items-center rounded-full bg-black/55 text-white backdrop-blur"><Play size={28} fill="currentColor" /></span></span>}
-        <span className="absolute left-3 top-3 rounded-full bg-black/65 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">{typeLabels[item.type]}</span>
-        {featured && <span className="absolute right-3 top-3 rounded-full bg-yellow-300 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-black">Top</span>}
+        <span className="absolute left-3 top-3 rounded-[3px] bg-black/65 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">{typeLabels[item.type]}</span>
+        {featured && <span className="absolute right-3 top-3 rounded-[3px] bg-yellow-300 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-black">Top</span>}
       </button>
       <div className="p-4">
         <h3 className="line-clamp-2 text-lg font-black tracking-[-0.04em] text-[var(--foreground)]">{item.title || item.caption || "Contenuto dal campo"}</h3>
@@ -271,8 +271,8 @@ function MediaModal({ item, onClose }: { item: MediaItem; onClose: () => void })
   return (
     <div className="fixed inset-0 z-[90] grid place-items-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <button type="button" aria-label="Chiudi" onClick={onClose} className="absolute inset-0" />
-      <div className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/15 bg-[var(--card)] shadow-2xl">
-        <button type="button" onClick={onClose} className="absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-black/65 text-xl font-black text-white">×</button>
+      <div className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-[8px] border border-white/15 bg-[var(--card)]">
+        <button type="button" onClick={onClose} className="absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-[3px] bg-black/65 text-xl font-black text-white">×</button>
         <div className="grid max-h-[90vh] lg:grid-cols-[minmax(0,1.4fr)_360px]">
           <div className="grid min-h-[320px] place-items-center bg-black">
             {video && canPlayVideo(item) ? <video src={item.fileUrl} controls playsInline className="max-h-[86vh] w-full" /> : video ? <a href={item.fileUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-black"><ExternalLink size={16} /> Apri video</a> : <img src={item.fileUrl} alt="" loading="eager" decoding="async" className="max-h-[86vh] w-full object-contain" />}
@@ -281,7 +281,7 @@ function MediaModal({ item, onClose }: { item: MediaItem; onClose: () => void })
             <Badge variant="default">{typeLabels[item.type]}</Badge>
             <h2 className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--foreground)]">{item.title || "Contenuto dal campo"}</h2>
             {item.caption && <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">{item.caption}</p>}
-            <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4">
+            <div className="mt-5 rounded-[5px] border border-[var(--border)] bg-transparent p-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)]">Credits</p>
               <p className="mt-1 text-base font-black text-[var(--foreground)]">{getCredit(item)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -299,5 +299,5 @@ function MediaModal({ item, onClose }: { item: MediaItem; onClose: () => void })
 }
 
 function Skeleton() {
-  return <div className="rounded-[28px] border border-[var(--border)] bg-[var(--card)] p-4"><div className="aspect-[4/5] animate-pulse rounded-3xl bg-white/10" /><div className="mt-4 h-6 w-3/4 animate-pulse rounded bg-white/10" /></div>;
+  return <div className="rounded-[6px] border border-[var(--border)] bg-[var(--card)] p-4"><div className="aspect-[4/5] animate-pulse rounded-3xl bg-white/10" /><div className="mt-4 h-6 w-3/4 animate-pulse rounded bg-white/10" /></div>;
 }

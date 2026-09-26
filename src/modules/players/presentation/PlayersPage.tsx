@@ -111,8 +111,8 @@ export default function PlayersPage() {
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-6 pb-8">
-        <Card>
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <Card className="!border-0 !bg-transparent !p-0">
+          <div className="flex flex-col gap-5 border-b border-[var(--border-strong)] pb-6 lg:flex-row lg:items-end lg:justify-between">
             <CardHeader
               tag="Giocatori"
               title="Giocatori"
@@ -128,7 +128,7 @@ export default function PlayersPage() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="!rounded-none !border-x-0 !bg-transparent !p-0 !py-4">
           <form onSubmit={submitSearch} className="flex flex-col gap-3 md:flex-row">
             <div className="relative flex-1">
               <Search
@@ -161,8 +161,8 @@ export default function PlayersPage() {
                 const href = `/leagues/${leagueId}/players${value ? `?status=${value}${q ? `&q=${encodeURIComponent(q)}` : ""}` : q ? `?q=${encodeURIComponent(q)}` : ""}`;
                 return (
                   <Link key={value} href={href} className={[
-                    "rounded-full border px-3 py-1.5 text-xs font-black transition",
-                    active ? "border-[var(--accent)] bg-[var(--accent)] text-black" : "border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)] hover:text-[var(--foreground)]",
+                    "border-b-2 px-2 py-2 text-xs font-semibold transition",
+                    active ? "border-[var(--accent)] text-[var(--foreground)]" : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]",
                   ].join(" ")}>{label}</Link>
                 );
               })}
@@ -222,7 +222,7 @@ export default function PlayersPage() {
                       </h2>
                     </div>
 
-                    <span className="rounded-full bg-[var(--card-2)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
+                    <span className="font-mono text-xs text-[var(--muted)]">
                       {players.length}
                     </span>
                   </div>
@@ -264,7 +264,7 @@ function PlayerCard({
   return (
     <Link
       href={`/leagues/${leagueId}/players/${player.id}`}
-      className="group relative overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--card)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:shadow-[0_14px_34px_rgba(0,0,0,0.09)]"
+      className="group relative overflow-hidden rounded-[6px] border border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--accent)]/40"
     >
       <div className="grid min-h-[150px] grid-cols-[104px_minmax(0,1fr)] sm:grid-cols-[118px_minmax(0,1fr)]">
         <PlayerAvatar
@@ -286,7 +286,7 @@ function PlayerCard({
                     #{player.number}
                   </span>
                   {player.isTeamCaptain && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-amber-300">
+                    <span className="inline-flex items-center gap-1 rounded-[3px] border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-amber-300">
                       <Crown size={10} /> Capitano
                     </span>
                   )}
@@ -320,7 +320,7 @@ function PlayerCard({
 
             {isAdmin ? (
               <span className={[
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.1em]",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.1em]",
                 player.isEligibleForMatchSheet ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-amber-400/10 text-amber-300",
               ].join(" ")}>
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -338,13 +338,12 @@ function PlayerCard({
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-[var(--card-2)] px-4 py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-        {label}
-      </div>
-
-      <div className="mt-1 text-lg font-black tracking-[-0.04em] text-[var(--foreground)]">
+    <div className="border-l border-[var(--border)] pl-3 first:border-l-0">
+      <div className="scoreboard-figure text-2xl font-semibold leading-none text-[var(--foreground)]">
         {value}
+      </div>
+      <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        {label}
       </div>
     </div>
   );

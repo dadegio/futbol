@@ -164,7 +164,7 @@ export default function AdminSectionNav({
         ))}
       </div>
 
-      <Card className="hidden h-fit !p-3 xl:sticky xl:top-5 xl:block">
+      <Card className="hidden h-fit !rounded-none !border-0 !border-r !bg-transparent !p-0 !pr-4 xl:sticky xl:top-5 xl:block">
         <div className="px-2 pb-3 pt-1">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--accent)]">
             Centro di controllo
@@ -174,7 +174,7 @@ export default function AdminSectionNav({
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {groups.map((group) => (
             <div key={group}>
               <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--foreground)]/35">
@@ -196,18 +196,18 @@ export default function AdminSectionNav({
                       type="button"
                       onClick={() => onSelect(section.id)}
                       className={[
-                        "flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition",
+                        "flex w-full items-center gap-2 border-l-2 px-2 py-2 text-left transition",
                         selected
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                          : "border-transparent hover:border-[var(--border)] hover:bg-[var(--card-2)]",
+                          ? "border-[var(--accent)] bg-transparent"
+                          : "border-transparent hover:border-[var(--border-strong)]",
                       ].join(" ")}
                     >
                       <span
                         className={[
-                          "grid h-9 w-9 shrink-0 place-items-center rounded-xl",
+                          "grid h-7 w-7 shrink-0 place-items-center",
                           selected
-                            ? "bg-[var(--accent)]/15 text-[var(--accent)]"
-                            : "bg-[var(--card-2)] text-[var(--muted)]",
+                            ? "text-[var(--accent)]"
+                            : "text-[var(--muted)]",
                         ].join(" ")}
                       >
                         <Icon size={17} />
@@ -221,7 +221,7 @@ export default function AdminSectionNav({
                             </span>
                           )}
                         </span>
-                        <span className="mt-0.5 block text-[11px] leading-snug text-[var(--muted)]">
+                        <span className="mt-0.5 block text-[10px] leading-snug text-[var(--muted)]">
                           {section.description}
                         </span>
                       </span>
@@ -237,9 +237,9 @@ export default function AdminSectionNav({
           <div className="mt-4 border-t border-[var(--border)] pt-3">
             <Link
               href="/admin/users"
-              className="flex items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 transition hover:border-[var(--border)] hover:bg-[var(--card-2)]"
+              className="flex items-center gap-2 border-l-2 border-transparent px-2 py-2.5 transition hover:border-[var(--border-strong)]"
             >
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--card-2)] text-[var(--muted)]">
+              <span className="grid h-7 w-7 place-items-center text-[var(--muted)]">
                 <UsersRound size={17} />
               </span>
               <span>

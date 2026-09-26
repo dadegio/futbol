@@ -189,11 +189,11 @@ export default function TeamsPage({
   return (
     <DashboardShell leagueId={leagueId}>
       <div className="w-full space-y-5 pb-8">
-        <header className="pt-2">
+        <header className="border-b border-[var(--border-strong)] pb-6 pt-2">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent)]">Club del torneo</p>
-              <h1 className="mt-1 text-[34px] font-black tracking-[-0.065em] text-[var(--foreground)] sm:text-[42px]">Squadre</h1>
+              <h1 className="scoreboard-figure mt-1 text-[46px] font-semibold leading-none text-[var(--foreground)] sm:text-[64px]">SQUADRE</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
                 {teams.length} {teams.length === 1 ? "squadra" : "squadre"} in gara. Apri un club per vedere rosa, profili e prossimi impegni.
               </p>
@@ -238,17 +238,17 @@ export default function TeamsPage({
           </Card>
         )}
 
-        <div className="grid gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--card)] p-3 sm:grid-cols-[minmax(0,1fr)_190px] sm:p-4">
+        <div className="grid gap-3 border-y border-[var(--border)] py-4 sm:grid-cols-[minmax(0,1fr)_190px]">
           <label className="relative block">
             <Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Cerca una squadra…"
-              className="h-11 w-full rounded-2xl border border-[var(--border)] bg-[var(--card-2)] pl-11 pr-4 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
+              className="h-11 w-full rounded-[5px] border border-[var(--border)] bg-transparent pl-11 pr-4 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             />
           </label>
-          <select value={sort} onChange={(e) => setSort(e.target.value as TeamSort)} className="h-11 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-3 text-sm text-[var(--foreground)]">
+          <select value={sort} onChange={(e) => setSort(e.target.value as TeamSort)} className="h-11 rounded-[5px] border border-[var(--border)] bg-transparent px-3 text-sm text-[var(--foreground)]">
             <option value="name">Ordina: nome</option>
             <option value="standing">Ordina: classifica</option>
           </select>
@@ -293,10 +293,10 @@ function TeamCard({ leagueId, team, isAdmin, removing, onRemove }: { leagueId: s
   const attention = team.adminRoster?.attentionPlayers ?? 0;
 
   return (
-    <article className="group relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--card)] shadow-[0_18px_55px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--border-strong)]">
+    <article className="group relative overflow-hidden rounded-[8px] border border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--border-strong)]">
       <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${primary}, ${secondary})` }} />
       <div className="relative p-5 sm:p-6">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full blur-3xl" style={{ background: `${primary}22` }} />
+        <div className="hidden" style={{ background: `${primary}22` }} />
         <div className="relative flex items-start gap-4">
           <TeamLogo name={team.name} badgeUrl={team.badgeUrl ?? null} />
           <div className="min-w-0 flex-1 pt-1">
@@ -317,7 +317,7 @@ function TeamCard({ leagueId, team, isAdmin, removing, onRemove }: { leagueId: s
 
         {isAdmin && team.adminRoster && (
           <div className={[
-            "relative mt-4 flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-bold",
+            "relative mt-4 flex items-center gap-2 rounded-[4px] border px-3 py-2 text-xs font-bold",
             attention > 0 ? "border-amber-400/20 bg-amber-400/[0.06] text-amber-300" : "border-emerald-400/20 bg-emerald-400/[0.06] text-emerald-300",
           ].join(" ")}>
             {attention > 0 ? <CircleAlert size={14} /> : <ShieldCheck size={14} />}
@@ -325,7 +325,7 @@ function TeamCard({ leagueId, team, isAdmin, removing, onRemove }: { leagueId: s
           </div>
         )}
 
-        <div className="relative mt-5 overflow-hidden rounded-[24px] border border-white/10 bg-black/30">
+        <div className="relative mt-5 overflow-hidden rounded-[6px] border border-white/10 bg-black/30">
           <div
             className="absolute inset-0 opacity-90"
             style={{ background: `linear-gradient(118deg, ${primary}3D 0%, ${primary}16 42%, ${secondary}32 100%)` }}
@@ -359,7 +359,7 @@ function TeamCard({ leagueId, team, isAdmin, removing, onRemove }: { leagueId: s
           </div>
         </div>
 
-        <Link href={`/leagues/${leagueId}/teams/${team.id}`} className="relative mt-4 flex min-h-11 w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 text-sm font-black text-[var(--foreground)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
+        <Link href={`/leagues/${leagueId}/teams/${team.id}`} className="relative mt-4 flex min-h-10 w-full items-center justify-between border-t border-[var(--border)] px-0 pt-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:text-[var(--foreground)]">
           <span>Apri squadra</span><ChevronRight size={16} />
         </Link>
       </div>
@@ -376,7 +376,7 @@ function TeamLogo({ name, badgeUrl }: { name: string; badgeUrl: string | null })
 
   if (badgeUrl) {
     return (
-      <div className="relative h-[82px] w-[82px] shrink-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/20 shadow-[0_16px_42px_rgba(0,0,0,0.25)]">
+      <div className="relative h-[82px] w-[82px] shrink-0 overflow-hidden rounded-[10px] border border-white/10 bg-black/20 ">
         <img
           src={badgeUrl}
           alt={`Logo ${name}`}
@@ -386,5 +386,5 @@ function TeamLogo({ name, badgeUrl }: { name: string; badgeUrl: string | null })
     );
   }
 
-  return <span className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-[24px] border border-[var(--border)] bg-[var(--accent-soft)] text-lg font-black text-[var(--accent)]">{initials}</span>;
+  return <span className="flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--accent-soft)] text-lg font-black text-[var(--accent)]">{initials}</span>;
 }
