@@ -3,12 +3,9 @@ type CardProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 const styles = {
-  default:
-    "rounded-[24px] border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(244,234,216,0.04)] backdrop-blur-xl md:p-5",
-  inner:
-    "rounded-[20px] border border-[var(--border)] bg-[var(--card-2)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] md:p-5",
-  flat:
-    "rounded-[20px] bg-[var(--card-2)] p-4",
+  default: "rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:p-5",
+  inner: "rounded-lg border border-[var(--border)] bg-[var(--card-2)] p-4 md:p-5",
+  flat: "rounded-lg bg-[var(--card-2)] p-4",
 } as const;
 
 export default function Card({ className = "", variant = "default", ...props }: CardProps) {
@@ -31,12 +28,13 @@ export function CardHeader({
   return (
     <div>
       {tag && (
-        <div className="mb-2 inline-flex rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--accent)]">
+        <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-[var(--accent)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
           {tag}
         </div>
       )}
 
-      <Tag className="text-2xl font-black tracking-[-0.05em] text-[var(--foreground)] md:text-3xl">
+      <Tag className="text-2xl font-extrabold tracking-[-0.02em] text-[var(--foreground)] md:text-3xl">
         {title}
       </Tag>
 

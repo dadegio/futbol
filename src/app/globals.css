@@ -1,30 +1,38 @@
 @import "tailwindcss";
 
- :root {
-  --background: #050806;
-  --foreground: #f4ead8;
-  --card: rgba(13, 19, 15, 0.88);
-  --card-2: rgba(185, 144, 88, 0.075);
-  --muted: rgba(244, 234, 216, 0.58);
-  --border: rgba(210, 174, 114, 0.18);
-  --border-strong: rgba(210, 174, 114, 0.34);
-  --accent: #c9a766;
-  --accent-2: #8f6d3e;
-  --accent-soft: rgba(201, 167, 102, 0.14);
-  --success: #3d8a5a;
-  --danger: #b64034;
-  --warn: #d2ae72;
-  --tabbar-bg: rgba(5, 8, 6, 0.90);
+:root {
+  /* Base — colori presi dallo stemma (verde, oro, rosso), usati piatti */
+  --background: #0c1310;
+  --foreground: #eef1e8;
+  --card: #101a15;
+  --card-2: #16211b;
+  --muted: rgba(238, 241, 232, 0.58);
+  --border: rgba(238, 241, 232, 0.10);
+  --border-strong: rgba(238, 241, 232, 0.22);
 
-  --imperial-black: #050806;
-  --imperial-panel: rgba(13, 19, 15, 0.88);
-  --imperial-panel-strong: rgba(18, 28, 22, 0.94);
-  --imperial-green: #183524;
-  --imperial-green-2: #28563b;
-  --imperial-gold: #c9a766;
-  --imperial-gold-2: #e0c181;
-  --imperial-red: #b64034;
-  --imperial-text: #f4ead8;
+  --accent: #b99a5b;       /* oro — evidenza, leader, in primo piano */
+  --accent-2: #2e6b46;     /* verde — colore primario, azioni */
+  --accent-soft: rgba(185, 154, 91, 0.14);
+  --live: #a3362a;         /* rosso — solo per live/allerte/away, non decorativo */
+
+  --success: #3d8a5a;
+  --danger: #a3362a;
+  --warn: #b99a5b;
+  --tabbar-bg: rgba(12, 19, 16, 0.94);
+
+  --pitch-line: rgba(238, 241, 232, 0.14);
+
+  /* Compatibilità: nomi storici usati nei componenti, ora sulla
+     nuova palette piatta (nessun nuovo significato, stesso ruolo) */
+  --imperial-black: var(--background);
+  --imperial-text: var(--foreground);
+  --imperial-green: var(--card-2);
+  --imperial-green-2: var(--accent-2);
+  --imperial-gold: var(--accent);
+  --imperial-gold-2: #d3b884;
+  --imperial-red: var(--live);
+  --imperial-panel: var(--card);
+  --imperial-panel-strong: var(--card-2);
 }
 
 @theme inline {
@@ -32,6 +40,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-display);
   --font-mono: var(--font-mono);
+  --font-scoreboard: var(--font-scoreboard);
 }
 
 * {
@@ -48,26 +57,11 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--foreground);
-  font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif);
-  background:
-    radial-gradient(circle at top left, rgba(0, 210, 106, 0.20), transparent 34rem),
-    radial-gradient(circle at top right, rgba(0, 90, 255, 0.15), transparent 34rem),
-    linear-gradient(180deg, #0b1018 0%, #07090d 56%, #05070a 100%);
+  font-family: var(--font-display, "Public Sans", system-ui, sans-serif);
+  background: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.72), transparent 75%);
 }
 
 @layer base {
@@ -91,7 +85,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(0, 210, 106, 0.32);
+  background: rgba(185, 154, 91, 0.32);
 }
 
 ::-webkit-scrollbar {
@@ -109,15 +103,6 @@ textarea {
   background: rgba(255, 255, 255, 0.24);
 }
 
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out;
-}
-
 @media print {
   body { background: white !important; color: black !important; }
   aside, nav, .no-print { display: none !important; }
@@ -125,159 +110,120 @@ textarea {
   * { box-shadow: none !important; }
 }
 
-/* Cammino Imperiale redesign */
-:root {
-  --matchroom-bg: var(--imperial-black);
-  --matchroom-panel: rgba(13, 19, 15, 0.76);
-  --matchroom-panel-strong: var(--imperial-panel-strong);
-  --matchroom-lime: var(--imperial-gold);
-  --matchroom-cyan: var(--imperial-green-2);
-  --matchroom-violet: var(--imperial-red);
-}
+/* ============================================================
+   Sistema "lega": la linea di metà campo come unico motivo
+   strutturale ricorrente. Sostituisce i glow/gradient decorativi.
+   ============================================================ */
 
-body {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(47, 89, 58, 0.24), transparent 30rem),
-    radial-gradient(circle at 88% 0%, rgba(34, 72, 58, 0.18), transparent 34rem),
-    radial-gradient(circle at 50% 96%, rgba(58, 42, 95, 0.14), transparent 38rem),
-    linear-gradient(180deg, #08100c 0%, #050806 58%, #020302 100%);
+.pitch-divider {
+  position: relative;
+  height: 1px;
+  background: var(--pitch-line);
+  margin: 1.5rem 0;
 }
-
-body::after {
+.pitch-divider::after {
   content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(210, 174, 114, 0.08), transparent 24rem),
-    linear-gradient(115deg, transparent 0 48%, rgba(210, 174, 114, 0.035) 48% 48.35%, transparent 48.35% 100%);
-  opacity: 0.9;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 1px solid var(--pitch-line);
+  background: var(--background);
+  transform: translate(-50%, -50%);
 }
 
+/* Testata da tabellone: usata per hero/intestazioni di lega */
+.scoreboard-header {
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  position: relative;
+}
+.scoreboard-header::before {
+  /* singola riga netta in alto, non un gradiente atmosferico */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-2) 0 33%, var(--accent) 33% 66%, var(--live) 66% 100%);
+}
+
+/* Numeri/dati: font condensato da tabellone, usato con intenzione
+   (punteggi, posizioni in classifica, minutaggio) e non ovunque */
+.scoreboard-figure {
+  font-family: var(--font-scoreboard), var(--font-display), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+/* Card piatte, gerarchia per tinta/peso, non per ombra+blur uniformi */
+.panel {
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.panel-raised {
+  border: 1px solid var(--border-strong);
+  background: var(--card-2);
+}
+
+/* ------------------------------------------------------------
+   Classi storiche riusate in tutta la codebase: stessa API,
+   resa piatta e strutturale invece che a gradiente/glow/blur.
+   ------------------------------------------------------------ */
+
+/* Contenitore card generico (era: bordo+ombra+glow decorativo) */
+.turf-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+/* Hero di sezione (era: gradienti radiali + watermark ruotato) */
 .matchroom-hero {
   position: relative;
-  overflow: hidden;
-  background-image:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--background) 78%, transparent) 42%, color-mix(in srgb, var(--background) 86%, black 14%)),
-    var(--league-cover-image, none);
-  background-size: cover, cover;
-  background-position: center, center;
-  border-color: var(--border-strong) !important;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
 }
-
 .matchroom-hero::before {
   content: "";
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 78% 44%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 15rem),
-    linear-gradient(115deg, transparent 0 42%, color-mix(in srgb, var(--accent) 12%, transparent) 42% 42.45%, transparent 42.45% 100%),
-    repeating-linear-gradient(90deg, rgba(244,234,216,0.032) 0 1px, transparent 1px 34px),
-    repeating-linear-gradient(0deg, rgba(244,234,216,0.025) 0 1px, transparent 1px 34px);
-  mask-image: linear-gradient(90deg, rgba(0,0,0,0.94), transparent 86%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-2) 0 33%, var(--accent) 33% 66%, var(--live) 66% 100%);
 }
-
-.matchroom-hero::after {
-  content: "";
-  position: absolute;
-  right: 5%;
-  top: 50%;
-  width: min(42vw, 520px);
-  aspect-ratio: 1;
-  transform: translateY(-50%) rotate(45deg);
-  background:
-    linear-gradient(rgba(5, 8, 6, 0.18), rgba(5, 8, 6, 0.18)),
-    var(--league-watermark-image, url("/cammino-imperiale-logo.png")) center / contain no-repeat;
-  filter: drop-shadow(0 0 44px rgba(177, 42, 31, 0.18));
-  opacity: 0.16;
-}
-
 .matchroom-hero > * {
   position: relative;
   z-index: 1;
 }
 
-.turf-card {
-  position: relative;
-  overflow: hidden;
-  border-color: var(--border) !important;
-}
-
-.turf-card::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  pointer-events: none;
-  border-radius: inherit;
-  border: 1px solid rgba(244, 234, 216, 0.035);
-}
-
-.turf-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 25% 18%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 22rem),
-    linear-gradient(120deg, transparent 0 54%, color-mix(in srgb, var(--accent) 6%, transparent) 54% 54.5%, transparent 54.5% 100%);
-  opacity: 0.95;
-}
-
-.turf-card > * {
-  position: relative;
-  z-index: 1;
-}
-
+/* Titoli in evidenza — condensato, guadagnato dal contesto scoreboard */
 .imperial-title {
-  font-family: var(--font-imperial), var(--font-display), system-ui, sans-serif;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  text-shadow: 0 2px 0 rgba(0,0,0,0.32), 0 18px 45px rgba(0,0,0,0.35);
+  font-family: var(--font-scoreboard), var(--font-display), system-ui, sans-serif;
+  letter-spacing: 0.01em;
 }
 
+/* Chip/etichetta di stato — bordo netto, nessun gradiente */
 .imperial-chip {
   border: 1px solid var(--border-strong);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-2) 36%, transparent), color-mix(in srgb, var(--background) 42%, transparent));
+  background: var(--card-2);
   color: var(--accent);
 }
 
+/* Placca informativa (es. "Torneo attivo") */
 .imperial-plate {
   border: 1px solid var(--border);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent-2) 24%, transparent), color-mix(in srgb, var(--background) 86%, transparent)),
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 18rem);
-  box-shadow: inset 0 1px 0 rgba(244, 234, 216, 0.05), 0 18px 60px rgba(0,0,0,0.26);
+  background: var(--card-2);
 }
 
+/* Banner sponsor — piatto, coerente col resto delle card */
 .sponsor-banner {
-  position: relative;
-  overflow: hidden;
-  /* Sfondo scuro coordinato con le card sottostanti */
-  background: #0f1110;
-  /* Bordo dorato coerente con il resto dell'interfaccia */
-  border: 1px solid rgba(201, 167, 102, 0.35) !important;
-  /* Ombra morbida per dare profondità */
-  box-shadow: inset 0 0 20px rgba(201, 167, 102, 0.05), 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
+  background: var(--card);
 }
-
-.sponsor-banner::after {
-  /* Elimina la banda diagonale beige */
-  display: none;
-}
-
-.sponsor-banner > * {
-  position: relative;
-  z-index: 1;
-}
-
-@media (min-width: 1024px) {
-  .desktop-control-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
-  }
-}
-
 
 @media (max-width: 768px) {
   html,
@@ -292,9 +238,9 @@ body::after {
   header,
   aside,
   nav,
-  .turf-card,
-  .matchroom-hero,
-  .imperial-plate {
+  .panel,
+  .panel-raised,
+  .scoreboard-header {
     min-width: 0;
   }
 
@@ -313,52 +259,21 @@ body::after {
   video {
     max-width: 100%;
   }
-
-  .matchroom-hero::after {
-    width: 80vw;
-    right: -22vw;
-    opacity: 0.08;
-  }
-
-  .desktop-control-grid {
-    min-width: 0;
-  }
 }
 
-/* Multi-tournament hub */
+/* ============================================================
+   Tema per tornei ospitati sulla piattaforma senza brand proprio
+   (modalità GENERIC/CUSTOM) — resta neutro e distinto da FutPoli
+   ============================================================ */
 .tournament-hub {
-  --background: #070b12;
-  --foreground: #f6f7fb;
-  --card: rgba(17, 24, 39, 0.88);
-  --card-2: rgba(102, 227, 255, 0.06);
-  --muted: rgba(246, 247, 251, 0.58);
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(102, 227, 255, 0.34);
-  --accent: #66e3ff;
-  --accent-2: #6c63ff;
-  --accent-soft: rgba(102, 227, 255, 0.12);
-  --imperial-green: #574ed6;
-  --imperial-green-2: #6c63ff;
-  --imperial-gold: #66e3ff;
-  --imperial-gold-2: #9aeeff;
-  --imperial-text: #ffffff;
-}
-
-body[data-league-theme] {
-  background:
-    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--accent) 19%, transparent), transparent 30rem),
-    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--accent-2) 15%, transparent), transparent 34rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--background) 92%, white 8%) 0%, var(--background) 58%, color-mix(in srgb, var(--background) 92%, black 8%) 100%);
-}
-
-body[data-league-theme]::after {
-  background:
-    radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 24rem),
-    linear-gradient(115deg, transparent 0 48%, color-mix(in srgb, var(--accent) 4%, transparent) 48% 48.35%, transparent 48.35% 100%);
-}
-
-/* Lo sponsor storico resta sui tornei legacy; i nuovi tornei non ereditano branding commerciale altrui. */
-body[data-league-theme="generic"] .sponsor-banner,
-body[data-league-theme="custom"] .sponsor-banner {
-  display: none;
+  --background: #0a0e14;
+  --foreground: #f1f3f8;
+  --card: #10151d;
+  --card-2: #161c26;
+  --muted: rgba(241, 243, 248, 0.58);
+  --border: rgba(241, 243, 248, 0.10);
+  --border-strong: rgba(241, 243, 248, 0.22);
+  --accent: #5b9fd6;
+  --accent-2: #4a5bd6;
+  --accent-soft: rgba(91, 159, 214, 0.12);
 }

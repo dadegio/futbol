@@ -178,7 +178,7 @@ export default function BrandingManager({
               </div>
             </div>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
-              Ogni torneo può avere nome, logo, copertina e palette proprie. I tornei già esistenti restano sul tema Cammino Imperiale finché non li modifichi.
+              Ogni torneo può avere nome, logo, copertina e palette proprie. I tornei già esistenti restano sul tema FutPoli finché non li modifichi.
             </p>
 
             <label className="mt-5 block rounded-2xl border border-[var(--border)] bg-[var(--card-2)] p-4">
@@ -195,7 +195,7 @@ export default function BrandingManager({
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {[
-                ["IMPERIAL", "Cammino Imperiale", "Grafica storica attuale"],
+                ["IMPERIAL", "FutPoli", "Grafica storica attuale"],
                 ["GENERIC", "Neutro", "Tema pulito per nuovi tornei"],
                 ["CUSTOM", "Personalizzato", "Colori e grafiche del torneo"],
               ].map(([id, title, subtitle]) => (

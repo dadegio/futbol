@@ -72,7 +72,7 @@ return (
             {leagueBrand && resolvedBrand.logoUrl && (
               <img src={resolvedBrand.logoUrl} alt="" loading="eager" decoding="async" className="h-8 w-8 shrink-0 object-contain" />
             )}
-            <span className="block truncate font-black text-[var(--accent)]">{resolvedBrand.mode === "IMPERIAL" ? "CAMMINO IMPERIALE" : (leagueBrand?.name || "TORNEI")}</span>
+            <span className="block truncate font-black text-[var(--accent)]">{resolvedBrand.mode === "IMPERIAL" ? "FUTPOLI" : (leagueBrand?.name || "TORNEI")}</span>
           </Link>
 
           {!authLoading && (

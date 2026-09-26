@@ -4,15 +4,15 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const base =
-  "inline-flex items-center justify-center rounded-2xl border font-black transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] active:scale-[0.98]";
+  "inline-flex items-center justify-center rounded-lg border font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] active:translate-y-px";
 
 const variants = {
   primary:
-    "border-[var(--border-strong)] bg-[linear-gradient(135deg,var(--accent-2),var(--accent))] text-[var(--imperial-text)] shadow-[0_12px_34px_rgba(0,0,0,0.30),inset_0_1px_0_rgba(244,234,216,0.08)] hover:border-[var(--accent)] hover:brightness-110",
+    "border-[var(--accent-2)] bg-[var(--accent-2)] text-[var(--imperial-text)] hover:border-[color-mix(in_srgb,var(--accent-2)_80%,white)] hover:bg-[color-mix(in_srgb,var(--accent-2)_80%,white)]",
   secondary:
-    "border-[var(--border-strong)] bg-[var(--card-2)] text-[var(--foreground)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+    "border-[var(--border-strong)] bg-transparent text-[var(--foreground)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
   destructive:
-    "border-red-400/30 bg-red-500/10 text-red-300 hover:bg-red-500/18",
+    "border-[var(--live)]/40 bg-[var(--live)]/10 text-[var(--live)] hover:bg-[var(--live)]/18",
 } as const;
 
 const sizes = {

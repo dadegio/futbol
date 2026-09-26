@@ -27,9 +27,9 @@ export const GENERIC_BRAND = {
 };
 
 export const IMPERIAL_BRAND = {
-  primary: "#c9a766",
-  secondary: "#28563b",
-  background: "#050806",
+  primary: "#b99a5b",
+  secondary: "#2e6b46",
+  background: "#0c1310",
   logoUrl: "/cammino-imperiale-logo.png",
 };
 
@@ -51,7 +51,7 @@ export function resolveLeagueBranding(league?: LeagueBranding | null) {
       background: IMPERIAL_BRAND.background,
       logoUrl: IMPERIAL_BRAND.logoUrl,
       coverUrl: null,
-      label: "Cammino Imperiale",
+      label: "FutPoli",
     };
   }
 

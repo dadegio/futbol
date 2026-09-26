@@ -144,8 +144,8 @@ export default function Sidebar({ leagueId, branding }: SidebarProps) {
             </div>
           )}
           {resolvedBrand.mode === "IMPERIAL" ? (
-            <span className="imperial-title leading-none text-[22px] font-bold tracking-[0.08em] text-[var(--accent)]">
-              CAMMINO<br />IMPERIALE
+            <span className="scoreboard-figure leading-none text-[22px] text-[var(--accent)]">
+              FUTPOLI
             </span>
           ) : (
             <span className="min-w-0 text-[18px] font-black leading-tight tracking-[-0.03em] text-[var(--accent)]">

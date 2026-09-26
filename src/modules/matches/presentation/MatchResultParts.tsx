@@ -227,14 +227,14 @@ export function TeamScoreBlock({
         background: `linear-gradient(135deg, ${primaryColor}24 0 48%, ${secondaryColor}24 52% 100%)`,
       }}
     >
-      <div className="relative flex items-end justify-center pr-5 sm:pr-10">
+      <div className="flex items-end justify-center gap-5 sm:gap-8 lg:gap-10">
         <div
           className="rounded-[26px] p-2"
           style={{ boxShadow: `-8px 10px 28px ${primaryColor}1F, 8px 10px 28px ${secondaryColor}1F`, background: `linear-gradient(135deg, ${primaryColor}18 0 49%, ${secondaryColor}18 51% 100%)` }}
         >
           <TeamCrest name={team.name} badgeUrl={team.badgeUrl ?? null} large />
         </div>
-        <div className="absolute -right-1 bottom-0 flex flex-col items-center sm:-right-2">
+        <div className="flex shrink-0 flex-col items-center">
           <TeamKitThumb
             url={kitUrl}
             primary={primaryColor}

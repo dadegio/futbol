@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, DM_Mono, Teko } from "next/font/google";
+import { Public_Sans, DM_Mono, Teko } from "next/font/google";
 import { AuthProvider } from "@/lib/client-auth";
 import CookieConsentBanner from "./_components/cookie-consent-banner";
 import "./globals.css";
 
-const jakartaSans = Plus_Jakarta_Sans({
+const publicSans = Public_Sans({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -17,14 +17,14 @@ const dmMono = DM_Mono({
   display: "swap",
 });
 const teko = Teko({
-  variable: "--font-imperial",
+  variable: "--font-scoreboard",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Tornei",
+  title: "FutPoli",
   description: "Gestione, calendario e statistiche per tornei di calcio",
     manifest: "/manifest.json",
     icons: {
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
-      <body className={`${jakartaSans.variable} ${dmMono.variable} ${teko.variable}`}>
+      <body className={`${publicSans.variable} ${dmMono.variable} ${teko.variable}`}>
         <AuthProvider>
           {children}
           <CookieConsentBanner />

@@ -31,7 +31,7 @@ const channelUrl =
 export const youtubePresentationConfig: YouTubeVideoConfig = {
   title:
     process.env.NEXT_PUBLIC_PRESENTATION_VIDEO_TITLE ||
-    "Presentazione Cammino Imperiale",
+    "Presentazione FutPoli",
   subtitle:
     process.env.NEXT_PUBLIC_PRESENTATION_VIDEO_SUBTITLE ||
     "Il video ufficiale di presentazione del torneo.",
@@ -45,7 +45,7 @@ export const youtubePresentationConfig: YouTubeVideoConfig = {
 export const youtubeFeaturedConfig: YouTubeVideoConfig = {
   title:
     process.env.NEXT_PUBLIC_FEATURED_VIDEO_TITLE ||
-    "Ultima uscita Cammino Imperiale",
+    "Ultima uscita FutPoli",
   subtitle:
     process.env.NEXT_PUBLIC_FEATURED_VIDEO_SUBTITLE ||
     "Highlights, replay e contenuti ufficiali del torneo.",
